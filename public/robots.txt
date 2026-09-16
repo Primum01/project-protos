@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Block admin section from crawlers
+Disallow: /admin
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://www.twinspace360.com/sitemap.xml
