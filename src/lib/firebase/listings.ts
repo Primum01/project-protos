@@ -36,17 +36,20 @@ export function subscribeAllListings(callback: (listings: Listing[]) => void) {
 }
 
 /**
- * Subscribe to published listings only.
- * Sorting is done client-side to avoid a composite Firestore index requirement.
+ * Subscribe to published, non-deactivated listings only.
+ * Sorting and deactivation filtering are done client-side to avoid composite
+ * Firestore index requirements (same pattern used for sort order).
  * Used by the public /tours page.
  */
 export function subscribePublishedListings(callback: (listings: Listing[]) => void) {
   return subscribeCollection<Listing>(
     COL,
     (listings) => {
-      const sorted = [...listings].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
+      const sorted = [...listings]
+        .filter((l) => !l.deactivated)
+        .sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
       callback(sorted)
     },
     where('published', '==', true),

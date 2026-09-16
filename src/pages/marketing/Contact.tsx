@@ -3,10 +3,18 @@ import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { Button, Input, Section, Textarea } from "@/components/ui"
 import { createMessage } from "@/lib/firebase/messages"
 import { isFirebaseConfigured } from "@/lib/firebase/config"
+import { usePageMeta } from "@/hooks/usePageMeta"
 
-const CONTACT_EMAIL = 'hello@twinspace.app'
+const CONTACT_EMAIL = 'info@twinspace360.com'
 
 export function Contact() {
+  usePageMeta({
+    title: 'Contact TwinSpace — Get in Touch',
+    description:
+      'Have a question or ready to get started? Reach out to the TwinSpace team — we\'d love to help you create an unforgettable property tour.',
+    path: '/contact',
+  })
+
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")

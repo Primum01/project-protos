@@ -4,6 +4,7 @@ import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
 import { exampleTours } from '@/data/exampleTours'
 import { cn } from '@/lib/cn'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 const accentClasses: Record<string, string> = {
   clay: 'from-[#d9a373] to-[#8c5a3c]',
@@ -16,6 +17,14 @@ export function TourDetail() {
   const { slug } = useParams<{ slug: string }>()
   const tour = exampleTours.find((item) => item.slug === slug)
   const [copied, setCopied] = useState(false)
+
+  usePageMeta({
+    title: tour ? `${tour.title} — 3D Property Tour` : '3D Property Tour — TwinSpace',
+    description: tour
+      ? `${tour.propertyType} in ${tour.location}, ${tour.city}. ${tour.description ?? 'Explore this property in an interactive 3D tour on TwinSpace.'}`
+      : 'Explore this property in an interactive 3D tour on TwinSpace.',
+    path: `/tour/${slug}`,
+  })
 
   if (!tour) {
     return (

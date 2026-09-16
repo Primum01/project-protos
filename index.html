@@ -2,9 +2,73 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="TwinSpace: turn any property into an interactive 3D tour guests can explore before they arrive." />
+
+    <!-- ── Primary SEO ──────────────────────────────────────────────────── -->
+    <title>TwinSpace — Interactive 3D Property Tours for Hosts</title>
+    <meta
+      name="description"
+      content="TwinSpace turns any property into an immersive 3D tour guests can explore before they arrive. Increase bookings, reduce questions, and wow your guests from the first click."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.twinspace360.com/" />
+
+    <!-- ── Open Graph ───────────────────────────────────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TwinSpace" />
+    <meta property="og:title" content="TwinSpace — Interactive 3D Property Tours for Hosts" />
+    <meta
+      property="og:description"
+      content="TwinSpace turns any property into an immersive 3D tour guests can explore before they arrive. Increase bookings, reduce questions, and wow your guests from the first click."
+    />
+    <meta property="og:url" content="https://www.twinspace360.com/" />
+    <meta property="og:image" content="https://www.twinspace360.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TwinSpace — Interactive 3D Property Tours for Hosts" />
+    <meta
+      name="twitter:description"
+      content="TwinSpace turns any property into an immersive 3D tour guests can explore before they arrive."
+    />
+    <meta name="twitter:image" content="https://www.twinspace360.com/og-image.png" />
+
+    <!-- ── Structured Data (JSON-LD) ────────────────────────────────────── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TwinSpace",
+        "url": "https://www.twinspace360.com",
+        "description": "TwinSpace turns any property into an immersive 3D tour guests can explore before they arrive.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "KES",
+          "description": "Free plan available — start with one property tour at no cost."
+        },
+        "provider": {
+          "@type": "Organization",
+          "name": "TwinSpace",
+          "url": "https://www.twinspace360.com",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "info@twinspace360.com"
+          }
+        }
+      }
+    </script>
+
+    <!-- ── Favicon ───────────────────────────────────────────────────────── -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- ── Fonts ────────────────────────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Non-render-blocking font load: browser paints immediately, fonts swap in -->
@@ -20,7 +84,6 @@
         rel="stylesheet"
       />
     </noscript>
-    <title>TwinSpace: 3D Property Tours</title>
   </head>
   <body>
     <div id="root"></div>

@@ -3,6 +3,7 @@ import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Button, Card, Section } from '@/components/ui'
 import { pricingPlans } from '@/data/plans'
 import { cn } from '@/lib/cn'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 /* ── Credit-card number formatter ─────────────────────────────── */
 function formatCardNumber(value: string) {
@@ -182,6 +183,13 @@ function CardDetail() {
 /* ── Main page ─────────────────────────────────────────────────── */
 export function Pricing() {
   const [activeMethod, setActiveMethod] = useState<Method>(null)
+
+  usePageMeta({
+    title: 'Pricing — Simple Plans for Every Host',
+    description:
+      'Start free with one property tour, then scale as your portfolio grows. No long-term contracts. Pay via M-Pesa or card.',
+    path: '/pricing',
+  })
 
   function toggle(method: Method) {
     setActiveMethod((prev) => (prev === method ? null : method))

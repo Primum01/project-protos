@@ -1,7 +1,15 @@
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Section } from '@/components/ui'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 export function About() {
+  usePageMeta({
+    title: 'About TwinSpace — Our Story',
+    description:
+      'We built TwinSpace to give independent hosts and property managers access to the same 3D walkthrough quality used by large platforms — without needing an in-house production team.',
+    path: '/about',
+  })
+
   return (
     <MarketingLayout>
       <div className="h-20" />

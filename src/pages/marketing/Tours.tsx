@@ -5,6 +5,7 @@ import { Section } from "@/components/ui"
 import { exampleTours } from "@/data/exampleTours"
 import { usePublishedListings } from "@/hooks/useListings"
 import { isFirebaseConfigured } from "@/lib/firebase/config"
+import { usePageMeta } from "@/hooks/usePageMeta"
 import type { ExampleTour } from "@/data/exampleTours"
 import type { Listing } from "@/types/listing"
 
@@ -290,6 +291,13 @@ function matchesSearch(text: string, query: string) {
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export function Tours() {
   const { listings, loading } = usePublishedListings()
+
+  usePageMeta({
+    title: 'Browse 3D Property Tours — TwinSpace',
+    description:
+      'Explore interactive 3D tours of properties across Nairobi, Mombasa, and beyond. Find your next stay and walk through it before you book.',
+    path: '/tours',
+  })
 
   const [liveLocation, setLiveLocation] = useState("")
   const [liveSearch, setLiveSearch] = useState("")

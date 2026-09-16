@@ -1,4 +1,11 @@
 export type ListingStatus = 'available' | 'sold' | 'rented' | 'off_market'
+export type DeactivationReason = 'late_payment' | 'sold' | 'rented' | ''
+
+export const DEACTIVATION_REASONS: { value: DeactivationReason; label: string; color: string }[] = [
+  { value: 'late_payment', label: 'Late Payment',    color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  { value: 'sold',         label: 'Property Sold',   color: 'text-red-700 bg-red-50 border-red-200' },
+  { value: 'rented',       label: 'Property Rented', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+]
 export type ListingAccent = 'clay' | 'olive' | 'ink' | 'sand'
 
 export const LISTING_STATUSES: { value: ListingStatus; label: string; color: string }[] = [
@@ -60,6 +67,8 @@ export interface Listing {
   photoUrl: string
   status: ListingStatus
   published: boolean
+  deactivated: boolean
+  deactivationReason: DeactivationReason
   accent: ListingAccent
   createdAt: string
   updatedAt: string
@@ -88,5 +97,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   photoUrl: '',
   status: 'available',
   published: false,
+  deactivated: false,
+  deactivationReason: '',
   accent: 'clay',
 }

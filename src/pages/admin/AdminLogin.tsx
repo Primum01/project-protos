@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button, Input, PasswordInput } from '@/components/ui'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 /** The only email address allowed to register an admin account. */
 const ADMIN_EMAIL = 'team@twinspace360.com'
@@ -16,6 +17,13 @@ export function AdminLogin() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
+
+  usePageMeta({
+    title: 'Admin Login — TwinSpace',
+    description: 'TwinSpace admin portal login.',
+    path: '/admin/login',
+    noIndex: true,
+  })
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
