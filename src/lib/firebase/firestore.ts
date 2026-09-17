@@ -61,6 +61,12 @@ export function subscribeCollection<T extends DocumentData>(
     (snapshot) => {
       callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as T)))
     },
+    (error) => {
+      // Permission errors or network failures must not cause infinite loading —
+      // surface an empty result so the UI can show an appropriate empty state.
+      console.error(`[Firestore] subscribeCollection(${collectionName}) error:`, error.message)
+      callback([])
+    },
   )
 }
 
