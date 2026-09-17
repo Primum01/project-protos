@@ -3,7 +3,6 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { signOut } from '@/lib/firebase/auth'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/hooks/useAuth'
-import { AdminDataProvider } from '@/contexts/AdminDataContext'
 import { useSession } from '@/contexts/SessionContext'
 import { SessionSelect } from '@/pages/admin/SessionSelect'
 
@@ -259,9 +258,7 @@ export function AdminLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <AdminDataProvider>
-            <Outlet />
-          </AdminDataProvider>
+          <Outlet />
         </main>
       </div>
     </div>

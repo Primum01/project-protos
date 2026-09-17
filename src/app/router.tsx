@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AuthGuard } from '@/components/admin/AuthGuard'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { SessionProvider } from '@/contexts/SessionContext'
+import { AdminDataProvider } from '@/contexts/AdminDataContext'
 
 // ── Lazy-loaded pages (each becomes its own JS chunk) ──────────────────────
 const NotFound        = lazy(() => import('@/pages/NotFound').then(m => ({ default: m.NotFound })))
@@ -62,11 +63,13 @@ export const router = createBrowserRouter([
       {
         path: '/admin',
         element: (
-          <AuthGuard>
-            <SessionProvider>
-              <AdminLayout />
-            </SessionProvider>
-          </AuthGuard>
+          <AdminDataProvider>
+            <AuthGuard>
+              <SessionProvider>
+                <AdminLayout />
+              </SessionProvider>
+            </AuthGuard>
+          </AdminDataProvider>
         ),
         children: [
           { index: true, element: <Navigate to="/admin/listings" replace /> },

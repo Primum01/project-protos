@@ -18,7 +18,7 @@ const ID_KEY   = 'ts_session_id'
 const USER_KEY = 'ts_session_user'
 
 /** Max ms to wait for a Firestore conflict-check before proceeding anyway. */
-const CONFLICT_CHECK_TIMEOUT = 3000
+const CONFLICT_CHECK_TIMEOUT = 1000
 
 export type SelectResult =
   | { status: 'ok'; session: AdminSession }

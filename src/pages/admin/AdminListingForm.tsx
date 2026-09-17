@@ -233,10 +233,10 @@ export function AdminListingForm() {
   const [showPreview, setShowPreview] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Photo upload state
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  // Photo upload state — upload eagerly on file pick, not on save
   const [photoPreview, setPhotoPreview] = useState<string>('')
-  const [photoUploadProgress, setPhotoUploadProgress] = useState<number | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoUploadProgress, setPhotoUploadProgress] = useState(0)
   const [photoError, setPhotoError] = useState('')
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -270,21 +270,15 @@ export function AdminListingForm() {
       setError('Firebase is not configured. Add .env.local credentials to save listings.')
       return
     }
+    if (photoUploading) {
+      setError('Please wait for the photo to finish uploading.')
+      return
+    }
     setSaving(true)
     setError('')
     try {
-      // Upload photo first if a new file was selected
-      let finalPhotoUrl = form.photoUrl
-      if (photoFile) {
-        setPhotoUploadProgress(0)
-        finalPhotoUrl = await uploadFile(
-          `listings/${crypto.randomUUID()}-${photoFile.name}`,
-          photoFile,
-          (p) => setPhotoUploadProgress(Math.round(p * 100)),
-        )
-        setPhotoUploadProgress(null)
-      }
-      const data: ListingFormData = { ...form, published: publish, photoUrl: finalPhotoUrl }
+      // Photo URL is already resolved eagerly; just write Firestore data
+      const data: ListingFormData = { ...form, published: publish }
       if (isEditing && id) {
         await updateListing(id, data)
       } else {
@@ -293,27 +287,52 @@ export function AdminListingForm() {
       navigate('/admin/listings')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed. Check your Firebase config.')
-      setPhotoUploadProgress(null)
     } finally {
       setSaving(false)
     }
   }
 
-  function handlePhotoChange(file: File | null) {
+  /**
+   * Called when the user picks a file. Immediately starts the Storage upload
+   * and updates form.photoUrl when done. This keeps the save flow fast.
+   */
+  async function handlePhotoChange(file: File | null) {
     setPhotoError('')
     if (!file) return
-    if (file.size > 1024 * 1024) {
-      setPhotoError('Image is too large. Maximum size is 1 MB.')
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image is too large. Maximum size is 5 MB.')
       return
     }
     if (!file.type.startsWith('image/')) {
       setPhotoError('Please select a valid image file (JPEG, PNG, WebP, etc.).')
       return
     }
-    setPhotoFile(file)
-    const reader = new FileReader()
-    reader.onload = (e) => setPhotoPreview(e.target?.result as string)
-    reader.readAsDataURL(file)
+
+    // Show a local preview instantly
+    const localUrl = URL.createObjectURL(file)
+    setPhotoPreview(localUrl)
+    setPhotoUploading(true)
+    setPhotoUploadProgress(0)
+
+    try {
+      const uploadedUrl = await uploadFile(
+        `listings/${crypto.randomUUID()}-${file.name}`,
+        file,
+        (p) => setPhotoUploadProgress(Math.round(p * 100)),
+      )
+      // Store the real CDN URL in form state so save() can use it
+      set('photoUrl', uploadedUrl)
+      setPhotoPreview(uploadedUrl)
+    } catch (err) {
+      setPhotoError(
+        err instanceof Error ? err.message : 'Upload failed. Check Storage rules and try again.',
+      )
+      setPhotoPreview('')
+      set('photoUrl', '')
+    } finally {
+      setPhotoUploading(false)
+      setPhotoUploadProgress(0)
+    }
   }
 
   if (loadingListing) {
@@ -623,7 +642,7 @@ export function AdminListingForm() {
               />
 
               {/* Upload progress bar */}
-              {photoUploadProgress !== null && (
+              {photoUploading && (
                 <div className="mt-3">
                   <div className="flex items-center justify-between text-xs text-ink-500 mb-1">
                     <span>Uploading…</span>
@@ -644,11 +663,10 @@ export function AdminListingForm() {
               )}
 
               {/* Remove button */}
-              {photoPreview && (
+              {photoPreview && !photoUploading && (
                 <button
                   type="button"
                   onClick={() => {
-                    setPhotoFile(null)
                     setPhotoPreview('')
                     set('photoUrl', '')
                     if (photoInputRef.current) photoInputRef.current.value = ''
@@ -715,16 +733,16 @@ export function AdminListingForm() {
                 id="save-draft-btn"
                 variant="secondary"
                 onClick={() => save(false)}
-                disabled={saving}
+                disabled={saving || photoUploading}
               >
-                {saving ? 'Saving…' : 'Save as draft'}
+                {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : 'Save as draft'}
               </Button>
               <Button
                 id="save-publish-btn"
                 onClick={() => save(true)}
-                disabled={saving}
+                disabled={saving || photoUploading}
               >
-                {saving ? 'Saving…' : isEditing ? 'Save & publish' : 'Publish listing'}
+                {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : isEditing ? 'Save & publish' : 'Publish listing'}
               </Button>
             </div>
           </div>
