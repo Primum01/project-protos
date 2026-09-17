@@ -11,18 +11,16 @@ function Spinner() {
 }
 
 /**
- * Wraps admin routes. Redirects unauthenticated users to /admin/login.
- * When Firebase is not yet configured, grants access with a dev-mode warning
- * shown in the AdminLayout sidebar so the UI is still explorable.
+ * Wraps admin routes. Always redirects unauthenticated users to /admin/login.
+ * If Firebase is not configured the login page will surface a warning —
+ * but we never bypass auth and expose the admin UI publicly.
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, loading, isConfigured } = useAuth()
+  const { user, loading } = useAuth()
 
   if (loading) return <Spinner />
 
-  // Dev mode: Firebase not configured — allow through so the UI can be previewed
-  if (!isConfigured) return <>{children}</>
-
+  // No user (or Firebase not configured) → always gate behind login
   if (!user) return <Navigate to="/admin/login" replace />
 
   return <>{children}</>
