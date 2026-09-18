@@ -23,7 +23,7 @@ export const DEFAULT_SHOOT_PRICING: ShootPricingPlan[] = [
     id: 'studio',
     name: 'Studio Apartment',
     price: 'Ksh 1,200',
-    cadence: '/shoot',
+    cadence: '',
     description: 'Perfect for compact units and studios.',
     features: [
       'Full 3D scan',
@@ -38,7 +38,7 @@ export const DEFAULT_SHOOT_PRICING: ShootPricingPlan[] = [
     id: '1-bedroom',
     name: '1 Bedroom Apartment',
     price: 'Ksh 1,500',
-    cadence: '/shoot',
+    cadence: '',
     description: 'For single-bedroom property listings.',
     features: [
       'Full 3D scan',
@@ -54,7 +54,7 @@ export const DEFAULT_SHOOT_PRICING: ShootPricingPlan[] = [
     id: '2-bedroom',
     name: '2 Bedroom Apartment',
     price: 'Ksh 1,800',
-    cadence: '/shoot',
+    cadence: '',
     description: 'For larger multi-bedroom properties.',
     features: [
       'Full 3D scan',

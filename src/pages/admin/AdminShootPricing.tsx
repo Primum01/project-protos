@@ -71,7 +71,6 @@ function PricingRow({ plan }: { plan: ShootPricingPlan }) {
             placeholder="e.g. Ksh 1,200"
           />
         </div>
-        <span className="shrink-0 text-sm text-ink-400">{plan.cadence}</span>
       </div>
 
       {/* Save / status */}
