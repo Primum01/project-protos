@@ -2,19 +2,19 @@
 // Run with: node scripts/seed-listings.mjs
 
 const PROJECT_ID = 'twinspace-c113c'
-const API_KEY    = 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
-const BASE_URL   = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
+const API_KEY = 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
 
 const now = new Date().toISOString()
 
 // Convert a plain JS value into a Firestore REST API field value
 function toFirestoreValue(val) {
   if (val === null || val === undefined) return { nullValue: null }
-  if (typeof val === 'boolean')  return { booleanValue: val }
-  if (typeof val === 'number')   return { integerValue: String(val) }
-  if (typeof val === 'string')   return { stringValue: val }
-  if (Array.isArray(val))        return { arrayValue: { values: val.map(toFirestoreValue) } }
-  if (typeof val === 'object')   return { mapValue: { fields: Object.fromEntries(Object.entries(val).map(([k, v]) => [k, toFirestoreValue(v)])) } }
+  if (typeof val === 'boolean') return { booleanValue: val }
+  if (typeof val === 'number') return { integerValue: String(val) }
+  if (typeof val === 'string') return { stringValue: val }
+  if (Array.isArray(val)) return { arrayValue: { values: val.map(toFirestoreValue) } }
+  if (typeof val === 'object') return { mapValue: { fields: Object.fromEntries(Object.entries(val).map(([k, v]) => [k, toFirestoreValue(v)])) } }
   return { stringValue: String(val) }
 }
 

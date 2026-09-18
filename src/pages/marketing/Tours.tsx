@@ -1,12 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { TourCard } from "@/components/marketing/TourCard"
 import { Section } from "@/components/ui"
-import { exampleTours } from "@/data/exampleTours"
 import { usePublishedListings } from "@/hooks/useListings"
-import { isFirebaseConfigured } from "@/lib/firebase/config"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import type { ExampleTour } from "@/data/exampleTours"
 import type { Listing } from "@/types/listing"
 
 /** Seed list — any location found in live data that is not here gets auto-added. */
@@ -266,7 +263,14 @@ function FilterBar({
 }
 
 /* ── Data helpers ───────────────────────────────────────────────────────── */
-function listingToCard(listing: Listing): ExampleTour & { photoUrl?: string } {
+type TourCardData = {
+  slug: string; title: string; location?: string; city: string; country: string
+  propertyType: string; bedrooms: number; bathrooms: number
+  accent: 'clay' | 'olive' | 'ink' | 'sand'; description: string
+  amenities: string[]; externalUrl?: string; photoUrl?: string
+}
+
+function listingToCard(listing: Listing): TourCardData {
   return {
     slug: listing.id,
     title: listing.name,
@@ -299,96 +303,66 @@ export function Tours() {
     path: '/tours',
   })
 
-  const [liveLocation, setLiveLocation] = useState("")
-  const [liveSearch, setLiveSearch] = useState("")
-  const [exampleLocation, setExampleLocation] = useState("")
-  const [exampleSearch, setExampleSearch] = useState("")
+  const [location, setLocation] = useState("")
+  const [search, setSearch] = useState("")
 
-  // Auto-merges any new location from live data into the dropdown — no code change ever needed
-  const liveOptions = useMemo(() => buildOptions(listings.map((l) => l.location)), [listings])
-  const exampleOptions = useMemo(() => buildOptions(exampleTours.map((t) => t.location)), [])
+  const locationOptions = useMemo(() => buildOptions(listings.map((l) => l.location)), [listings])
 
-  const filteredListings = useMemo(() => {
+  const filtered = useMemo(() => {
     return listings.filter((l) => {
-      const locationMatch = !liveLocation || l.location?.toLowerCase().includes(liveLocation.toLowerCase())
-      const searchMatch = !liveSearch || [l.name, l.location, l.city, l.propertyType, l.description]
-        .some((f) => matchesSearch(f ?? "", liveSearch))
+      const locationMatch = !location || l.location?.toLowerCase().includes(location.toLowerCase())
+      const searchMatch = !search || [l.name, l.location, l.city, l.propertyType, l.description]
+        .some((f) => matchesSearch(f ?? "", search))
       return locationMatch && searchMatch
     })
-  }, [listings, liveLocation, liveSearch])
-
-  const filteredExamples = useMemo(() => {
-    return exampleTours.filter((t) => {
-      const locationMatch = !exampleLocation || t.location?.toLowerCase().includes(exampleLocation.toLowerCase())
-      const searchMatch = !exampleSearch || [t.title, t.location, t.city, t.propertyType, t.description]
-        .some((f) => matchesSearch(f ?? "", exampleSearch))
-      return locationMatch && searchMatch
-    })
-  }, [exampleLocation, exampleSearch])
+  }, [listings, location, search])
 
   return (
     <MarketingLayout>
       <div className="h-20" />
 
-      {isFirebaseConfigured && (
-        <Section
-          eyebrow="Available properties"
-          title="Browse our listings"
-          description="Properties currently available to view. Click any card to launch the 3D tour."
-        >
-          {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-64 animate-pulse rounded-xl bg-ink-100" />
-              ))}
-            </div>
-          ) : (
-            <>
-              <FilterBar
-                options={liveOptions}
-                location={liveLocation}
-                onLocation={setLiveLocation}
-                search={liveSearch}
-                onSearch={setLiveSearch}
-                count={filteredListings.length}
-              />
-              {filteredListings.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredListings.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
-                </div>
-              ) : (
-                <p className="text-ink-400">
-                  No listings match your filters.{" "}
-                  <button onClick={() => { setLiveLocation(""); setLiveSearch("") }} className="text-brand-600 underline">Clear all</button>
-                </p>
-              )}
-            </>
-          )}
-        </Section>
-      )}
-
       <Section
-        eyebrow="Example tours"
-        title="Explore properties in 3D"
-        description="A sample of the kind of tours hosts publish on TwinSpace. Open one to see the guest experience."
+        eyebrow="Available properties"
+        title="Browse our listings"
+        description="Properties currently available to view. Click any card to launch the 3D tour."
       >
-        <FilterBar
-          options={exampleOptions}
-          location={exampleLocation}
-          onLocation={setExampleLocation}
-          search={exampleSearch}
-          onSearch={setExampleSearch}
-          count={filteredExamples.length}
-        />
-        {filteredExamples.length > 0 ? (
+        {loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredExamples.map((t) => <TourCard key={t.slug} tour={t} />)}
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-64 animate-pulse rounded-xl bg-ink-100" />
+            ))}
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 py-20 text-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="mb-4 text-ink-300" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <p className="font-medium text-ink-500">No properties listed yet</p>
+            <p className="mt-1 text-sm text-ink-400">Check back soon — new tours are added regularly.</p>
           </div>
         ) : (
-          <p className="text-ink-400">
-            No tours match your filters.{" "}
-            <button onClick={() => { setExampleLocation(""); setExampleSearch("") }} className="text-brand-600 underline">Clear all</button>
-          </p>
+          <>
+            <FilterBar
+              options={locationOptions}
+              location={location}
+              onLocation={setLocation}
+              search={search}
+              onSearch={setSearch}
+              count={filtered.length}
+            />
+            {filtered.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
+              </div>
+            ) : (
+              <p className="text-ink-400">
+                No listings match your filters.{" "}
+                <button onClick={() => { setLocation(""); setSearch("") }} className="text-brand-600 underline">Clear all</button>
+              </p>
+            )}
+          </>
         )}
       </Section>
     </MarketingLayout>

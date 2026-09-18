@@ -61,6 +61,14 @@ function IconMessage() {
     </svg>
   )
 }
+function IconTag() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  )
+}
 
 /* ── Session clock ────────────────────────────────────────────────────────── */
 function SessionClock({ startedAt }: { startedAt: string }) {
@@ -91,6 +99,7 @@ const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: <IconGrid /> },
   { to: '/admin/sorting', label: 'Sorting', icon: <IconSort /> },
   { to: '/admin/messages', label: 'Messages', icon: <IconMessage /> },
+  { to: '/admin/pricing', label: 'Shoot Pricing', icon: <IconTag /> },
 ]
 
 export function AdminLayout() {
@@ -106,6 +115,7 @@ export function AdminLayout() {
     void import('@/pages/admin/AdminListingForm')
     void import('@/pages/admin/AdminMessages')
     void import('@/pages/admin/AdminSorting')
+    void import('@/pages/admin/AdminShootPricing')
   }, [])
 
   async function handleSignOut() {

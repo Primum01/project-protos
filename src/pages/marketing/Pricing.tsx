@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Button, Card, Section } from '@/components/ui'
-import { pricingPlans } from '@/data/plans'
 import { cn } from '@/lib/cn'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { subscribePricing, DEFAULT_SHOOT_PRICING, type ShootPricingPlan } from '@/lib/firebase/pricing'
+import { isFirebaseConfigured } from '@/lib/firebase/config'
 
 /* ── Credit-card number formatter ─────────────────────────────── */
 function formatCardNumber(value: string) {
@@ -183,6 +184,17 @@ function CardDetail() {
 /* ── Main page ─────────────────────────────────────────────────── */
 export function Pricing() {
   const [activeMethod, setActiveMethod] = useState<Method>(null)
+  const [plans, setPlans] = useState<ShootPricingPlan[]>(DEFAULT_SHOOT_PRICING)
+  const [plansLoading, setPlansLoading] = useState(isFirebaseConfigured)
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) return
+    const unsub = subscribePricing((data) => {
+      setPlans(data)
+      setPlansLoading(false)
+    })
+    return unsub
+  }, [])
 
   usePageMeta({
     title: 'Pricing — Simple Plans for Every Host',
@@ -195,6 +207,25 @@ export function Pricing() {
     setActiveMethod((prev) => (prev === method ? null : method))
   }
 
+  // Enterprise plan is static — no price to configure
+  const enterprisePlan = {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: 'Custom',
+    cadence: '',
+    description: 'For hotel groups and portfolios that need custom branding.',
+    features: [
+      'Everything in 2 Bedroom',
+      'Custom branding & domain',
+      'Dedicated account manager',
+      'API access',
+      'SLA-backed support',
+    ],
+    ctaLabel: 'Talk to sales',
+  }
+
+  const allPlans = [...plans, enterprisePlan]
+
   return (
     <MarketingLayout>
       <div className="h-20" />
@@ -206,41 +237,49 @@ export function Pricing() {
         description="Start free with one property, then add tours as you grow. No long-term contracts."
         align="center"
       >
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {pricingPlans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={cn(
-                'flex flex-col gap-6 p-8',
-                plan.highlighted && 'border-brand-500 ring-1 ring-brand-500',
-              )}
-            >
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-500">
-                  {plan.name}
-                </h3>
-                <p className="mt-3 flex items-baseline gap-1">
-                  <span className="font-display text-4xl text-ink-950">{plan.price}</span>
-                  {plan.cadence && (
-                    <span className="text-sm text-ink-500">{plan.cadence}</span>
-                  )}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-ink-500">{plan.description}</p>
-              </div>
-              <ul className="flex flex-1 flex-col gap-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-ink-700">
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button href="/contact" variant="secondary" className="w-full">
-                {plan.ctaLabel}
-              </Button>
-            </Card>
-          ))}
-        </div>
+        {plansLoading ? (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-64 animate-pulse rounded-2xl bg-ink-100" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            {allPlans.map((plan) => (
+              <Card
+                key={plan.id}
+                className={cn(
+                  'flex flex-col gap-6 p-8',
+                  'highlighted' in plan && (plan as { highlighted?: boolean }).highlighted && 'border-brand-500 ring-1 ring-brand-500',
+                )}
+              >
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-500">
+                    {plan.name}
+                  </h3>
+                  <p className="mt-3 flex items-baseline gap-1">
+                    <span className="font-display text-4xl text-ink-950">{plan.price}</span>
+                    {plan.cadence && (
+                      <span className="text-sm text-ink-500">{plan.cadence}</span>
+                    )}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink-500">{plan.description}</p>
+                </div>
+                <ul className="flex flex-1 flex-col gap-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm text-ink-700">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button href="/contact" variant="secondary" className="w-full">
+                  {plan.ctaLabel}
+                </Button>
+              </Card>
+            ))}
+          </div>
+        )}
       </Section>
 
       {/* ── Payment options ───────────────────────────────────────── */}
