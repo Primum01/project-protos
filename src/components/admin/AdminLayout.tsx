@@ -70,13 +70,31 @@ function IconTag() {
   )
 }
 
+function IconClockHistory() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
 /* ── Session clock ────────────────────────────────────────────────────────── */
-function SessionClock({ startedAt }: { startedAt: string }) {
+function SessionClock({ startedAt }: { startedAt?: string }) {
   const [elapsed, setElapsed] = useState('')
 
   useEffect(() => {
+    if (!startedAt) {
+      setElapsed('Active now')
+      return
+    }
     function tick() {
-      const diff = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)
+      const parsed = new Date(startedAt!).getTime()
+      if (isNaN(parsed)) {
+        setElapsed('Active now')
+        return
+      }
+      const diff = Math.max(0, Math.floor((Date.now() - parsed) / 1000))
       const h = Math.floor(diff / 3600)
       const m = Math.floor((diff % 3600) / 60)
       const s = diff % 60
@@ -91,7 +109,7 @@ function SessionClock({ startedAt }: { startedAt: string }) {
     return () => clearInterval(id)
   }, [startedAt])
 
-  return <span>{elapsed}</span>
+  return <span>{elapsed || 'Active now'}</span>
 }
 
 const navItems = [
@@ -116,6 +134,7 @@ export function AdminLayout() {
     void import('@/pages/admin/AdminMessages')
     void import('@/pages/admin/AdminSorting')
     void import('@/pages/admin/AdminShootPricing')
+    void import('@/pages/admin/AdminLogs')
   }, [])
 
   async function handleSignOut() {
@@ -156,7 +175,7 @@ export function AdminLayout() {
       </div>
 
       {/* In Session badge */}
-      {currentUser && activeSession && (
+      {currentUser && (
         <div className="mx-3 mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {/* Pulsing green dot */}
@@ -170,7 +189,7 @@ export function AdminLayout() {
           </div>
           <p className="mt-1.5 text-sm font-medium text-white/90">{currentUser}</p>
           <p className="mt-0.5 text-[11px] text-white/35">
-            <SessionClock startedAt={activeSession.startedAt} />
+            <SessionClock startedAt={activeSession?.startedAt || localStorage.getItem('ts_session_started') || ''} />
           </p>
         </div>
       )}
@@ -228,6 +247,23 @@ export function AdminLayout() {
             </span>
           </div>
         )}
+
+        {/* Admin Logs tab just on top of the sign out area */}
+        <NavLink
+          to="/admin/logs"
+          onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) =>
+            cn(
+              'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-white/12 text-white'
+                : 'text-white/55 hover:bg-white/6 hover:text-white',
+            )
+          }
+        >
+          <IconClockHistory />
+          <span>Admin Logs</span>
+        </NavLink>
 
         {isConfigured && (
           <button

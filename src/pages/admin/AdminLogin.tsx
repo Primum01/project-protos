@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { isAdminEmail, signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button, Input, PasswordInput } from '@/components/ui'
@@ -9,6 +9,8 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 type Mode = 'sign_in' | 'sign_up'
 
 export function AdminLogin() {
+  const [searchParams] = useSearchParams()
+  const isIdleTimeout = searchParams.get('reason') === 'idle_timeout'
   const [mode, setMode] = useState<Mode>('sign_in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -83,6 +85,13 @@ export function AdminLogin() {
             <strong>Firebase not configured.</strong> Add your credentials to{' '}
             <code className="rounded bg-amber-100 px-1 font-mono text-xs">.env.local</code>{' '}
             to enable authentication.
+          </div>
+        )}
+
+        {/* Idle timeout notice */}
+        {isIdleTimeout && (
+          <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <strong>Session expired.</strong> Your admin session was automatically ended after 30 minutes of inactivity. Please sign in again.
           </div>
         )}
 

@@ -42,3 +42,17 @@ export async function endSession(sessionId: string): Promise<void> {
 export async function deleteSessionDoc(sessionId: string): Promise<void> {
   await deleteDocument(COL, sessionId)
 }
+
+/** Returns all session records, ordered by start time descending. */
+export async function getAllSessions(): Promise<AdminSession[]> {
+  try {
+    const results = await getCollection<AdminSession>(COL)
+    return results.sort(
+      (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+    )
+  } catch (err) {
+    console.warn('[sessions] Failed to fetch all sessions from Firestore:', err)
+    return []
+  }
+}
+

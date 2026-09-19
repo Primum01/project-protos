@@ -18,9 +18,17 @@ import {
 
 
 /* ──────────────────────────────────────────────────── section wrapper */
-function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+function FormSection({
+  id,
+  title,
+  children,
+}: {
+  id?: string
+  title: string
+  children: React.ReactNode
+}) {
   return (
-    <div className="rounded-xl border border-ink-950/8 bg-paper p-6 shadow-soft">
+    <div id={id} className="scroll-mt-6 rounded-xl border border-ink-950/8 bg-paper p-6 shadow-soft">
       <h2 className="mb-5 text-sm font-semibold uppercase tracking-wider text-ink-400">{title}</h2>
       <div className="flex flex-col gap-4">{children}</div>
     </div>
@@ -229,6 +237,29 @@ function PreviewPanel({
   )
 }
 
+const FORM_SECTIONS = [
+  {
+    id: 'section-property-details',
+    label: 'Property Details',
+    isComplete: (f: ListingFormData) => Boolean(f.name && f.location && f.city),
+  },
+  {
+    id: 'section-tour',
+    label: '3D Virtual Tour',
+    isComplete: (f: ListingFormData) => Boolean(f.tourUrl || f.embedCode),
+  },
+  {
+    id: 'section-contact',
+    label: 'Contact & Payment',
+    isComplete: (f: ListingFormData) => Boolean(f.contactName || f.contactPhone || f.paymentMethod),
+  },
+  {
+    id: 'section-display',
+    label: 'Media & Presentation',
+    isComplete: (f: ListingFormData) => Boolean(f.photoUrl),
+  },
+]
+
 /* ══════════════════════════════════════════════════════ main component */
 export function AdminListingForm() {
   const { id } = useParams<{ id: string }>()
@@ -240,6 +271,7 @@ export function AdminListingForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const [activeSection, setActiveSection] = useState('section-property-details')
   const formRef = useRef<HTMLFormElement>(null)
 
   // Photo upload state — upload eagerly on file pick, not on save
@@ -271,6 +303,38 @@ export function AdminListingForm() {
 
   function set<K extends keyof ListingFormData>(key: K, value: ListingFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const offsets = FORM_SECTIONS.map((sec) => {
+        const el = document.getElementById(sec.id)
+        if (!el) return { id: sec.id, top: Infinity }
+        const rect = el.getBoundingClientRect()
+        return { id: sec.id, top: Math.abs(rect.top - 140) }
+      })
+      offsets.sort((a, b) => a.top - b.top)
+      if (offsets[0] && offsets[0].top < 700) {
+        setActiveSection(offsets[0].id)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    const mainEl = document.querySelector('main')
+    mainEl?.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      mainEl?.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
+  function scrollToSection(id: string) {
+    setActiveSection(id)
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   async function save(publish: boolean) {
@@ -354,7 +418,7 @@ export function AdminListingForm() {
 
   return (
     <>
-      <div className="mx-auto max-w-3xl p-6 lg:p-10">
+      <div className="mx-auto max-w-6xl p-6 lg:p-10">
         {/* Page header */}
         <div className="mb-8 flex items-center gap-4">
           <button
@@ -377,9 +441,12 @@ export function AdminListingForm() {
           </div>
         )}
 
-        <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} noValidate className="flex flex-col gap-5">
-          {/* ── Property details */}
-          <FormSection title="Property Details">
+        <div className="flex flex-col lg:flex-row lg:items-start gap-8">
+          {/* ── Left side: scrollable form */}
+          <div className="min-w-0 flex-1">
+            <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} noValidate className="flex flex-col gap-5">
+              {/* ── Property details */}
+              <FormSection id="section-property-details" title="Property Details">
             <Input
               id="listing-name"
               label="Property name"
@@ -497,7 +564,7 @@ export function AdminListingForm() {
           </FormSection>
 
           {/* ── 3D Tour */}
-          <FormSection title="3D Virtual Tour">
+          <FormSection id="section-tour" title="3D Virtual Tour">
             <Input
               id="listing-tour-url"
               type="url"
@@ -532,7 +599,7 @@ export function AdminListingForm() {
           </FormSection>
 
           {/* ── Contact details */}
-          <FormSection title="Contact Details">
+          <FormSection id="section-contact" title="Contact Details">
             <Input
               id="listing-contact-name"
               label="Contact name"
@@ -612,7 +679,7 @@ export function AdminListingForm() {
           </FormSection>
 
           {/* ── Display options */}
-          <FormSection title="Display Options">
+          <FormSection id="section-display" title="Display Options">
             {/* ── Photo upload */}
             <div>
               <p className="mb-2 text-sm font-medium text-ink-800">Property photo</p>
@@ -777,6 +844,116 @@ export function AdminListingForm() {
           </div>
         </form>
       </div>
+
+      {/* ── Right side: constant fixed/sticky tabs bar */}
+      <aside className="hidden lg:block w-72 shrink-0 sticky top-6 self-start space-y-4">
+        {/* Status & Actions Card */}
+        <div className="rounded-xl border border-ink-950/8 bg-paper p-5 shadow-soft">
+          <div className="flex items-center justify-between border-b border-ink-950/8 pb-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+              Publishing
+            </span>
+            <span
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider',
+                form.published
+                  ? 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20'
+                  : 'bg-ink-100 text-ink-600',
+              )}
+            >
+              {form.published ? 'Live' : 'Draft'}
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2.5">
+            <Button
+              id="side-save-publish-btn"
+              className="w-full"
+              onClick={() => save(true)}
+              disabled={saving || photoUploading}
+            >
+              {saving
+                ? 'Saving…'
+                : photoUploading
+                  ? 'Uploading photo…'
+                  : isEditing
+                    ? 'Save & publish'
+                    : 'Publish listing'}
+            </Button>
+
+            <Button
+              id="side-save-draft-btn"
+              variant="secondary"
+              className="w-full"
+              onClick={() => save(false)}
+              disabled={saving || photoUploading}
+            >
+              {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : 'Save as draft'}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-ink-950/15 bg-paper px-3 py-2 text-xs font-medium text-ink-700 hover:bg-ink-50 hover:text-ink-950 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              Preview listing
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Navigation Tabs Card */}
+        <div className="rounded-xl border border-ink-950/8 bg-paper p-4 shadow-soft">
+          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-ink-400">
+            Form Sections
+          </p>
+          <nav className="flex flex-col space-y-1">
+            {FORM_SECTIONS.map((sec) => {
+              const isCur = activeSection === sec.id
+              const isDone = sec.isComplete(form)
+              return (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => scrollToSection(sec.id)}
+                  className={cn(
+                    'flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-left transition-colors',
+                    isCur
+                      ? 'bg-ink-950 text-white shadow-sm'
+                      : 'text-ink-600 hover:bg-ink-100/70 hover:text-ink-950',
+                  )}
+                >
+                  <span className="truncate">{sec.label}</span>
+                  {isDone ? (
+                    <span
+                      className={cn(
+                        'text-[11px] font-bold',
+                        isCur ? 'text-emerald-400' : 'text-emerald-600',
+                      )}
+                    >
+                      ✓
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        'text-[10px]',
+                        isCur ? 'text-white/40' : 'text-ink-300',
+                      )}
+                    >
+                      ○
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      </aside>
+    </div>
+  </div>
 
       {showPreview && (
         <PreviewPanel form={form} onClose={() => setShowPreview(false)} />
