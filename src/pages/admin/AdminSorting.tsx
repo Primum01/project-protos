@@ -31,27 +31,57 @@ function IconClock() {
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 type DueBucket = "3-days" | "1-week" | "all"
 
-const SUBSCRIPTION_MONTHS = 1
-
-function nextRenewalDate(datePaid: string): Date | null {
-  if (!datePaid) return null
-  const paid = new Date(datePaid)
-  if (isNaN(paid.getTime())) return null
-  const now = new Date()
-  const renewal = new Date(paid)
-  while (renewal <= now) {
-    renewal.setMonth(renewal.getMonth() + SUBSCRIPTION_MONTHS)
+function parseLocalDate(dateStr: string): Date | null {
+  if (!dateStr) return null
+  const parts = dateStr.split("-").map(Number)
+  if (parts.length === 3 && !parts.some(isNaN)) {
+    return new Date(parts[0], parts[1] - 1, parts[2])
   }
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function nextRenewalDate(datePaid: string, pkg?: Listing["package"]): Date | null {
+  if (!datePaid) return null
+  const paid = parseLocalDate(datePaid)
+  if (!paid) return null
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const stepDays = pkg === "quarterly" ? 90 : pkg === "annually" ? 365 : null
+
+  const renewal = new Date(paid)
+  
+  // Advance by at least one billing cycle after the payment date
+  if (stepDays !== null) {
+    renewal.setDate(renewal.getDate() + stepDays)
+  } else {
+    renewal.setMonth(renewal.getMonth() + 1)
+  }
+
+  // Roll forward if the renewal date has already passed relative to today
+  let safetyCounter = 0
+  while (renewal < today && safetyCounter < 2000) {
+    safetyCounter++
+    if (stepDays !== null) {
+      renewal.setDate(renewal.getDate() + stepDays)
+    } else {
+      renewal.setMonth(renewal.getMonth() + 1)
+    }
+  }
+
   return renewal
 }
 
 function daysUntil(date: Date): number {
   const now = new Date()
-  return Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 function getBucket(listing: Listing): { renewal: Date | null; days: number | null; bucket: "3-days" | "1-week" | "none" } {
-  const renewal = nextRenewalDate(listing.datePaid)
+  const renewal = nextRenewalDate(listing.datePaid, listing.package)
   if (!renewal) return { renewal: null, days: null, bucket: "none" }
   const days = daysUntil(renewal)
   if (days >= 0 && days <= 3) return { renewal, days, bucket: "3-days" }
@@ -60,13 +90,14 @@ function getBucket(listing: Listing): { renewal: Date | null; days: number | nul
 }
 
 function exportCSV(rows: Array<{ listing: Listing; days: number; renewal: Date }>, label: string) {
-  const headers = ["Name", "Email", "Phone", "Property", "Days Until Renewal", "Renewal Date"]
+  const headers = ["Name", "Email", "Phone", "Property", "Package", "Days Until Renewal", "Renewal Date"]
   const lines = rows.map(({ listing, days, renewal }) =>
     [
       listing.contactName,
       listing.contactEmail,
       listing.contactPhone,
       listing.name,
+      listing.package ? listing.package.charAt(0).toUpperCase() + listing.package.slice(1) : "Monthly",
       days,
       renewal.toLocaleDateString("en-KE"),
     ]
@@ -228,7 +259,7 @@ export function AdminSorting() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-ink-950/8 bg-ink-50">
-                  {["Name", "Email", "Phone", "Property", "Renewal Date", "Due In"].map((h) => (
+                  {["Name", "Email", "Phone", "Property", "Package", "Renewal Date", "Due In"].map((h) => (
                     <th
                       key={h}
                       className="whitespace-nowrap px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400"
@@ -262,6 +293,23 @@ export function AdminSorting() {
                         {listing.contactPhone || <span className="text-ink-300">—</span>}
                       </td>
                       <td className="px-5 py-3.5 text-ink-700">{listing.name}</td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
+                            listing.package === "annually"
+                              ? "border border-purple-200 bg-purple-50 text-purple-700"
+                              : listing.package === "quarterly"
+                                ? "border border-blue-200 bg-blue-50 text-blue-700"
+                                : "border border-ink-950/10 bg-ink-50 text-ink-700"
+                          }`}
+                        >
+                          {listing.package === "annually"
+                            ? "Annually (365d)"
+                            : listing.package === "quarterly"
+                              ? "Quarterly (90d)"
+                              : "Monthly"}
+                        </span>
+                      </td>
                       <td className="px-5 py-3.5 text-ink-600">
                         {renewal.toLocaleDateString("en-KE", {
                           day: "numeric",

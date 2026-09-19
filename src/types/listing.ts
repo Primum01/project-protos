@@ -44,6 +44,7 @@ export const ACCENT_GRADIENTS: Record<ListingAccent, string> = {
 
 
 export type PaymentMethod = 'credit_card' | 'mpesa' | ''
+export type SubscriptionPackage = 'monthly' | 'quarterly' | 'annually'
 
 export interface Listing {
   id: string
@@ -62,6 +63,7 @@ export interface Listing {
   contactEmail: string
   contactPhone: string
   datePaid: string
+  package?: SubscriptionPackage
   paymentMethod: PaymentMethod
   tourUrl: string
   embedCode?: string
@@ -93,6 +95,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   contactEmail: '',
   contactPhone: '',
   datePaid: '',
+  package: 'monthly',
   paymentMethod: '',
   tourUrl: '',
   embedCode: '',

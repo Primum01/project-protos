@@ -293,7 +293,7 @@ export function AdminListingForm() {
         if (listing) {
           const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = listing as Listing
           void _id; void _c; void _u
-          setForm({ ...DEFAULT_LISTING_FORM, ...rest, embedCode: rest.embedCode ?? '' })
+          setForm({ ...DEFAULT_LISTING_FORM, ...rest, embedCode: rest.embedCode ?? '', package: rest.package ?? 'monthly' })
           if (rest.photoUrl) setPhotoPreview(rest.photoUrl)
         }
       })
@@ -634,6 +634,43 @@ export function AdminListingForm() {
               value={form.datePaid}
               onChange={(e) => set('datePaid', e.target.value)}
             />
+
+            {/* Package */}
+            <div>
+              <p className="mb-2 text-sm font-medium text-ink-800">Package</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(
+                  [
+                    { value: 'monthly', label: 'Monthly', period: '30 days' },
+                    { value: 'quarterly', label: 'Quarterly', period: '90 days' },
+                    { value: 'annually', label: 'Annually', period: '365 days' },
+                  ] as const
+                ).map((pkg) => (
+                  <label
+                    key={pkg.value}
+                    className={cn(
+                      'flex cursor-pointer items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors',
+                      form.package === pkg.value
+                        ? 'border-brand-500 bg-brand-500/5 text-ink-950 font-semibold ring-1 ring-brand-500/30'
+                        : 'border-ink-950/12 text-ink-600 hover:border-ink-950/25',
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="radio"
+                        name="package"
+                        value={pkg.value}
+                        checked={form.package === pkg.value}
+                        onChange={() => set('package', pkg.value)}
+                        className="accent-brand-500"
+                      />
+                      <span>{pkg.label}</span>
+                    </div>
+                    <span className="text-xs text-ink-400 font-normal">{pkg.period}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             {/* Payment method */}
             <div>
