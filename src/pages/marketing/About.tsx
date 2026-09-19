@@ -20,9 +20,9 @@ export function About() {
       >
         <div className="max-w-2xl space-y-6 text-base leading-relaxed text-ink-700">
           <p>
-            Photos only tell part of the story. A 3D tour lets a guest walk through the
+            Photos only tell part of the story. Our 3D tour lets clients walk through the
             living room, check the kitchen layout, and see the view from the balcony,
-            all before they ever message the host.
+            all before they contact the host to book the space.
           </p>
           <p>
             We started TwinSpace to give independent hosts and small property managers
@@ -30,9 +30,10 @@ export function About() {
             an in-house production team.
           </p>
           <p>
-            The platform is built to grow with you: from a single capture on one
-            apartment to a full portfolio across a hotel group, with the underlying 3D
-            technology able to evolve without disrupting your published tours.
+            The platform is built to grow with you, from a single capture on one
+            apartment to a full portfolio across a chain of real estate units. Our
+            underlying 3D technology is the first of its kind, being able to evolve
+            without disrupting your published tours.
           </p>
         </div>
       </Section>
