@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email != null
+          && request.auth.token.email.lower() == 'team@twinspace360.com';
+    }
+
+    // Public visitors can view all uploaded media assets (property photos, tours).
+    // Admin (team@twinspace360.com) can upload, update, and delete media.
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

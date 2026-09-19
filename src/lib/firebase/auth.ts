@@ -14,15 +14,26 @@ import {
 } from 'firebase/auth'
 import { getFirebaseApp } from './config'
 
-/** The only email address permitted to register an admin account. */
-const ADMIN_EMAIL = 'team@twinspace360.com'
+/** The only email address recognized with admin privileges in TwinSpace. */
+export const ADMIN_EMAIL = 'team@twinspace360.com'
+
+/** Checks whether a given email address matches the designated admin email. */
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false
+  return email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()
+}
+
+/** Checks whether a Firebase Auth user has the admin email address. */
+export function isAdminUser(user: FirebaseUser | null): boolean {
+  return isAdminEmail(user?.email)
+}
 
 function auth() {
   return getAuth(getFirebaseApp())
 }
 
 export async function signUpWithEmail(email: string, password: string) {
-  if (email.trim().toLowerCase() !== ADMIN_EMAIL) {
+  if (!isAdminEmail(email)) {
     throw new Error(
       `Unauthorised: only ${ADMIN_EMAIL} is permitted to create an admin account.`,
     )
@@ -37,11 +48,19 @@ export async function signInWithEmail(email: string, password: string) {
   // This ensures the login form is always shown at the start of a new session.
   await setPersistence(auth(), browserSessionPersistence)
   const credential = await signInWithEmailAndPassword(auth(), email, password)
+  if (!isAdminEmail(credential.user.email)) {
+    await firebaseSignOut(auth())
+    throw new Error(`Unauthorised: only ${ADMIN_EMAIL} is recognized as admin.`)
+  }
   return credential.user
 }
 
 export async function signInWithGoogle() {
   const credential = await signInWithPopup(auth(), new GoogleAuthProvider())
+  if (!isAdminEmail(credential.user.email)) {
+    await firebaseSignOut(auth())
+    throw new Error(`Unauthorised: only ${ADMIN_EMAIL} is recognized as admin.`)
+  }
   return credential.user
 }
 
@@ -58,3 +77,4 @@ export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
 }
 
 export type { FirebaseUser }
+

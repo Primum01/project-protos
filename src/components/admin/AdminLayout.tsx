@@ -221,8 +221,14 @@ export function AdminLayout() {
           </div>
         )}
         {user?.email && (
-          <p className="truncate px-1 text-xs text-white/25">{user.email}</p>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <p className="truncate text-xs text-white/50">{user.email}</p>
+            <span className="shrink-0 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400 ring-1 ring-emerald-500/30">
+              Admin
+            </span>
+          </div>
         )}
+
         {isConfigured && (
           <button
             onClick={handleSignOut}

@@ -1,12 +1,10 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
+import { ADMIN_EMAIL, isAdminEmail, signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button, Input, PasswordInput } from '@/components/ui'
+import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
-
-/** The only email address allowed to register an admin account. */
-const ADMIN_EMAIL = 'team@twinspace360.com'
 
 type Mode = 'sign_in' | 'sign_up'
 
@@ -17,6 +15,14 @@ export function AdminLogin() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
+  const { user, isAdmin, loading } = useAuth()
+
+  // Auto-redirect if already signed in with admin permissions
+  useEffect(() => {
+    if (!loading && user && isAdmin) {
+      navigate('/admin/listings', { replace: true })
+    }
+  }, [user, isAdmin, loading, navigate])
 
   usePageMeta({
     title: 'Admin Login — TwinSpace',
@@ -28,17 +34,18 @@ export function AdminLogin() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Guard: only team@twinspace360.com is recognized as admin
+    if (!isAdminEmail(email)) {
+      setError(`Email not recognized. Only ${ADMIN_EMAIL} has admin access.`)
+      return
+    }
+
     setBusy(true)
     try {
       if (mode === 'sign_in') {
         await signInWithEmail(email, password)
       } else {
-        // Guard: only the permitted admin email may register
-        if (email.trim().toLowerCase() !== ADMIN_EMAIL) {
-          setError('Email not recognized.')
-          setBusy(false)
-          return
-        }
         await signUpWithEmail(email, password)
       }
       navigate('/admin/listings', { replace: true })
@@ -87,7 +94,7 @@ export function AdminLogin() {
           <p className="mt-1 text-sm text-ink-500">
             {mode === 'sign_in'
               ? 'Enter your credentials to access the admin panel.'
-              : 'Register the first admin account for this portal.'}
+              : 'Register the admin account for this portal.'}
           </p>
 
           <form id="login-form" onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
@@ -102,14 +109,15 @@ export function AdminLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!isFirebaseConfigured || busy}
               />
-              {/* Live warning: show as soon as user types a non-permitted email in sign-up mode */}
-              {mode === 'sign_up' && email.length > 0 && email.trim().toLowerCase() !== ADMIN_EMAIL && (
+              {/* Live warning if a non-admin email is entered */}
+              {email.length > 0 && !isAdminEmail(email) && (
                 <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
                   <span aria-hidden="true">⛔</span>
-                  Email not recognized.
+                  Only {ADMIN_EMAIL} has admin access.
                 </p>
               )}
             </div>
+
             <PasswordInput
               id="admin-password"
               label="Password"

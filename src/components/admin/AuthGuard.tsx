@@ -11,17 +11,17 @@ function Spinner() {
 }
 
 /**
- * Wraps admin routes. Always redirects unauthenticated users to /admin/login.
- * If Firebase is not configured the login page will surface a warning —
- * but we never bypass auth and expose the admin UI publicly.
+ * Wraps admin routes. Only sessions recognized as admin (team@twinspace360.com)
+ * are permitted to access admin features.
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin } = useAuth()
 
   if (loading) return <Spinner />
 
-  // No user (or Firebase not configured) → always gate behind login
-  if (!user) return <Navigate to="/admin/login" replace />
+  // No user or not recognized as admin → gate behind login
+  if (!user || !isAdmin) return <Navigate to="/admin/login" replace />
 
   return <>{children}</>
 }
+
