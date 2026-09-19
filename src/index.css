@@ -92,6 +92,10 @@
 
 /* ── Print / PDF Export Styles ────────────────────────────────────────────── */
 @media print {
+  @page {
+    margin: 12mm 15mm;
+    size: auto;
+  }
   .no-print,
   aside,
   header {

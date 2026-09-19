@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
 import { exampleTours } from '@/data/exampleTours'
+import { recordLinkShared, recordSessionDuration, recordTourView } from '@/lib/firebase/analytics'
 import { cn } from '@/lib/cn'
 import { usePageMeta } from '@/hooks/usePageMeta'
 
@@ -17,6 +18,17 @@ export function TourDetail() {
   const { slug } = useParams<{ slug: string }>()
   const tour = exampleTours.find((item) => item.slug === slug)
   const [copied, setCopied] = useState(false)
+
+  // Track tour view and session duration
+  useEffect(() => {
+    if (!tour) return
+    void recordTourView(tour.slug, tour.title)
+    const startTime = Date.now()
+    return () => {
+      const duration = (Date.now() - startTime) / 1000
+      void recordSessionDuration(tour.slug, duration, tour.title)
+    }
+  }, [tour?.slug])
 
   usePageMeta({
     title: tour ? `${tour.title} — 3D Property Tour` : '3D Property Tour — TwinSpace',
@@ -44,6 +56,7 @@ export function TourDetail() {
   }
 
   async function handleShare() {
+    if (tour) void recordLinkShared(tour.slug, tour.title)
     try {
       await navigator.clipboard.writeText(window.location.href)
       setCopied(true)

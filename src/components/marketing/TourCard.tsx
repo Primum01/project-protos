@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui'
 import { extractEmbedSrc } from '@/lib/embed'
+import { recordLinkShared } from '@/lib/firebase/analytics'
 import { cn } from '@/lib/cn'
 
 export interface TourCardData {
@@ -49,6 +50,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
   }, [menuOpen])
 
   async function handleCopyLink() {
+    void recordLinkShared(tour.slug, tour.title)
     const urlToCopy = tourLink || window.location.origin + `/listing/${tour.slug}`
     try {
       await navigator.clipboard.writeText(urlToCopy)

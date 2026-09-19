@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getListingById } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { extractEmbedSrc } from '@/lib/embed'
+import { recordLinkShared, recordSessionDuration, recordTourView } from '@/lib/firebase/analytics'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -27,7 +28,19 @@ export function ListingDetail() {
       .finally(() => setLoading(false))
   }, [id])
 
+  // Track real tour view and session duration
+  useEffect(() => {
+    if (!listing) return
+    void recordTourView(listing.id, listing.name)
+    const startTime = Date.now()
+    return () => {
+      const duration = (Date.now() - startTime) / 1000
+      void recordSessionDuration(listing.id, duration, listing.name)
+    }
+  }, [listing?.id])
+
   async function handleShare() {
+    if (listing) void recordLinkShared(listing.id, listing.name)
     try {
       await navigator.clipboard.writeText(window.location.href)
       setCopied(true)

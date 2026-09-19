@@ -55,6 +55,16 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // TOUR ANALYTICS (Real tour views, sessions, link shares)
+    // =========================================================================
+    // PUBLIC USERS: Can record tour view, session duration, and share events.
+    // ADMIN: Can read, update, and manage analytics data.
+    match /tour_analytics/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // =========================================================================
     // DEFAULT DENIAL
     // =========================================================================
     // Any other collection or document (such as users, internal collections, etc.)
