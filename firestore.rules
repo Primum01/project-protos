@@ -2,41 +2,62 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Admin identity ────────────────────────────────────────────────────
-    // Any Firebase Auth session signed in as team@twinspace360.com is admin.
+    // =========================================================================
+    // ADMIN IDENTIFICATION
+    // =========================================================================
+    // A user is recognized as Admin ONLY IF they are authenticated with Firebase
+    // and their account email is team@twinspace360.com (case-insensitive).
     function isAdmin() {
       return request.auth != null
           && request.auth.token.email != null
           && request.auth.token.email.lower() == 'team@twinspace360.com';
     }
 
-    // ── Listings ──────────────────────────────────────────────────────────
-    // Public visitors can read published listings only.
-    // Admin (team@twinspace360.com) can read/write everything (including unpublished drafts).
+    // =========================================================================
+    // LISTINGS (Properties)
+    // =========================================================================
+    // PUBLIC USERS: Can only read/search listings where published == true.
+    // ADMIN: Can read all listings (published and drafts), and can create,
+    //        update, publish/unpublish, and permanently delete listings.
     match /listings/{id} {
       allow read: if (resource != null && resource.data.published == true) || isAdmin();
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    // ── Messages (contact form) ───────────────────────────────────────────
-    // Anyone can submit a contact message (create only).
-    // Admin can read, update and delete.
+    // =========================================================================
+    // MESSAGES (Contact / Inquiry Form Submissions)
+    // =========================================================================
+    // PUBLIC USERS: Can create/submit new contact messages. Cannot read, update,
+    //               or delete any messages.
+    // ADMIN: Can read, update (mark read/unread), and delete messages.
     match /messages/{id} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
-    // ── Admin sessions ────────────────────────────────────────────────────
-    // Only admin can manage session tracking documents.
+    // =========================================================================
+    // ADMIN SESSIONS (Active Session Tracking)
+    // =========================================================================
+    // PUBLIC USERS: Completely denied access.
+    // ADMIN: Can read, create, update, and delete admin session records.
     match /admin_sessions/{id} {
       allow read, write: if isAdmin();
     }
 
-    // ── Shoot pricing ─────────────────────────────────────────────────────
-    // Public pricing page reads prices; only admin can update them.
+    // =========================================================================
+    // SHOOT PRICING (Pricing Tiers)
+    // =========================================================================
+    // PUBLIC USERS: Can read pricing plans on the website.
+    // ADMIN: Can update and modify pricing tier values.
     match /pricing/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // =========================================================================
+    // DEFAULT DENIAL
+    // =========================================================================
+    // Any other collection or document (such as users, internal collections, etc.)
+    // is denied by default in Firestore.
   }
 }
