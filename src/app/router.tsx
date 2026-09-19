@@ -23,6 +23,7 @@ const AdminMessages   = lazy(() => import('@/pages/admin/AdminMessages').then(m 
 const AdminSorting    = lazy(() => import('@/pages/admin/AdminSorting').then(m => ({ default: m.AdminSorting })))
 const AdminShootPricing = lazy(() => import('@/pages/admin/AdminShootPricing').then(m => ({ default: m.AdminShootPricing })))
 const AdminLogs       = lazy(() => import('@/pages/admin/AdminLogs').then(m => ({ default: m.AdminLogs })))
+const AdminAnalytics  = lazy(() => import('@/pages/admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })))
 
 /** Minimal spinner shown while a lazy chunk is being fetched. */
 function PageSpinner() {
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/admin/listings" replace /> },
           { path: 'dashboard', element: <AdminDashboard /> },
+          { path: 'analytics', element: <AdminAnalytics /> },
           { path: 'listings', element: <AdminListings /> },
           { path: 'listings/new', element: <AdminListingForm /> },
           { path: 'listings/:id', element: <AdminListingForm /> },

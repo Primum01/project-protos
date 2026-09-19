@@ -69,6 +69,15 @@ function IconTag() {
     </svg>
   )
 }
+function IconBarChart() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  )
+}
 
 function IconClockHistory() {
   return (
@@ -115,6 +124,7 @@ function SessionClock({ startedAt }: { startedAt?: string }) {
 const navItems = [
   { to: '/admin/listings', label: 'Listings', icon: <IconBuilding /> },
   { to: '/admin/dashboard', label: 'Dashboard', icon: <IconGrid /> },
+  { to: '/admin/analytics', label: 'Analytics', icon: <IconBarChart /> },
   { to: '/admin/sorting', label: 'Sorting', icon: <IconSort /> },
   { to: '/admin/messages', label: 'Messages', icon: <IconMessage /> },
   { to: '/admin/pricing', label: 'Shoot Pricing', icon: <IconTag /> },
@@ -131,6 +141,7 @@ export function AdminLayout() {
     void import('@/pages/admin/AdminDashboard')
     void import('@/pages/admin/AdminListings')
     void import('@/pages/admin/AdminListingForm')
+    void import('@/pages/admin/AdminAnalytics')
     void import('@/pages/admin/AdminMessages')
     void import('@/pages/admin/AdminSorting')
     void import('@/pages/admin/AdminShootPricing')
