@@ -267,7 +267,7 @@ type TourCardData = {
   slug: string; title: string; location?: string; city: string; country: string
   propertyType: string; bedrooms: number; bathrooms: number
   accent: 'clay' | 'olive' | 'ink' | 'sand'; description: string
-  amenities: string[]; externalUrl?: string; photoUrl?: string
+  amenities: string[]; externalUrl?: string; photoUrl?: string; embedCode?: string
 }
 
 function listingToCard(listing: Listing): TourCardData {
@@ -285,6 +285,7 @@ function listingToCard(listing: Listing): TourCardData {
     amenities: listing.amenities,
     externalUrl: listing.tourUrl || undefined,
     photoUrl: listing.photoUrl || undefined,
+    embedCode: listing.embedCode || undefined,
   }
 }
 
@@ -327,9 +328,9 @@ export function Tours() {
         description="Properties currently available to view. Click any card to launch the 3D tour."
       >
         {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-64 animate-pulse rounded-xl bg-ink-100" />
+              <div key={i} className="h-72 animate-pulse rounded-xl bg-ink-100" />
             ))}
           </div>
         ) : listings.length === 0 ? (
@@ -353,7 +354,7 @@ export function Tours() {
               count={filtered.length}
             />
             {filtered.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                 {filtered.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
               </div>
             ) : (

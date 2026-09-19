@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getListingById } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { extractEmbedSrc } from '@/lib/embed'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -99,26 +100,60 @@ export function ListingDetail() {
             ACCENT_GRADIENTS[listing.accent] ?? ACCENT_GRADIENTS.clay,
           )}
         >
-          {listing.tourUrl ? (
-            <a
-              href={listing.tourUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center gap-3 text-center"
-            >
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />
-              </svg>
-              <span className="rounded-full bg-white/20 px-6 py-2.5 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors">
-                Launch 3D Tour
-              </span>
-            </a>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm font-medium text-white/80">3D tour coming soon</p>
-              <p className="mt-1 text-sm text-white/55">Contact us to arrange a viewing.</p>
-            </div>
-          )}
+          {(() => {
+            const embedSrc = extractEmbedSrc(listing.embedCode || listing.tourUrl)
+            if (embedSrc) {
+              return (
+                <div className="relative h-full w-full">
+                  <iframe
+                    src={embedSrc}
+                    title={`${listing.name} 3D Tour`}
+                    className="h-full w-full border-0 rounded-xl"
+                    allowFullScreen
+                    allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
+                  />
+                  {listing.tourUrl && (
+                    <a
+                      href={listing.tourUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
+                    >
+                      <span>Open tour in new tab</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              )
+            }
+            if (listing.tourUrl) {
+              return (
+                <a
+                  href={listing.tourUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-3 text-center"
+                >
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" />
+                  </svg>
+                  <span className="rounded-full bg-white/20 px-6 py-2.5 text-sm font-medium backdrop-blur-sm hover:bg-white/30 transition-colors">
+                    Launch 3D Tour
+                  </span>
+                </a>
+              )
+            }
+            return (
+              <div className="text-center">
+                <p className="text-sm font-medium text-white/80">3D tour coming soon</p>
+                <p className="mt-1 text-sm text-white/55">Contact us to arrange a viewing.</p>
+              </div>
+            )
+          })()}
         </div>
       </Container>
 

@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ADMIN_EMAIL, isAdminEmail, signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
+import { isAdminEmail, signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button, Input, PasswordInput } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
@@ -35,9 +35,9 @@ export function AdminLogin() {
     e.preventDefault()
     setError('')
 
-    // Guard: only team@twinspace360.com is recognized as admin
+    // Guard: only valid admin email is allowed
     if (!isAdminEmail(email)) {
-      setError(`Email not recognized. Only ${ADMIN_EMAIL} has admin access.`)
+      setError('Email not recognized or invalid credentials.')
       return
     }
 
@@ -109,13 +109,6 @@ export function AdminLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!isFirebaseConfigured || busy}
               />
-              {/* Live warning if a non-admin email is entered */}
-              {email.length > 0 && !isAdminEmail(email) && (
-                <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600">
-                  <span aria-hidden="true">⛔</span>
-                  Only {ADMIN_EMAIL} has admin access.
-                </p>
-              )}
             </div>
 
             <PasswordInput

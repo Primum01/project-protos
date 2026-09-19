@@ -64,6 +64,7 @@ export interface Listing {
   datePaid: string
   paymentMethod: PaymentMethod
   tourUrl: string
+  embedCode?: string
   photoUrl: string
   status: ListingStatus
   published: boolean
@@ -94,6 +95,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   datePaid: '',
   paymentMethod: '',
   tourUrl: '',
+  embedCode: '',
   photoUrl: '',
   status: 'available',
   published: false,

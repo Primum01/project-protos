@@ -34,9 +34,7 @@ function auth() {
 
 export async function signUpWithEmail(email: string, password: string) {
   if (!isAdminEmail(email)) {
-    throw new Error(
-      `Unauthorised: only ${ADMIN_EMAIL} is permitted to create an admin account.`,
-    )
+    throw new Error('Unauthorised: email not recognized.')
   }
   const credential = await createUserWithEmailAndPassword(auth(), email, password)
   await sendEmailVerification(credential.user)
@@ -50,7 +48,7 @@ export async function signInWithEmail(email: string, password: string) {
   const credential = await signInWithEmailAndPassword(auth(), email, password)
   if (!isAdminEmail(credential.user.email)) {
     await firebaseSignOut(auth())
-    throw new Error(`Unauthorised: only ${ADMIN_EMAIL} is recognized as admin.`)
+    throw new Error('Unauthorised: invalid admin credentials.')
   }
   return credential.user
 }
@@ -59,7 +57,7 @@ export async function signInWithGoogle() {
   const credential = await signInWithPopup(auth(), new GoogleAuthProvider())
   if (!isAdminEmail(credential.user.email)) {
     await firebaseSignOut(auth())
-    throw new Error(`Unauthorised: only ${ADMIN_EMAIL} is recognized as admin.`)
+    throw new Error('Unauthorised: invalid admin credentials.')
   }
   return credential.user
 }

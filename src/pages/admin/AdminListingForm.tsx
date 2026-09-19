@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { createListing, getListingById, updateListing } from '@/lib/firebase/listings'
 import { uploadFile } from '@/lib/firebase/storage'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { extractEmbedSrc } from '@/lib/embed'
 import { cn } from '@/lib/cn'
 import { Button, Input } from '@/components/ui'
 import {
@@ -170,8 +171,16 @@ function PreviewPanel({
             <div className="space-y-5">
               <p className="text-center text-xs text-ink-400">As it appears on the listing detail page</p>
               {/* Detail preview */}
-              <div className={cn('aspect-video w-full rounded-xl bg-gradient-to-br flex items-center justify-center', ACCENT_GRADIENTS[form.accent])}>
-                {form.tourUrl ? (
+              <div className={cn('relative aspect-video w-full overflow-hidden rounded-xl bg-gradient-to-br flex items-center justify-center', ACCENT_GRADIENTS[form.accent])}>
+                {extractEmbedSrc(form.embedCode || form.tourUrl) ? (
+                  <iframe
+                    src={extractEmbedSrc(form.embedCode || form.tourUrl)}
+                    title="Tour preview"
+                    className="h-full w-full border-0"
+                    allowFullScreen
+                    allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
+                  />
+                ) : form.tourUrl ? (
                   <a
                     href={form.tourUrl}
                     target="_blank"
@@ -252,7 +261,7 @@ export function AdminListingForm() {
         if (listing) {
           const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = listing as Listing
           void _id; void _c; void _u
-          setForm(rest)
+          setForm({ ...DEFAULT_LISTING_FORM, ...rest, embedCode: rest.embedCode ?? '' })
           if (rest.photoUrl) setPhotoPreview(rest.photoUrl)
         }
       })
@@ -498,8 +507,28 @@ export function AdminListingForm() {
               onChange={(e) => set('tourUrl', e.target.value)}
             />
             <p className="text-xs text-ink-400">
-              Paste a Matterport, Kuula, or any 3D tour link. Visitors will be sent to this URL when they click your listing.
+              Direct web link to the tour. When visitors click "Visit tour URL" in the card menu, they are sent to this address.
             </p>
+
+            <div className="mt-4">
+              <label
+                htmlFor="listing-embed-code"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-500"
+              >
+                Embed Code / Iframe
+              </label>
+              <textarea
+                id="listing-embed-code"
+                rows={3}
+                placeholder='<iframe width="853" height="480" src="https://my.matterport.com/show/?m=..." frameborder="0" allowfullscreen allow="autoplay; fullscreen; web-share; xr-spatial-tracking;"></iframe>'
+                value={form.embedCode ?? ''}
+                onChange={(e) => set('embedCode', e.target.value)}
+                className="w-full resize-y rounded-md border border-ink-950/15 bg-paper px-3.5 py-2.5 font-mono text-xs text-ink-950 placeholder:text-ink-300 transition-colors focus:border-brand-500 focus:outline-none"
+              />
+              <p className="mt-1 text-xs text-ink-400">
+                Paste the full &lt;iframe&gt; embed code or embed link. Published property tiles will display this interactive 3D tour directly.
+              </p>
+            </div>
           </FormSection>
 
           {/* ── Contact details */}
