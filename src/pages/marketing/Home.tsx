@@ -19,8 +19,8 @@ export function Home() {
   return (
     <MarketingLayout overlayNav>
       <Hero />
-      <HowItWorks />
       <TourPreviewMockup />
+      <HowItWorks />
       <BenefitsGrid />
       <AnalyticsPreview />
       <FAQSection />
