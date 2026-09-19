@@ -181,9 +181,76 @@ function CardDetail() {
   )
 }
 
+/* ── Billing cycle calculation helpers ─────────────────────────── */
+type BillingCycle = 'monthly' | 'quarterly' | 'annually'
+
+interface PlanPricingDisplay {
+  displayPrice: string
+  originalPrice: string | null
+  savingsPct: number | null
+  savingsKsh: number | null
+}
+
+function getPlanPricing(rawPrice: string, cycle: BillingCycle): PlanPricingDisplay {
+  const digits = rawPrice.replace(/[^\d]/g, '')
+  if (!digits) {
+    return {
+      displayPrice: rawPrice,
+      originalPrice: null,
+      savingsPct: null,
+      savingsKsh: null,
+    }
+  }
+
+  const monthlyVal = parseInt(digits, 10)
+  if (isNaN(monthlyVal) || monthlyVal <= 0) {
+    return {
+      displayPrice: rawPrice,
+      originalPrice: null,
+      savingsPct: null,
+      savingsKsh: null,
+    }
+  }
+
+  if (cycle === 'monthly') {
+    return {
+      displayPrice: `Ksh ${monthlyVal.toLocaleString()}`,
+      originalPrice: null,
+      savingsPct: null,
+      savingsKsh: null,
+    }
+  }
+
+  if (cycle === 'quarterly') {
+    const rawTotal = monthlyVal * 3
+    const discount = 500
+    const finalPrice = Math.max(0, rawTotal - discount)
+    const pct = Math.round((discount / rawTotal) * 100)
+    return {
+      displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
+      originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
+      savingsPct: pct,
+      savingsKsh: discount,
+    }
+  }
+
+  // annually
+  const rawTotal = monthlyVal * 12
+  const discount = 1100
+  const finalPrice = Math.max(0, rawTotal - discount)
+  const pct = Math.round((discount / rawTotal) * 100)
+  return {
+    displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
+    originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
+    savingsPct: pct,
+    savingsKsh: discount,
+  }
+}
+
 /* ── Main page ─────────────────────────────────────────────────── */
 export function Pricing() {
   const [activeMethod, setActiveMethod] = useState<Method>(null)
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
   const [plans, setPlans] = useState<ShootPricingPlan[]>(DEFAULT_SHOOT_PRICING)
   const [plansLoading, setPlansLoading] = useState(isFirebaseConfigured)
 
@@ -237,6 +304,57 @@ export function Pricing() {
         description="Start free with one property, then add tours as you grow. No long-term contracts."
         align="center"
       >
+        {/* Billing cycle toggle */}
+        <div className="mb-10 flex justify-center">
+          <div className="inline-flex items-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1.5 shadow-sm">
+            <button
+              type="button"
+              id="billing-cycle-monthly-btn"
+              onClick={() => setBillingCycle('monthly')}
+              className={cn(
+                'rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                billingCycle === 'monthly'
+                  ? 'bg-paper text-ink-950 shadow-sm'
+                  : 'text-ink-600 hover:text-ink-950',
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              id="billing-cycle-quarterly-btn"
+              onClick={() => setBillingCycle('quarterly')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                billingCycle === 'quarterly'
+                  ? 'bg-paper text-ink-950 shadow-sm'
+                  : 'text-ink-600 hover:text-ink-950',
+              )}
+            >
+              <span>Quarterly</span>
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                Save 500 Ksh
+              </span>
+            </button>
+            <button
+              type="button"
+              id="billing-cycle-annually-btn"
+              onClick={() => setBillingCycle('annually')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                billingCycle === 'annually'
+                  ? 'bg-paper text-ink-950 shadow-sm'
+                  : 'text-ink-600 hover:text-ink-950',
+              )}
+            >
+              <span>Annually</span>
+              <span className="rounded-full bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+                Save 1,100 Ksh
+              </span>
+            </button>
+          </div>
+        </div>
+
         {plansLoading ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -245,39 +363,58 @@ export function Pricing() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            {allPlans.map((plan) => (
-              <Card
-                key={plan.id}
-                className={cn(
-                  'flex flex-col gap-6 p-8',
-                  'highlighted' in plan && (plan as { highlighted?: boolean }).highlighted && 'border-brand-500 ring-1 ring-brand-500',
-                )}
-              >
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-500">
-                    {plan.name}
-                  </h3>
-                  <p className="mt-3 flex items-baseline gap-1">
-                    <span className="font-display text-4xl text-ink-950">{plan.price}</span>
-                    {plan.cadence && (
-                      <span className="text-sm text-ink-500">{plan.cadence}</span>
-                    )}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-ink-500">{plan.description}</p>
-                </div>
-                <ul className="flex flex-1 flex-col gap-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm text-ink-700">
-                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button href="/contact" variant="secondary" className="w-full">
-                  {plan.ctaLabel}
-                </Button>
-              </Card>
-            ))}
+            {allPlans.map((plan) => {
+              const pricing = getPlanPricing(plan.price, billingCycle)
+              return (
+                <Card
+                  key={plan.id}
+                  className={cn(
+                    'flex flex-col gap-6 p-8 transition-all duration-200',
+                    'highlighted' in plan && (plan as { highlighted?: boolean }).highlighted && 'border-brand-500 ring-1 ring-brand-500',
+                  )}
+                >
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-ink-500">
+                      {plan.name}
+                    </h3>
+                    <div className="mt-3 min-h-[4rem] flex flex-col justify-end">
+                      {pricing.originalPrice && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm text-ink-400 line-through">
+                            {pricing.originalPrice}
+                          </span>
+                          {pricing.savingsPct !== null && (
+                            <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/25">
+                              Save {pricing.savingsPct}%
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <p className="flex items-baseline gap-1">
+                        <span className="font-display text-4xl text-ink-950">
+                          {pricing.displayPrice}
+                        </span>
+                        {plan.cadence && (
+                          <span className="text-sm text-ink-500">{plan.cadence}</span>
+                        )}
+                      </p>
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-ink-500">{plan.description}</p>
+                  </div>
+                  <ul className="flex flex-1 flex-col gap-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm text-ink-700">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button href="/contact" variant="secondary" className="w-full">
+                    {plan.ctaLabel}
+                  </Button>
+                </Card>
+              )
+            })}
           </div>
         )}
       </Section>
