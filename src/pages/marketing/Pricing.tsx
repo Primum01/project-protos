@@ -289,10 +289,6 @@ export function Pricing() {
       'Minor updates',
       'Analytics/reporting',
       'Customer support',
-      'Custom branding & domain',
-      'Dedicated account manager',
-      'API access',
-      'SLA-backed support',
     ],
     ctaLabel: 'Get started',
   }
