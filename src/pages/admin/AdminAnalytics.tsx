@@ -190,9 +190,9 @@ export function AdminAnalytics() {
         <div className="flex items-center justify-between">
           <div>
             <img
-              src="/logo.png"
-              alt="TwinSpace"
-              className="h-10 w-auto object-contain"
+              src="/twinspace-analytics-logo.png"
+              alt="TwinSpace 360"
+              className="h-12 w-auto object-contain"
             />
             <p className="mt-1 text-xs text-ink-500">Interactive 3D Virtual Tour Performance</p>
           </div>
@@ -321,7 +321,7 @@ export function AdminAnalytics() {
       {/* ── Print Footer (Clean, with TwinSpace Logo) ── */}
       <div className="print-only mt-10 border-t border-ink-950/15 pt-6 text-center text-xs text-ink-400">
         <div className="flex items-center justify-center gap-2">
-          <img src="/logo.png" alt="TwinSpace" className="h-5 w-auto object-contain" />
+          <img src="/twinspace-analytics-logo.png" alt="TwinSpace 360" className="h-6 w-auto object-contain" />
           <span className="font-medium text-ink-600">· Professional 3D Property Intelligence</span>
         </div>
         <p className="mt-1">
