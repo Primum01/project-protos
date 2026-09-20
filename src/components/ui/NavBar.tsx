@@ -44,7 +44,7 @@ export function NavBar({ overlay = false }: NavBarProps) {
     >
       <Container>
         <nav
-          className="flex h-20 items-center justify-between py-4"
+          className="relative flex h-20 items-center justify-between py-4"
           aria-label="Primary"
         >
           <Link
@@ -61,7 +61,7 @@ export function NavBar({ overlay = false }: NavBarProps) {
             />
           </Link>
 
-          <ul className="hidden items-center gap-8 md:flex">
+          <ul className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
             {navLinks.map((link) => (
               <li key={link.to}>
                 <NavLink
