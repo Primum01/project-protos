@@ -1,4 +1,5 @@
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { Button, Input, Section, Textarea } from "@/components/ui"
 import { createMessage } from "@/lib/firebase/messages"
@@ -8,6 +9,9 @@ import { usePageMeta } from "@/hooks/usePageMeta"
 const CONTACT_EMAIL = 'info@twinspace360.com'
 
 export function Contact() {
+  const [searchParams] = useSearchParams()
+  const initialMessage = searchParams.get('message') || ''
+
   usePageMeta({
     title: 'Contact TwinSpace — Get in Touch',
     description:
@@ -18,10 +22,17 @@ export function Contact() {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState(initialMessage)
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const msgFromUrl = searchParams.get('message')
+    if (msgFromUrl) {
+      setMessage(msgFromUrl)
+    }
+  }, [searchParams])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

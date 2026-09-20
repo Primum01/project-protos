@@ -274,7 +274,7 @@ export function Pricing() {
     setActiveMethod((prev) => (prev === method ? null : method))
   }
 
-  // Enterprise plan is static — no price to configure
+  // Enterprise / Custom plan is static — no price to configure
   const enterprisePlan = {
     id: 'enterprise',
     name: 'Enterprise',
@@ -282,13 +282,19 @@ export function Pricing() {
     cadence: '',
     description: 'For hotel groups and portfolios that need custom branding.',
     features: [
-      'Everything in 2 Bedroom',
+      'Matterport hosting',
+      'Tour maintenance',
+      'Link management',
+      'Embedding support',
+      'Minor updates',
+      'Analytics/reporting',
+      'Customer support',
       'Custom branding & domain',
       'Dedicated account manager',
       'API access',
       'SLA-backed support',
     ],
-    ctaLabel: 'Talk to sales',
+    ctaLabel: 'Get started',
   }
 
   const allPlans = [...plans, enterprisePlan]
@@ -305,14 +311,14 @@ export function Pricing() {
         align="center"
       >
         {/* Billing cycle toggle */}
-        <div className="mb-10 flex justify-center">
-          <div className="inline-flex items-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1.5 shadow-sm">
+        <div className="mb-10 flex justify-center px-4">
+          <div className="inline-flex w-full max-w-[340px] sm:w-auto sm:max-w-none items-center justify-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1 sm:p-1.5 shadow-sm">
             <button
               type="button"
               id="billing-cycle-monthly-btn"
               onClick={() => setBillingCycle('monthly')}
               className={cn(
-                'rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
                 billingCycle === 'monthly'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -325,32 +331,26 @@ export function Pricing() {
               id="billing-cycle-quarterly-btn"
               onClick={() => setBillingCycle('quarterly')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
                 billingCycle === 'quarterly'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
               )}
             >
-              <span>Quarterly</span>
-              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                Save 500 Ksh
-              </span>
+              Quarterly
             </button>
             <button
               type="button"
               id="billing-cycle-annually-btn"
               onClick={() => setBillingCycle('annually')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200',
+                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
                 billingCycle === 'annually'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
               )}
             >
-              <span>Annually</span>
-              <span className="rounded-full bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
-                Save 1,100 Ksh
-              </span>
+              Annually
             </button>
           </div>
         </div>
@@ -365,6 +365,10 @@ export function Pricing() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
             {allPlans.map((plan) => {
               const pricing = getPlanPricing(plan.price, billingCycle)
+              const propertyType = plan.id === 'enterprise' ? 'Custom Space' : plan.name
+              const prefilledMessage = `I am interested in this 3D tour package for my ${propertyType}. I’d like to get started and would love to learn more about the package, pricing, and next steps.`
+              const contactUrl = `/contact?message=${encodeURIComponent(prefilledMessage)}`
+
               return (
                 <Card
                   key={plan.id}
@@ -409,7 +413,7 @@ export function Pricing() {
                       </li>
                     ))}
                   </ul>
-                  <Button href="/contact" variant="secondary" className="w-full">
+                  <Button href={contactUrl} variant="secondary" className="w-full">
                     {plan.ctaLabel}
                   </Button>
                 </Card>
