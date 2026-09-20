@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui'
-
 export function Hero() {
   return (
     <section className="relative flex min-h-[92vh] items-end overflow-hidden bg-ink-950 pb-20 pt-40 text-white">
@@ -45,14 +43,6 @@ export function Hero() {
           Turn any listing into an interactive 3D tour guests can explore from anywhere,
           then send them straight to booking.
         </p>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-          <Button href="/contact" size="lg">
-            Get started
-          </Button>
-          <Button href="/tours" size="lg" variant="secondary" className="border-white/30 bg-white/10 text-white hover:bg-white/20">
-            Explore example tours
-          </Button>
-        </div>
       </div>
     </section>
   )
