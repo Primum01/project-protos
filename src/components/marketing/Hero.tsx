@@ -1,6 +1,6 @@
 export function Hero() {
   return (
-    <section className="relative flex min-h-[92vh] items-end overflow-hidden bg-ink-950 pb-20 pt-40 text-white">
+    <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden bg-ink-950 pb-20 pt-28 text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-b from-ink-950/90 via-ink-900/60 to-ink-950" />
         <svg
