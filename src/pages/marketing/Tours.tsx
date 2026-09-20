@@ -104,14 +104,14 @@ function LocationDropdown({
   )
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full sm:w-auto">
       {/* Pill trigger */}
       <button
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={`
-          flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium
+          flex w-full sm:w-auto items-center justify-between sm:justify-start gap-2 rounded-full border px-4 sm:px-5 py-2.5 text-sm font-medium
           shadow-sm transition-all duration-200 select-none whitespace-nowrap
           ${open
             ? "border-ink-950/20 bg-ink-950 text-white shadow-lg"
@@ -119,8 +119,10 @@ function LocationDropdown({
           }
         `}
       >
-        <IconPin />
-        <span>{value || "All locations"}</span>
+        <div className="flex items-center gap-2">
+          <IconPin />
+          <span>{value || "All locations"}</span>
+        </div>
         <IconChevron open={open} />
       </button>
 
@@ -129,7 +131,7 @@ function LocationDropdown({
         <div
           role="listbox"
           style={{ animation: "iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both", transformOrigin: "top left" }}
-          className="absolute left-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
+          className="absolute left-0 top-[calc(100%+8px)] z-50 w-full sm:w-64 overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
         >
           {/* Search inside panel */}
           <div className="border-b border-ink-950/8 px-3 py-2.5">
@@ -206,7 +208,7 @@ function SearchBar({
   placeholder?: string
 }) {
   return (
-    <div className="flex flex-1 items-center gap-2 rounded-full border border-ink-950/10 bg-white px-4 py-2.5 shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20 max-w-xs">
+    <div className="flex w-full sm:w-auto sm:flex-1 items-center gap-2 rounded-full border border-ink-950/10 bg-white px-4 py-2.5 shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20 sm:max-w-xs">
       <span className="text-ink-400 shrink-0"><IconSearch /></span>
       <input
         type="search"
@@ -241,21 +243,23 @@ function FilterBar({
   count: number
 }) {
   return (
-    <div className="mb-8 flex flex-wrap items-center gap-3">
-      <LocationDropdown options={options} value={location} onChange={onLocation} />
-      <SearchBar value={search} onChange={onSearch} />
+    <div className="mb-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+        <LocationDropdown options={options} value={location} onChange={onLocation} />
+        <SearchBar value={search} onChange={onSearch} />
+      </div>
 
       {/* Active chips */}
       {location && (
         <button
           onClick={() => onLocation("")}
-          className="flex items-center gap-1.5 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-80"
+          className="self-start flex items-center gap-1.5 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-80"
         >
           {location} <IconX />
         </button>
       )}
 
-      <span className="ml-auto text-sm text-ink-400 tabular-nums whitespace-nowrap">
+      <span className="text-xs sm:text-sm text-ink-400 tabular-nums whitespace-nowrap self-end sm:self-auto sm:ml-auto">
         {count} {count === 1 ? "property" : "properties"}
       </span>
     </div>

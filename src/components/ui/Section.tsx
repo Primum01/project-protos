@@ -21,7 +21,7 @@ export function Section({
 }: SectionProps) {
   const centered = align === 'center'
   return (
-    <section className={cn('py-20 lg:py-28', className)} {...rest}>
+    <section className={cn('py-14 sm:py-20 lg:py-28', className)} {...rest}>
       <Container>
         {(eyebrow || title || description) && (
           <div className={cn('mb-12 max-w-2xl', centered && 'mx-auto text-center')}>
@@ -31,7 +31,7 @@ export function Section({
               </p>
             )}
             {title && (
-              <h2 className="text-3xl font-medium leading-tight lg:text-4xl">{title}</h2>
+              <h2 className="text-2xl sm:text-3xl font-medium leading-tight lg:text-4xl">{title}</h2>
             )}
             {description && (
               <p className="mt-4 text-base leading-relaxed text-ink-500">{description}</p>

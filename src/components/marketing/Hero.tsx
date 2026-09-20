@@ -30,16 +30,16 @@ export function Hero() {
         </svg>
       </div>
 
-      <div className="relative mx-auto w-full max-w-4xl px-6 text-center">
-        <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+      <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6 text-center">
+        <p className="mb-4 sm:mb-5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
           3D property tours for hosts &amp; property managers
         </p>
-        <h1 className="text-4xl font-medium leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+        <h1 className="text-3xl font-medium leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
           Experience properties
           <br />
           before you arrive
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
+        <p className="mx-auto mt-5 sm:mt-6 max-w-xl text-sm sm:text-base lg:text-lg leading-relaxed text-white/75">
           Turn any listing into an interactive 3D tour guests can explore from anywhere,
           then send them straight to booking.
         </p>

@@ -25,26 +25,26 @@ type Method = 'mpesa' | 'card' | null
 
 function MpesaDetail() {
   return (
-    <div className="mt-5 overflow-hidden rounded-2xl border border-[#4caf50]/30 bg-[#f0fdf0] p-6 shadow-inner">
+    <div className="mt-5 overflow-hidden rounded-2xl border border-[#4caf50]/30 bg-[#f0fdf0] p-4 sm:p-6 shadow-inner">
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-[#2e7d32]">
         M-Pesa Paybill Instructions
       </p>
-      <ol className="mb-5 space-y-2 text-sm text-[#1b5e20]">
+      <ol className="mb-5 space-y-2 text-xs sm:text-sm text-[#1b5e20]">
         <li className="flex gap-2"><span className="font-bold">1.</span> Go to <strong>M-Pesa</strong> → <strong>Lipa na M-Pesa</strong> → <strong>Paybill</strong></li>
         <li className="flex gap-2"><span className="font-bold">2.</span> Enter Business Number below</li>
         <li className="flex gap-2"><span className="font-bold">3.</span> Enter Account Number below</li>
         <li className="flex gap-2"><span className="font-bold">4.</span> Enter the amount and your M-Pesa PIN</li>
       </ol>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-[#4caf50]/40 bg-white p-4 text-center shadow-sm">
-          <p className="text-xs text-[#4caf50] font-medium">Paybill Number</p>
-          <p className="mt-1 font-display text-2xl font-bold tracking-widest text-[#1b5e20]">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="rounded-xl border border-[#4caf50]/40 bg-white p-2.5 sm:p-4 text-center shadow-sm">
+          <p className="text-[11px] sm:text-xs text-[#4caf50] font-medium">Paybill Number</p>
+          <p className="mt-1 font-display text-lg sm:text-2xl font-bold tracking-wider sm:tracking-widest text-[#1b5e20]">
             123456
           </p>
         </div>
-        <div className="rounded-xl border border-[#4caf50]/40 bg-white p-4 text-center shadow-sm">
-          <p className="text-xs text-[#4caf50] font-medium">Account Number</p>
-          <p className="mt-1 font-display text-2xl font-bold tracking-widest text-[#1b5e20]">
+        <div className="rounded-xl border border-[#4caf50]/40 bg-white p-2.5 sm:p-4 text-center shadow-sm">
+          <p className="text-[11px] sm:text-xs text-[#4caf50] font-medium">Account Number</p>
+          <p className="mt-1 font-display text-lg sm:text-2xl font-bold tracking-wider sm:tracking-widest text-[#1b5e20]">
             TS-0001
           </p>
         </div>
@@ -74,7 +74,7 @@ function CardDetail() {
 
   if (submitted) {
     return (
-      <div className="mt-5 rounded-2xl border border-ink-950/8 bg-paper p-8 text-center shadow-soft">
+      <div className="mt-5 rounded-2xl border border-ink-950/8 bg-paper p-5 sm:p-8 text-center shadow-soft">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
@@ -92,7 +92,7 @@ function CardDetail() {
   return (
     <div className="mt-5 overflow-hidden rounded-2xl border border-ink-950/8 bg-paper shadow-soft">
       {/* Decorative card preview */}
-      <div className="relative flex h-40 flex-col justify-between overflow-hidden bg-gradient-to-br from-ink-800 to-ink-950 p-6">
+      <div className="relative flex h-40 flex-col justify-between overflow-hidden bg-gradient-to-br from-ink-800 to-ink-950 p-5 sm:p-6">
         {/* Circles decoration */}
         <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
         <div className="absolute -right-4 -bottom-10 h-48 w-48 rounded-full bg-white/5" />
@@ -119,7 +119,7 @@ function CardDetail() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 sm:p-6">
         <div>
           <label htmlFor="cc-number" className="mb-1.5 block text-xs font-medium text-ink-600">Card number</label>
           <input
@@ -307,14 +307,14 @@ export function Pricing() {
         align="center"
       >
         {/* Billing cycle toggle */}
-        <div className="mb-10 flex justify-center px-4">
-          <div className="inline-flex w-full max-w-[340px] sm:w-auto sm:max-w-none items-center justify-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1 sm:p-1.5 shadow-sm">
+        <div className="mb-10 flex justify-center px-2 sm:px-4">
+          <div className="inline-flex w-full max-w-xs sm:max-w-md sm:w-auto items-center justify-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1 sm:p-1.5 shadow-sm">
             <button
               type="button"
               id="billing-cycle-monthly-btn"
               onClick={() => setBillingCycle('monthly')}
               className={cn(
-                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
                 billingCycle === 'monthly'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -327,7 +327,7 @@ export function Pricing() {
               id="billing-cycle-quarterly-btn"
               onClick={() => setBillingCycle('quarterly')}
               className={cn(
-                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
                 billingCycle === 'quarterly'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -340,7 +340,7 @@ export function Pricing() {
               id="billing-cycle-annually-btn"
               onClick={() => setBillingCycle('annually')}
               className={cn(
-                'flex-1 sm:flex-initial rounded-full px-3 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm font-medium transition-all duration-200 text-center',
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
                 billingCycle === 'annually'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -369,7 +369,7 @@ export function Pricing() {
                 <Card
                   key={plan.id}
                   className={cn(
-                    'flex flex-col gap-6 p-8 transition-all duration-200',
+                    'flex flex-col gap-6 p-5 sm:p-8 transition-all duration-200',
                     'highlighted' in plan && (plan as { highlighted?: boolean }).highlighted && 'border-brand-500 ring-1 ring-brand-500',
                   )}
                 >
@@ -428,21 +428,21 @@ export function Pricing() {
       >
         <div className="mx-auto max-w-2xl">
           {/* Method selector cards */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {/* M-Pesa */}
             <button
               id="mpesa-option-btn"
               type="button"
               onClick={() => toggle('mpesa')}
               className={cn(
-                'group flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-all duration-200',
+                'group flex flex-col items-center gap-2.5 sm:gap-3 rounded-2xl border-2 p-3.5 sm:p-6 transition-all duration-200',
                 activeMethod === 'mpesa'
                   ? 'border-[#4caf50] bg-[#f0fdf0] shadow-lg'
                   : 'border-ink-950/10 bg-paper hover:border-[#4caf50]/50 hover:bg-[#f0fdf0]/60 hover:shadow-md',
               )}
             >
               <div className={cn(
-                'flex h-16 w-full max-w-[8rem] items-center justify-center overflow-hidden rounded-xl transition-all',
+                'flex h-12 sm:h-16 w-full max-w-[8rem] items-center justify-center overflow-hidden rounded-xl transition-all',
                 activeMethod === 'mpesa' ? 'ring-2 ring-[#4caf50]/40' : 'group-hover:ring-2 group-hover:ring-[#4caf50]/20',
               )}>
                 <img
@@ -452,16 +452,16 @@ export function Pricing() {
                 />
               </div>
               <span className={cn(
-                'text-sm font-semibold transition-colors',
+                'text-xs sm:text-sm font-semibold transition-colors text-center',
                 activeMethod === 'mpesa' ? 'text-[#2e7d32]' : 'text-ink-700',
               )}>
                 Pay via M-Pesa
               </span>
               <span className={cn(
-                'text-xs transition-colors',
+                'text-[10px] sm:text-xs transition-colors text-center',
                 activeMethod === 'mpesa' ? 'text-[#4caf50]' : 'text-ink-400',
               )}>
-                {activeMethod === 'mpesa' ? 'See details below ↓' : 'Tap to view Paybill details'}
+                {activeMethod === 'mpesa' ? 'See details below ↓' : 'Tap to view details'}
               </span>
             </button>
 
@@ -471,7 +471,7 @@ export function Pricing() {
               type="button"
               onClick={() => toggle('card')}
               className={cn(
-                'group flex flex-col items-center gap-3 rounded-2xl border-2 p-6 transition-all duration-200',
+                'group flex flex-col items-center gap-2.5 sm:gap-3 rounded-2xl border-2 p-3.5 sm:p-6 transition-all duration-200',
                 activeMethod === 'card'
                   ? 'border-brand-500 bg-ink-950 shadow-lg'
                   : 'border-ink-950/10 bg-paper hover:border-brand-500/50 hover:bg-ink-50 hover:shadow-md',
@@ -479,7 +479,7 @@ export function Pricing() {
             >
               {/* Decorative card icon */}
               <div className={cn(
-                'flex h-16 w-full max-w-[8rem] items-center justify-center rounded-xl transition-all',
+                'flex h-12 sm:h-16 w-full max-w-[8rem] items-center justify-center rounded-xl transition-all',
                 activeMethod === 'card'
                   ? 'bg-gradient-to-br from-ink-700 to-ink-900 ring-2 ring-brand-500/40'
                   : 'bg-gradient-to-br from-ink-100 to-ink-200 group-hover:from-ink-200 group-hover:to-ink-300',

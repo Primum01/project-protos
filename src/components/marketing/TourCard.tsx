@@ -69,7 +69,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
       {/* ── 3D Embed / Photo Container ── */}
       <div
         className={cn(
-          'relative aspect-[16/10] min-h-[250px] sm:min-h-[280px] w-full overflow-hidden bg-ink-950',
+          'relative aspect-[16/10] w-full overflow-hidden bg-ink-950',
           accentClasses[tour.accent ?? 'clay'] ?? accentClasses.clay,
         )}
       >

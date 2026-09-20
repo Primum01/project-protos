@@ -120,7 +120,7 @@ export function Contact() {
                 {submitError && (
                   <p className="text-sm text-red-600">{submitError}</p>
                 )}
-                <Button type="submit" className="self-start" disabled={submitting}>
+                <Button type="submit" className="w-full sm:w-auto self-stretch sm:self-start" disabled={submitting}>
                   {submitting ? "Sending…" : "Send message"}
                 </Button>
               </>
