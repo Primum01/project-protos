@@ -1,66 +1,48 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAdminListings } from '@/contexts/AdminDataContext'
-import {
-  subscribeRealAnalytics,
-  type AnalyticsRecord,
-} from '@/lib/firebase/analytics'
 import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 
 type TimeRange = '1w' | '1m' | '3m' | '6m' | '1y'
 
-const TIME_RANGES: { id: TimeRange; label: string; days: number }[] = [
-  { id: '1w', label: 'Last 1 week', days: 7 },
-  { id: '1m', label: 'Last 1 month', days: 30 },
-  { id: '3m', label: 'Last 3 months', days: 90 },
-  { id: '6m', label: 'Last 6 months', days: 180 },
-  { id: '1y', label: 'Last 1 year', days: 365 },
+const TIME_RANGES: { id: TimeRange; label: string }[] = [
+  { id: '1w', label: 'Last 1 week' },
+  { id: '1m', label: 'Last 1 month' },
+  { id: '3m', label: 'Last 3 months' },
+  { id: '6m', label: 'Last 6 months' },
+  { id: '1y', label: 'Last 1 year' },
 ]
 
-function formatSeconds(seconds: number): string {
-  if (!seconds || seconds <= 0) return '0s'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m ${s > 0 ? `${s}s` : ''}`.trim()
-  return `${s}s`
+interface MetricData {
+  totalViews: string
+  visitors: string
+  impressions: string
 }
 
-function formatDate(iso: string): string {
+const STORAGE_KEY = 'ts_admin_analytics_metrics_v1'
+
+function getInitialMetrics(): Record<string, MetricData> {
   try {
-    return new Date(iso).toLocaleString('en-KE', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    const saved = localStorage.getItem(STORAGE_KEY)
+    return saved ? JSON.parse(saved) : {}
   } catch {
-    return iso
+    return {}
   }
 }
 
 export function AdminAnalytics() {
   const { listings } = useAdminListings()
-  const [records, setRecords] = useState<AnalyticsRecord[]>([])
   const [timeRange, setTimeRange] = useState<TimeRange>('1m')
   const [selectedListingId, setSelectedListingId] = useState<string>('all')
   const [clientName, setClientName] = useState<string>('')
+  const [metricsMap, setMetricsMap] = useState<Record<string, MetricData>>(getInitialMetrics)
 
   usePageMeta({
     title: 'Tour Performance Report — TwinSpace',
-    description: 'Real-time 3D tour analytics and guest telemetry.',
+    description: '3D virtual tour performance report generator.',
     path: '/admin/analytics',
     noIndex: true,
   })
-
-  // Subscribe to real-time telemetry events starting from now
-  useEffect(() => {
-    const unsubscribe = subscribeRealAnalytics((liveRecords) => {
-      setRecords(liveRecords)
-    })
-    return () => unsubscribe()
-  }, [])
 
   const selectedListing = useMemo(
     () => listings.find((l) => l.id === selectedListingId),
@@ -72,38 +54,30 @@ export function AdminAnalytics() {
     [timeRange],
   )
 
-  // Filter records by selected time window and optional property filter
-  const filteredRecords = useMemo(() => {
-    const cutoff = Date.now() - activeRangeConfig.days * 24 * 60 * 60 * 1000
-    return records.filter((r) => {
-      const time = new Date(r.timestamp).getTime()
-      if (isNaN(time) || time < cutoff) return false
-      if (selectedListingId !== 'all') {
-        const matchesId = r.tourId === selectedListingId
-        const matchesSlug = selectedListing && r.tourId === selectedListing.id
-        if (!matchesId && !matchesSlug) return false
+  // Current metric values for the selected property
+  const currentMetrics = metricsMap[selectedListingId] || {
+    totalViews: '',
+    visitors: '',
+    impressions: '',
+  }
+
+  function handleMetricChange(field: keyof MetricData, value: string) {
+    setMetricsMap((prev) => {
+      const next = {
+        ...prev,
+        [selectedListingId]: {
+          ...(prev[selectedListingId] || { totalViews: '', visitors: '', impressions: '' }),
+          [field]: value,
+        },
       }
-      return true
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        // ignore
+      }
+      return next
     })
-  }, [records, activeRangeConfig, selectedListingId, selectedListing])
-
-  // Compute real metrics
-  const stats = useMemo(() => {
-    const views = filteredRecords.filter((r) => r.type === 'tour_view').length
-    const shares = filteredRecords.filter((r) => r.type === 'link_shared').length
-    const durationEvents = filteredRecords.filter(
-      (r) => r.type === 'session_duration' && typeof r.durationSeconds === 'number',
-    )
-    const totalDuration = durationEvents.reduce((acc, r) => acc + (r.durationSeconds ?? 0), 0)
-    const avgDuration = durationEvents.length > 0 ? Math.round(totalDuration / durationEvents.length) : 0
-
-    return {
-      tourViews: views,
-      avgSession: formatSeconds(avgDuration),
-      linksShared: shares,
-      totalTrackedEvents: filteredRecords.length,
-    }
-  }, [filteredRecords])
+  }
 
   function handleExportPDF() {
     const origTitle = document.title
@@ -133,14 +107,13 @@ export function AdminAnalytics() {
               <span className="rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-600">
                 Analytics
               </span>
-              <span className="text-xs text-ink-400">· Real Guest Telemetry</span>
+              <span className="text-xs text-ink-400">· Tour Performance Report</span>
             </div>
             <h1 className="mt-1.5 text-2xl font-semibold text-ink-950">
-              See how guests actually explore your space
+              Tour Performance Report
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-ink-500 leading-relaxed">
-              Every tour comes with a dashboard showing views, room engagement, and booking clicks,
-              so you know what's working.
+              Enter tour metrics below and export a branded PDF performance report for clients and property owners.
             </p>
           </div>
 
@@ -212,14 +185,16 @@ export function AdminAnalytics() {
         </div>
       </div>
 
-      {/* ── Formal Print Header (Clean PDF layout without admin references) ── */}
+      {/* ── Formal Print Header (Clean PDF layout with TwinSpace Logo) ── */}
       <div className="print-only mb-8 border-b border-ink-950/15 pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <span className="font-display text-2xl font-medium tracking-tight text-ink-950">
-              TwinSpace
-            </span>
-            <p className="text-xs text-ink-500">Interactive 3D Virtual Tour Performance</p>
+            <img
+              src="/logo.png"
+              alt="TwinSpace"
+              className="h-10 w-auto object-contain"
+            />
+            <p className="mt-1 text-xs text-ink-500">Interactive 3D Virtual Tour Performance</p>
           </div>
           <div className="text-right">
             <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
@@ -253,132 +228,102 @@ export function AdminAnalytics() {
         </div>
       </div>
 
-      {/* ── THE DASHBOARD CONTAINER (Exact layout requested) ── */}
+      {/* ── THE DASHBOARD CONTAINER ── */}
       <div className="rounded-2xl border border-ink-950/10 bg-sand-100/60 p-8 shadow-soft">
         <div className="mb-6 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
             {selectedListing ? selectedListing.name : 'Tour Performance'} — {activeRangeConfig.label}
           </p>
           <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-ink-700 shadow-sm border border-ink-950/5">
-            Real Telemetry
+            Tour Analytics
           </span>
         </div>
 
-        {/* 3 Real Telemetry Stats: Tour views, Avg. session, Links shared */}
+        {/* 3 Metrics: Total views, Visitors, Impressions */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          <div className="rounded-xl bg-white/70 p-6 text-center shadow-sm border border-ink-950/5 transition-transform hover:scale-[1.02]">
-            <p className="font-display text-4xl font-medium text-ink-950">
-              {stats.tourViews.toLocaleString()}
+          {/* 1. Total views */}
+          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+            <div className="no-print">
+              <input
+                id="analytics-input-total-views"
+                type="text"
+                value={currentMetrics.totalViews}
+                onChange={(e) => handleMetricChange('totalViews', e.target.value)}
+                placeholder="0"
+                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                aria-label="Total views"
+              />
+              <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
+            </div>
+            <p className="print-only font-display text-4xl font-medium text-ink-950">
+              {currentMetrics.totalViews || '0'}
             </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-              Tour views
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+              Total views
             </p>
-            <p className="mt-1 text-[11px] text-ink-400">Total verified walkthrough opens</p>
-          </div>
-
-          <div className="rounded-xl bg-white/70 p-6 text-center shadow-sm border border-ink-950/5 transition-transform hover:scale-[1.02]">
-            <p className="font-display text-4xl font-medium text-ink-950">
-              {stats.avgSession}
-            </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-              Avg. session
-            </p>
-            <p className="mt-1 text-[11px] text-ink-400">Average exploration time spent</p>
-          </div>
-
-          <div className="rounded-xl bg-white/70 p-6 text-center shadow-sm border border-ink-950/5 transition-transform hover:scale-[1.02]">
-            <p className="font-display text-4xl font-medium text-ink-950">
-              {stats.linksShared.toLocaleString()}
-            </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-wider text-ink-500">
-              Links shared
-            </p>
-            <p className="mt-1 text-[11px] text-ink-400">Total shares &amp; link copies</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Live Telemetry Log Feed (Real visitor activity recorded starting now) ── */}
-      <div className="no-print mt-10">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-ink-950">Real Event Activity Log</h2>
-            <p className="text-xs text-ink-500">
-              Live events captured from active visitor sessions and link shares.
+            <p className="mt-1 text-[11px] text-ink-400">
+              Times your 3D tour was opened and viewed.
             </p>
           </div>
-          <span className="text-xs font-medium text-ink-400">
-            {filteredRecords.length} event{filteredRecords.length === 1 ? '' : 's'} in selected period
-          </span>
-        </div>
 
-        <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-paper shadow-soft">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-ink-950/8 bg-ink-50/70 uppercase tracking-wider text-ink-400">
-                <tr>
-                  <th className="px-5 py-3">Event Type</th>
-                  <th className="px-5 py-3">Property / Tour</th>
-                  <th className="px-5 py-3">Duration / Value</th>
-                  <th className="px-5 py-3">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-950/6">
-                {filteredRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-5 py-10 text-center text-ink-400">
-                      <p className="text-sm font-medium text-ink-600">No events captured yet</p>
-                      <p className="mt-1 text-xs text-ink-400">
-                        Real tour views, session durations, and link shares will appear here as visitors interact with published tours.
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredRecords.slice(0, 50).map((record) => (
-                    <tr key={record.id} className="transition-colors hover:bg-ink-50/50">
-                      <td className="px-5 py-3.5 font-medium">
-                        {record.type === 'tour_view' && (
-                          <span className="inline-flex items-center gap-1.5 text-brand-600">
-                            <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                            Tour Viewed
-                          </span>
-                        )}
-                        {record.type === 'session_duration' && (
-                          <span className="inline-flex items-center gap-1.5 text-emerald-600">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            Session Ended
-                          </span>
-                        )}
-                        {record.type === 'link_shared' && (
-                          <span className="inline-flex items-center gap-1.5 text-purple-600">
-                            <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-                            Link Shared
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-950 font-medium">
-                        {record.tourTitle || record.tourId}
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-600 font-mono">
-                        {record.durationSeconds ? formatSeconds(record.durationSeconds) : '—'}
-                      </td>
-                      <td className="px-5 py-3.5 text-ink-400">
-                        {formatDate(record.timestamp)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {/* 2. Visitors */}
+          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+            <div className="no-print">
+              <input
+                id="analytics-input-visitors"
+                type="text"
+                value={currentMetrics.visitors}
+                onChange={(e) => handleMetricChange('visitors', e.target.value)}
+                placeholder="0"
+                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                aria-label="Visitors"
+              />
+              <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
+            </div>
+            <p className="print-only font-display text-4xl font-medium text-ink-950">
+              {currentMetrics.visitors || '0'}
+            </p>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+              Visitors
+            </p>
+            <p className="mt-1 text-[11px] text-ink-400">
+              People who viewed your 3D tour.
+            </p>
+          </div>
+
+          {/* 3. Impressions */}
+          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+            <div className="no-print">
+              <input
+                id="analytics-input-impressions"
+                type="text"
+                value={currentMetrics.impressions}
+                onChange={(e) => handleMetricChange('impressions', e.target.value)}
+                placeholder="0"
+                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                aria-label="Impressions"
+              />
+              <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
+            </div>
+            <p className="print-only font-display text-4xl font-medium text-ink-950">
+              {currentMetrics.impressions || '0'}
+            </p>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+              Impressions
+            </p>
+            <p className="mt-1 text-[11px] text-ink-400">
+              Times your 3D tour was shown on a page.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ── Print Footer (Clean, no https link or admin text) ── */}
+      {/* ── Print Footer (Clean, with TwinSpace Logo) ── */}
       <div className="print-only mt-10 border-t border-ink-950/15 pt-6 text-center text-xs text-ink-400">
-        <p className="font-medium text-ink-600">
-          TwinSpace · Professional 3D Property Intelligence
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <img src="/logo.png" alt="TwinSpace" className="h-5 w-auto object-contain" />
+          <span className="font-medium text-ink-600">· Professional 3D Property Intelligence</span>
+        </div>
         <p className="mt-1">
           Confidential property walkthrough telemetry report prepared for client review.
         </p>
