@@ -1,4 +1,5 @@
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
+import { FAQSection } from '@/components/marketing/FAQSection'
 import { Section } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 
@@ -37,6 +38,7 @@ export function About() {
           </p>
         </div>
       </Section>
+      <FAQSection />
     </MarketingLayout>
   )
 }

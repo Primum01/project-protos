@@ -1,6 +1,5 @@
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { BenefitsGrid } from '@/components/marketing/BenefitsGrid'
-import { FAQSection } from '@/components/marketing/FAQSection'
 import { FinalCTA } from '@/components/marketing/FinalCTA'
 import { Hero } from '@/components/marketing/Hero'
 import { HowItWorks } from '@/components/marketing/HowItWorks'
@@ -21,7 +20,6 @@ export function Home() {
       <TourPreviewMockup />
       <HowItWorks />
       <BenefitsGrid />
-      <FAQSection />
       <FinalCTA />
     </MarketingLayout>
   )
