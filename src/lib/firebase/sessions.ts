@@ -47,9 +47,20 @@ export async function deleteSessionDoc(sessionId: string): Promise<void> {
 export async function getAllSessions(): Promise<AdminSession[]> {
   try {
     const results = await getCollection<AdminSession>(COL)
-    return results.sort(
-      (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
-    )
+    return results
+      .filter((s): s is AdminSession => Boolean(s && typeof s === 'object'))
+      .map((s) => ({
+        id: String(s.id || crypto.randomUUID()),
+        user: String(s.user || 'Administrator'),
+        startedAt: s.startedAt || new Date().toISOString(),
+        endedAt: s.endedAt || null,
+        active: Boolean(s.active),
+      }))
+      .sort((a, b) => {
+        const timeA = new Date(a.startedAt).getTime() || 0
+        const timeB = new Date(b.startedAt).getTime() || 0
+        return timeB - timeA
+      })
   } catch (err) {
     console.warn('[sessions] Failed to fetch all sessions from Firestore:', err)
     return []

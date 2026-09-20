@@ -18,24 +18,28 @@ const USER_ROSTER: Record<string, { initials: string; gradient: string }> = {
   },
 }
 
-function getInitials(name: string): string {
-  if (USER_ROSTER[name]) return USER_ROSTER[name].initials
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+function getInitials(name?: string | null): string {
+  if (!name || typeof name !== 'string') return 'AD'
+  const trimmed = name.trim()
+  if (!trimmed) return 'AD'
+  if (USER_ROSTER[trimmed]) return USER_ROSTER[trimmed].initials
+  const parts = trimmed.split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'AD'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-function getGradient(name: string): string {
-  if (USER_ROSTER[name]) return USER_ROSTER[name].gradient
+function getGradient(name?: string | null): string {
+  if (name && USER_ROSTER[name]) return USER_ROSTER[name].gradient
   return 'from-ink-600 to-ink-800'
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso?: string | null): string {
+  if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleString('en-KE', {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return '—'
+    return d.toLocaleString('en-KE', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -43,14 +47,17 @@ function fmtDate(iso: string): string {
       minute: '2-digit',
     })
   } catch {
-    return iso
+    return '—'
   }
 }
 
-function fmtDuration(startIso: string, endIso: string | null): string {
+function fmtDuration(startIso?: string | null, endIso?: string | null): string {
+  if (!startIso) return '—'
   try {
     const start = new Date(startIso).getTime()
+    if (isNaN(start)) return '—'
     const end = endIso ? new Date(endIso).getTime() : Date.now()
+    if (isNaN(end)) return '—'
     const diffSec = Math.max(0, Math.floor((end - start) / 1000))
     const h = Math.floor(diffSec / 3600)
     const m = Math.floor((diffSec % 3600) / 60)
@@ -95,13 +102,15 @@ export function AdminLogs() {
   }, [activeSession])
 
   const filtered = sessions.filter((s) => {
-    if (filterUser !== 'all' && s.user !== filterUser) return false
+    if (!s) return false
+    const user = s.user || 'Administrator'
+    if (filterUser !== 'all' && user !== filterUser) return false
     if (filterStatus === 'active' && !s.active) return false
     if (filterStatus === 'completed' && s.active) return false
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      const matchUser = s.user.toLowerCase().includes(term)
-      const matchId = s.id.toLowerCase().includes(term)
+      const matchUser = user.toLowerCase().includes(term)
+      const matchId = (s.id || '').toLowerCase().includes(term)
       if (!matchUser && !matchId) return false
     }
     return true
@@ -239,12 +248,15 @@ export function AdminLogs() {
                 </tr>
               ) : (
                 filtered.map((s) => {
-                  const initials = getInitials(s.user)
-                  const gradient = getGradient(s.user)
+                  const user = s.user || 'Administrator'
+                  const initials = getInitials(user)
+                  const gradient = getGradient(user)
                   const duration = fmtDuration(s.startedAt, s.endedAt)
+                  const rawId = s.id || ''
+                  const shortId = rawId.length > 12 ? `${rawId.slice(0, 8)}…${rawId.slice(-4)}` : rawId || '—'
 
                   return (
-                    <tr key={s.id} className="transition-colors hover:bg-ink-50/50">
+                    <tr key={s.id || Math.random()} className="transition-colors hover:bg-ink-50/50">
                       {/* Admin member */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -254,9 +266,9 @@ export function AdminLogs() {
                             {initials}
                           </span>
                           <div>
-                            <p className="font-medium text-ink-950">{s.user}</p>
+                            <p className="font-medium text-ink-950">{user}</p>
                             <p className="text-[11px] text-ink-400">
-                              {s.user === currentUser ? 'Your current session' : 'Administrator'}
+                              {user === currentUser ? 'Your current session' : 'Administrator'}
                             </p>
                           </div>
                         </div>
@@ -294,7 +306,7 @@ export function AdminLogs() {
 
                       {/* Session ID */}
                       <td className="px-6 py-4 font-mono text-[11px] text-ink-400">
-                        {s.id.slice(0, 8)}…{s.id.slice(-4)}
+                        {shortId}
                       </td>
                     </tr>
                   )

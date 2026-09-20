@@ -6,6 +6,8 @@ import { AdminLayout } from '@/components/admin/AdminLayout'
 import { SessionProvider } from '@/contexts/SessionContext'
 import { AdminDataProvider } from '@/contexts/AdminDataContext'
 
+import { RouteErrorBoundary } from '@/components/ui'
+
 // ── Lazy-loaded pages (each becomes its own JS chunk) ──────────────────────
 const NotFound        = lazy(() => import('@/pages/NotFound').then(m => ({ default: m.NotFound })))
 const About           = lazy(() => import('@/pages/marketing/About').then(m => ({ default: m.About })))
@@ -49,6 +51,7 @@ function ScrollToTop() {
 export const router = createBrowserRouter([
   {
     element: <ScrollToTop />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // ── Public marketing routes
       { path: '/', element: <Home /> },
@@ -65,6 +68,7 @@ export const router = createBrowserRouter([
       // ── Protected admin shell
       {
         path: '/admin',
+        errorElement: <RouteErrorBoundary />,
         element: (
           <AdminDataProvider>
             <AuthGuard>
