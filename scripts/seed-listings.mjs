@@ -1,8 +1,33 @@
 // Seed script using Firestore REST API (bypasses gRPC / SDK rule-propagation delays)
 // Run with: node scripts/seed-listings.mjs
 
-const PROJECT_ID = 'twinspace-c113c'
-const API_KEY = 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+import { readFileSync, existsSync } from 'fs'
+import { resolve, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const envPath = resolve(__dirname, '../.env')
+
+const env = {}
+if (existsSync(envPath)) {
+  try {
+    readFileSync(envPath, 'utf-8').split('\n').forEach((line) => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) return
+      const [k, ...v] = trimmed.split('=')
+      if (k) env[k.trim()] = v.join('=').trim()
+    })
+  } catch {}
+}
+
+const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID
+const API_KEY = process.env.VITE_FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY
+
+if (!PROJECT_ID || !API_KEY) {
+  console.error('❌ Missing Firebase configuration. Please set VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_API_KEY in your environment or .env file.')
+  process.exit(1)
+}
+
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
 
 const now = new Date().toISOString()

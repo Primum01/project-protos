@@ -23,11 +23,20 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+.claude/
+.gemini/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.bak
+*.tmp
+*.local.json
+
+# Operating System files
+Thumbs.db
+Desktop.ini
 
 # Large binaries / local tools
 cloudflared.exe

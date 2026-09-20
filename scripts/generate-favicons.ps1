@@ -1,13 +1,28 @@
+param(
+    [string]$SourcePath = "$PSScriptRoot/../public/favicon.png"
+)
+
 Add-Type -AssemblyName System.Drawing
 
-$srcPath = "C:\Users\kipto\.gemini\antigravity-ide\brain\84de01d1-1e36-497f-9c9a-5b3a86fae966\.user_uploaded\media_1789897844668.png"
-$publicDir = "c:\Users\kipto\OneDrive\Documents\TwinSpace System\public"
+$publicDir = (Resolve-Path "$PSScriptRoot/../public").Path
+$srcPath = (Resolve-Path $SourcePath -ErrorAction SilentlyContinue)
 
-# Copy original to favicon.png and icon-512.png
-Copy-Item -Path $srcPath -Destination (Join-Path $publicDir "favicon.png") -Force
-Copy-Item -Path $srcPath -Destination (Join-Path $publicDir "icon-512.png") -Force
+if (-not $srcPath -or -not (Test-Path $srcPath)) {
+    Write-Error "Source image not found at '$SourcePath'. Please provide a valid source image."
+    exit 1
+}
 
-$srcImg = [System.Drawing.Image]::FromFile($srcPath)
+# Copy to favicon.png and icon-512.png if a different source path was supplied
+$destFavicon = Join-Path $publicDir "favicon.png"
+if ($srcPath.Path -ne $destFavicon) {
+    Copy-Item -Path $srcPath.Path -Destination $destFavicon -Force
+}
+$destIcon512 = Join-Path $publicDir "icon-512.png"
+if ($srcPath.Path -ne $destIcon512) {
+    Copy-Item -Path $srcPath.Path -Destination $destIcon512 -Force
+}
+
+$srcImg = [System.Drawing.Image]::FromFile($srcPath.Path)
 
 function Resize-Image($img, $width, $height, $destPath) {
     $bmp = New-Object System.Drawing.Bitmap $width, $height
