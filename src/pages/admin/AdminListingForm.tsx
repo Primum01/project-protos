@@ -1,13 +1,11 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createListing, getListingById, updateListing } from '@/lib/firebase/listings'
-import { uploadFile } from '@/lib/firebase/storage'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { extractEmbedSrc } from '@/lib/embed'
 import { cn } from '@/lib/cn'
 import { Button, Input } from '@/components/ui'
 import {
-  ACCENT_OPTIONS,
   ACCENT_GRADIENTS,
   DEFAULT_LISTING_FORM,
   LISTING_STATUSES,
@@ -220,12 +218,11 @@ function PreviewPanel({
                     </div>
                   </>
                 )}
-                {(form.contactName || form.contactPhone || form.contactEmail) && (
+                {(form.contactPhone || form.contactEmail) && (
                   <div className="mt-5 border-t border-ink-950/8 pt-4">
                     <p className="text-sm font-semibold text-ink-950">Contact</p>
-                    <p className="mt-1 text-sm text-ink-600">{form.contactName}</p>
-                    <p className="text-sm text-ink-500">{form.contactPhone}</p>
-                    <p className="text-sm text-ink-500">{form.contactEmail}</p>
+                    {form.contactPhone && <p className="text-sm text-ink-500">{form.contactPhone}</p>}
+                    {form.contactEmail && <p className="text-sm text-ink-500">{form.contactEmail}</p>}
                   </div>
                 )}
               </div>
@@ -253,11 +250,6 @@ const FORM_SECTIONS = [
     label: 'Contact & Payment',
     isComplete: (f: ListingFormData) => Boolean(f.contactName || f.contactPhone || f.paymentMethod),
   },
-  {
-    id: 'section-display',
-    label: 'Media & Presentation',
-    isComplete: (f: ListingFormData) => Boolean(f.photoUrl),
-  },
 ]
 
 /* ══════════════════════════════════════════════════════ main component */
@@ -274,13 +266,6 @@ export function AdminListingForm() {
   const [activeSection, setActiveSection] = useState('section-property-details')
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Photo upload state — upload eagerly on file pick, not on save
-  const [photoPreview, setPhotoPreview] = useState<string>('')
-  const [photoUploading, setPhotoUploading] = useState(false)
-  const [photoUploadProgress, setPhotoUploadProgress] = useState(0)
-  const [photoError, setPhotoError] = useState('')
-  const photoInputRef = useRef<HTMLInputElement>(null)
-
   // Load existing listing in edit mode
   useEffect(() => {
     if (!id) return
@@ -294,7 +279,6 @@ export function AdminListingForm() {
           const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = listing as Listing
           void _id; void _c; void _u
           setForm({ ...DEFAULT_LISTING_FORM, ...rest, embedCode: rest.embedCode ?? '', package: rest.package ?? 'monthly' })
-          if (rest.photoUrl) setPhotoPreview(rest.photoUrl)
         }
       })
       .catch(() => setError('Failed to load listing.'))
@@ -343,14 +327,9 @@ export function AdminListingForm() {
       setError('Firebase is not configured. Add .env.local credentials to save listings.')
       return
     }
-    if (photoUploading) {
-      setError('Please wait for the photo to finish uploading.')
-      return
-    }
     setSaving(true)
     setError('')
     try {
-      // Photo URL is already resolved eagerly; just write Firestore data
       const data: ListingFormData = { ...form, published: publish }
       if (isEditing && id) {
         await updateListing(id, data)
@@ -362,49 +341,6 @@ export function AdminListingForm() {
       setError(e instanceof Error ? e.message : 'Save failed. Check your Firebase config.')
     } finally {
       setSaving(false)
-    }
-  }
-
-  /**
-   * Called when the user picks a file. Immediately starts the Storage upload
-   * and updates form.photoUrl when done. This keeps the save flow fast.
-   */
-  async function handlePhotoChange(file: File | null) {
-    setPhotoError('')
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      setPhotoError('Image is too large. Maximum size is 5 MB.')
-      return
-    }
-    if (!file.type.startsWith('image/')) {
-      setPhotoError('Please select a valid image file (JPEG, PNG, WebP, etc.).')
-      return
-    }
-
-    // Show a local preview instantly
-    const localUrl = URL.createObjectURL(file)
-    setPhotoPreview(localUrl)
-    setPhotoUploading(true)
-    setPhotoUploadProgress(0)
-
-    try {
-      const uploadedUrl = await uploadFile(
-        `listings/${crypto.randomUUID()}-${file.name}`,
-        file,
-        (p) => setPhotoUploadProgress(Math.round(p * 100)),
-      )
-      // Store the real CDN URL in form state so save() can use it
-      set('photoUrl', uploadedUrl)
-      setPhotoPreview(uploadedUrl)
-    } catch (err) {
-      setPhotoError(
-        err instanceof Error ? err.message : 'Upload failed. Check Storage rules and try again.',
-      )
-      setPhotoPreview('')
-      set('photoUrl', '')
-    } finally {
-      setPhotoUploading(false)
-      setPhotoUploadProgress(0)
     }
   }
 
@@ -715,132 +651,6 @@ export function AdminListingForm() {
             </div>
           </FormSection>
 
-          {/* ── Display options */}
-          <FormSection id="section-display" title="Display Options">
-            {/* ── Photo upload */}
-            <div>
-              <p className="mb-2 text-sm font-medium text-ink-800">Property photo</p>
-              <p className="mb-3 text-xs text-ink-400">Used as the card thumbnail. Max 1 MB · JPEG, PNG, or WebP.</p>
-
-              {/* Drop zone */}
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => photoInputRef.current?.click()}
-                onKeyDown={(e) => e.key === 'Enter' && photoInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  handlePhotoChange(e.dataTransfer.files[0] ?? null)
-                }}
-                className={cn(
-                  'relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors',
-                  photoPreview ? 'border-brand-400 p-0' : 'border-ink-200 p-8 hover:border-brand-400',
-                )}
-              >
-                {photoPreview ? (
-                  <>
-                    <img
-                      src={photoPreview}
-                      alt="Property preview"
-                      className="h-48 w-full object-cover"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-ink-950/40 opacity-0 transition-opacity hover:opacity-100">
-                      <span className="rounded-full bg-white/90 px-4 py-2 text-xs font-medium text-ink-950">
-                        Click to change photo
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="mb-3 text-ink-300" aria-hidden="true">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <p className="text-sm font-medium text-ink-600">Click to upload or drag &amp; drop</p>
-                    <p className="mt-1 text-xs text-ink-400">Max 1 MB</p>
-                  </>
-                )}
-              </div>
-
-              {/* Hidden file input */}
-              <input
-                ref={photoInputRef}
-                id="listing-photo"
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
-              />
-
-              {/* Upload progress bar */}
-              {photoUploading && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-ink-500 mb-1">
-                    <span>Uploading…</span>
-                    <span>{photoUploadProgress}%</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
-                    <div
-                      className="h-full bg-brand-500 transition-all duration-300"
-                      style={{ width: `${photoUploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Validation error */}
-              {photoError && (
-                <p className="mt-2 text-xs text-red-600">{photoError}</p>
-              )}
-
-              {/* Remove button */}
-              {photoPreview && !photoUploading && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhotoPreview('')
-                    set('photoUrl', '')
-                    if (photoInputRef.current) photoInputRef.current.value = ''
-                  }}
-                  className="mt-2 text-xs text-red-500 hover:text-red-700 transition-colors"
-                >
-                  Remove photo
-                </button>
-              )}
-            </div>
-
-            {/* ── Accent colour */}
-            <div>
-              <p className="mb-3 text-sm font-medium text-ink-800">Card accent colour</p>
-              <p className="mb-3 text-xs text-ink-400">Used as the gradient background when no photo is uploaded.</p>
-              <div className="flex gap-3">
-                {ACCENT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => set('accent', opt.value)}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 rounded-lg border-2 p-1 transition-all',
-                      form.accent === opt.value
-                        ? 'border-brand-500 scale-105'
-                        : 'border-transparent hover:border-ink-950/20',
-                    )}
-                    title={opt.label}
-                    aria-label={opt.label}
-                  >
-                    <span
-                      className="h-10 w-10 rounded-md"
-                      style={{ background: `linear-gradient(135deg, ${opt.from}, ${opt.to})` }}
-                    />
-                    <span className="text-xs text-ink-500">{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </FormSection>
-
           {/* ── Error */}
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
@@ -866,16 +676,16 @@ export function AdminListingForm() {
                 id="save-draft-btn"
                 variant="secondary"
                 onClick={() => save(false)}
-                disabled={saving || photoUploading}
+                disabled={saving}
               >
-                {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : 'Save as draft'}
+                {saving ? 'Saving…' : 'Save as draft'}
               </Button>
               <Button
                 id="save-publish-btn"
                 onClick={() => save(true)}
-                disabled={saving || photoUploading}
+                disabled={saving}
               >
-                {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : isEditing ? 'Save & publish' : 'Publish listing'}
+                {saving ? 'Saving…' : isEditing ? 'Save & publish' : 'Publish listing'}
               </Button>
             </div>
           </div>
@@ -907,15 +717,9 @@ export function AdminListingForm() {
               id="side-save-publish-btn"
               className="w-full"
               onClick={() => save(true)}
-              disabled={saving || photoUploading}
+              disabled={saving}
             >
-              {saving
-                ? 'Saving…'
-                : photoUploading
-                  ? 'Uploading photo…'
-                  : isEditing
-                    ? 'Save & publish'
-                    : 'Publish listing'}
+              {saving ? 'Saving…' : isEditing ? 'Save & publish' : 'Publish listing'}
             </Button>
 
             <Button
@@ -923,9 +727,9 @@ export function AdminListingForm() {
               variant="secondary"
               className="w-full"
               onClick={() => save(false)}
-              disabled={saving || photoUploading}
+              disabled={saving}
             >
-              {saving ? 'Saving…' : photoUploading ? 'Uploading photo…' : 'Save as draft'}
+              {saving ? 'Saving…' : 'Save as draft'}
             </Button>
 
             <button

@@ -34,11 +34,11 @@ function ContactPromptModal({
 
   const whatsAppNum = listing.contactPhone ? formatWhatsAppNumber(listing.contactPhone) : ''
   const whatsAppMsg = encodeURIComponent(
-    `Hi ${listing.contactName ? listing.contactName + ', ' : ''}I am viewing ${listing.name} on TwinSpace and would like to arrange a viewing or ask a few questions.`
+    `Hi, I am viewing ${listing.name} on TwinSpace and would like to arrange a viewing or ask a few questions.`
   )
   const emailSubject = encodeURIComponent(`Inquiry regarding ${listing.name}`)
   const emailBody = encodeURIComponent(
-    `Hello ${listing.contactName || 'Host'},\n\nI am interested in ${listing.name} (${listing.location ? listing.location + ', ' : ''}${listing.city}) listed on TwinSpace.\n\nPlease share more details or availability for a viewing.\n\nThank you.`
+    `Hello,\n\nI am interested in ${listing.name} (${listing.location ? listing.location + ', ' : ''}${listing.city}) listed on TwinSpace.\n\nPlease share more details or availability for a viewing.\n\nThank you.`
   )
 
   function copyToClipboard(text: string, field: 'phone' | 'email') {
@@ -88,11 +88,11 @@ function ContactPromptModal({
         {/* Header */}
         <div className="flex items-start gap-3.5 pr-8">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 font-semibold text-lg">
-            {listing.contactName ? listing.contactName.charAt(0).toUpperCase() : '🏠'}
+            🏠
           </div>
           <div>
             <h3 id="contact-modal-title" className="text-lg font-semibold text-ink-950">
-              Contact {listing.contactName || 'Property Host'}
+              Contact Property Host
             </h3>
             <p className="mt-0.5 text-xs text-ink-500">
               Direct inquiry for <span className="font-medium text-ink-800">{listing.name}</span>
@@ -441,14 +441,8 @@ export function ListingDetail() {
             Get in touch directly with the property host to arrange a viewing or ask any questions.
           </p>
 
-          {(listing.contactName || listing.contactPhone || listing.contactEmail) && (
+          {(listing.contactPhone || listing.contactEmail) && (
             <div className="mt-5 space-y-2 border-t border-ink-950/8 pt-5 text-sm">
-              {listing.contactName && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Host:</span>
-                  <span className="font-medium text-ink-950">{listing.contactName}</span>
-                </div>
-              )}
               {listing.contactPhone && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Phone:</span>
@@ -476,7 +470,7 @@ export function ListingDetail() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
             </svg>
-            <span>Contact {listing.contactName || 'Host'}</span>
+            <span>Contact Host</span>
           </Button>
 
           <Link
