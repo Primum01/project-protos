@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-import { Button } from './Button'
 import { Container } from './Container'
 
 const navLinks = [
@@ -84,45 +83,34 @@ export function NavBar({ overlay = false }: NavBarProps) {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3">
-            <Button
-              href="/contact"
-              size="sm"
-              variant={isLight ? 'secondary' : 'primary'}
-              className={cn('hidden sm:inline-flex', isLight && 'bg-white/95 text-ink-950 hover:bg-white')}
-            >
-              Get started
-            </Button>
-
-            <button
-              type="button"
-              className={cn(
-                'inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors md:hidden',
-                isLight ? 'text-white hover:bg-white/10' : 'text-ink-950 hover:bg-ink-950/5',
+          <button
+            type="button"
+            className={cn(
+              'inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors md:hidden',
+              isLight ? 'text-white hover:bg-white/10' : 'text-ink-950 hover:bg-ink-950/5',
+            )}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              {menuOpen ? (
+                <path
+                  d="M5 5l10 10M15 5L5 15"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              ) : (
+                <path
+                  d="M2.5 5h15M2.5 10h15M2.5 15h15"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               )}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                {menuOpen ? (
-                  <path
-                    d="M5 5l10 10M15 5L5 15"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                ) : (
-                  <path
-                    d="M2.5 5h15M2.5 10h15M2.5 15h15"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                )}
-              </svg>
-            </button>
-          </div>
+            </svg>
+          </button>
         </nav>
       </Container>
 
