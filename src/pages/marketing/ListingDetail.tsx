@@ -291,6 +291,8 @@ export function ListingDetail() {
     )
   }
 
+  const embedSrc = extractEmbedSrc(listing.embedCode || listing.tourUrl)
+
   return (
     <MarketingLayout>
       <div className="h-20" />
@@ -327,7 +329,6 @@ export function ListingDetail() {
           )}
         >
           {(() => {
-            const embedSrc = extractEmbedSrc(listing.embedCode || listing.tourUrl)
             if (embedSrc) {
               return (
                 <div className="relative h-full w-full">
@@ -343,7 +344,7 @@ export function ListingDetail() {
                       href={listing.tourUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
+                      className="hidden sm:inline-flex absolute bottom-4 right-4 items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
                     >
                       <span>Open tour in new tab</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -381,6 +382,25 @@ export function ListingDetail() {
             )
           })()}
         </div>
+
+        {/* Mobile: Open tour in new tab placed just below the tour card */}
+        {listing.tourUrl && embedSrc && (
+          <div className="mt-3 sm:hidden">
+            <a
+              href={listing.tourUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-ink-950/10 bg-paper px-4 py-2.5 text-xs font-medium text-ink-800 shadow-xs active:bg-ink-100 hover:border-ink-950/20 hover:text-ink-950 transition-colors"
+            >
+              <span>Open tour in new tab</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+        )}
       </Container>
 
       {/* Body */}
