@@ -6,6 +6,7 @@ import { Section } from '@/components/ui'
 export function TourPreviewMockup() {
   return (
     <Section
+      id="guest-experience"
       eyebrow="The guest experience"
       title="A 3D tour that feels like walking through the door"
       description="Guests orbit, pan, and zoom through every room, follow hotspots for details, and jump straight to booking, no account required."
