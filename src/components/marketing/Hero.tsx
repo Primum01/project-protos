@@ -51,7 +51,7 @@ export function Hero() {
           <img
             src="/diaspace-logo.png"
             alt="DiaSpace — Building Possibilities, Bridging Distances"
-            className="h-10 sm:h-12 w-auto object-contain transition-opacity duration-300 hover:opacity-100"
+            className="w-56 sm:w-72 md:w-80 max-w-[85vw] h-auto object-contain transition-opacity duration-300 hover:opacity-100"
           />
         </div>
       </div>
