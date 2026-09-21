@@ -65,6 +65,18 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // INVOICES & RECEIPTS
+    // =========================================================================
+    // PUBLIC USERS: Completely denied access.
+    // ADMIN: Can read, create, update, and delete invoice and receipt records.
+    match /invoices/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /receipts/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // =========================================================================
     // DEFAULT DENIAL
     // =========================================================================
     // Any other collection or document (such as users, internal collections, etc.)
