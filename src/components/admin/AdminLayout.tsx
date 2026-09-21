@@ -88,6 +88,29 @@ function IconClockHistory() {
   )
 }
 
+function IconInvoice() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  )
+}
+
+function IconReceipt() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
+      <line x1="8" y1="8" x2="16" y2="8" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+      <line x1="8" y1="16" x2="12" y2="16" />
+    </svg>
+  )
+}
+
 /* ── Session clock ────────────────────────────────────────────────────────── */
 function SessionClock({ startedAt }: { startedAt?: string }) {
   const [elapsed, setElapsed] = useState('')
@@ -125,6 +148,8 @@ const navItems = [
   { to: '/admin/listings', label: 'Listings', icon: <IconBuilding /> },
   { to: '/admin/dashboard', label: 'Dashboard', icon: <IconGrid /> },
   { to: '/admin/analytics', label: 'Analytics', icon: <IconBarChart /> },
+  { to: '/admin/invoice', label: 'Invoice', icon: <IconInvoice /> },
+  { to: '/admin/receipt', label: 'Receipt', icon: <IconReceipt /> },
   { to: '/admin/sorting', label: 'Sorting', icon: <IconSort /> },
   { to: '/admin/messages', label: 'Messages', icon: <IconMessage /> },
   { to: '/admin/pricing', label: 'Shoot Pricing', icon: <IconTag /> },
@@ -142,6 +167,8 @@ export function AdminLayout() {
     void import('@/pages/admin/AdminListings')
     void import('@/pages/admin/AdminListingForm')
     void import('@/pages/admin/AdminAnalytics')
+    void import('@/pages/admin/AdminInvoice')
+    void import('@/pages/admin/AdminReceipt')
     void import('@/pages/admin/AdminMessages')
     void import('@/pages/admin/AdminSorting')
     void import('@/pages/admin/AdminShootPricing')

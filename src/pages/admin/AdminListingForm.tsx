@@ -562,6 +562,18 @@ export function AdminListingForm() {
               />
             </div>
 
+            {/* Unique Account Number (internal only, not visible publicly) */}
+            <Input
+              id="listing-account-number"
+              label="Unique Account Number"
+              placeholder="e.g. ACC-08492"
+              value={form.accountNumber ?? ''}
+              onChange={(e) => set('accountNumber', e.target.value)}
+            />
+            <p className="-mt-2 text-xs text-ink-400">
+              Internal client account identifier. Never shown on public tour pages.
+            </p>
+
             {/* Date paid */}
             <Input
               id="listing-date-paid"

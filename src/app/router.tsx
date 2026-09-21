@@ -26,6 +26,8 @@ const AdminSorting    = lazy(() => import('@/pages/admin/AdminSorting').then(m =
 const AdminShootPricing = lazy(() => import('@/pages/admin/AdminShootPricing').then(m => ({ default: m.AdminShootPricing })))
 const AdminLogs       = lazy(() => import('@/pages/admin/AdminLogs').then(m => ({ default: m.AdminLogs })))
 const AdminAnalytics  = lazy(() => import('@/pages/admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })))
+const AdminInvoice    = lazy(() => import('@/pages/admin/AdminInvoice').then(m => ({ default: m.AdminInvoice })))
+const AdminReceipt    = lazy(() => import('@/pages/admin/AdminReceipt').then(m => ({ default: m.AdminReceipt })))
 
 /** Minimal spinner shown while a lazy chunk is being fetched. */
 function PageSpinner() {
@@ -82,6 +84,8 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/admin/listings" replace /> },
           { path: 'dashboard', element: <AdminDashboard /> },
           { path: 'analytics', element: <AdminAnalytics /> },
+          { path: 'invoice', element: <AdminInvoice /> },
+          { path: 'receipt', element: <AdminReceipt /> },
           { path: 'listings', element: <AdminListings /> },
           { path: 'listings/new', element: <AdminListingForm /> },
           { path: 'listings/:id', element: <AdminListingForm /> },
