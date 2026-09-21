@@ -43,6 +43,17 @@ export function Hero() {
           Turn any listing into an interactive 3D tour guests can explore from anywhere,
           then send them straight to booking.
         </p>
+
+        <div className="mt-8 sm:mt-10 flex flex-col items-center justify-center gap-2 sm:gap-2.5">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
+            A PRODUCT OF
+          </span>
+          <img
+            src="/diaspace-logo.png"
+            alt="DiaSpace — Building Possibilities, Bridging Distances"
+            className="h-10 sm:h-12 w-auto object-contain transition-opacity duration-300 hover:opacity-100"
+          />
+        </div>
       </div>
     </section>
   )
