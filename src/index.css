@@ -93,8 +93,8 @@
 /* ── Print / PDF Export Styles ────────────────────────────────────────────── */
 @media print {
   @page {
-    margin: 12mm 15mm;
-    size: auto;
+    size: A4 portrait;
+    margin: 8mm 10mm;
   }
   .no-print,
   aside,
@@ -109,11 +109,64 @@
     color: #0b0b0c !important;
     overflow: visible !important;
     height: auto !important;
+    min-height: 0 !important;
     max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* A4 Document Print Formatting */
+  .a4-print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .a4-document-sheet {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(11, 11, 12, 0.14) !important;
+  }
+
+  .a4-document-sheet input,
+  .a4-document-sheet textarea {
+    border-bottom: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .a4-document-sheet input[type='number'] {
+    -moz-appearance: textfield !important;
+  }
+
+  .a4-document-sheet input[type='number']::-webkit-inner-spin-button,
+  .a4-document-sheet input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+  }
+
+  .a4-document-sheet table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .a4-document-sheet tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
