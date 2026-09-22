@@ -22,6 +22,8 @@ if (existsSync(envPath)) {
 
 const PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || env.VITE_FIREBASE_PROJECT_ID
 const API_KEY = process.env.VITE_FIREBASE_API_KEY || env.VITE_FIREBASE_API_KEY
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.VITE_ADMIN_EMAIL || env.ADMIN_EMAIL || env.VITE_ADMIN_EMAIL
+const password = process.argv[2] || process.env.ADMIN_PASSWORD
 
 if (!PROJECT_ID || !API_KEY) {
   console.error('❌ Missing Firebase configuration. Please set VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_API_KEY in your environment or .env file.')
@@ -29,6 +31,30 @@ if (!PROJECT_ID || !API_KEY) {
 }
 
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`
+
+let authHeaders = {}
+if (password && ADMIN_EMAIL) {
+  console.log(`🔐 Authenticating as ${ADMIN_EMAIL}...`)
+  try {
+    const authRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: ADMIN_EMAIL, password, returnSecureToken: true }),
+      },
+    )
+    const authData = await authRes.json()
+    if (authRes.ok) {
+      authHeaders = { Authorization: `Bearer ${authData.idToken}` }
+      console.log('✅ Authenticated as admin.\n')
+    } else {
+      console.warn('⚠️ Authentication failed:', authData.error?.message ?? authRes.status)
+    }
+  } catch (err) {
+    console.warn('⚠️ Auth request error:', err.message)
+  }
+}
 
 const now = new Date().toISOString()
 
@@ -119,7 +145,7 @@ for (const listing of listings) {
 
   const res = await fetch(url, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body: JSON.stringify(toFirestoreDoc(data)),
   })
 
