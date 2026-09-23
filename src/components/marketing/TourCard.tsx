@@ -34,7 +34,20 @@ export function TourCard({ tour }: { tour: TourCardData }) {
   const [copied, setCopied] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const embedSrc = extractEmbedSrc(tour.embedCode || tour.externalUrl)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const embedSrc = extractEmbedSrc(tour.embedCode || tour.externalUrl, { isMobile })
   const tourLink = tour.externalUrl || embedSrc
 
   // Close kebab menu when clicking outside
@@ -80,7 +93,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
             className="h-full w-full border-0"
             allowFullScreen
             allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
             loading="lazy"
           />
         ) : tour.photoUrl ? (

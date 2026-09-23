@@ -291,7 +291,20 @@ export function ListingDetail() {
     )
   }
 
-  const embedSrc = extractEmbedSrc(listing.embedCode || listing.tourUrl)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const embedSrc = extractEmbedSrc(listing.embedCode || listing.tourUrl, { isMobile })
 
   return (
     <MarketingLayout>
@@ -338,7 +351,7 @@ export function ListingDetail() {
                     className="h-full w-full border-0 rounded-xl"
                     allowFullScreen
                     allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
                     loading="lazy"
                   />
                   {listing.tourUrl && (
