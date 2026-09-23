@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useAdminListings } from '@/contexts/AdminDataContext'
 import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { formatExportFilename } from '@/lib/exportFilename'
+import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
 
 type TimeRange = '1w' | '1m' | '3m' | '6m' | '1y'
 
@@ -81,9 +83,17 @@ export function AdminAnalytics() {
 
   function handleExportPDF() {
     const origTitle = document.title
-    const reportSubject = selectedListing ? selectedListing.name : 'Tour Performance Report'
-    document.title = `${reportSubject} — TwinSpace`
+    const clientOrProp = clientName.trim() || selectedListing?.name || 'All Published Properties'
+    const tourType = selectedListing?.propertyType
+      ? `${selectedListing.propertyType} 3D Tour`
+      : '3D Virtual Tour'
+    const pdfFilename = formatExportFilename({
+      clientOrProperty: clientOrProp,
+      tourType,
+      date: new Date(),
+    })
 
+    document.title = pdfFilename
     window.print()
 
     setTimeout(() => {
@@ -318,15 +328,21 @@ export function AdminAnalytics() {
         </div>
       </div>
 
-      {/* ── Print Footer (Clean, with TwinSpace Logo) ── */}
-      <div className="print-only mt-10 border-t border-ink-950/15 pt-6 text-center text-xs text-ink-400">
+      {/* ── Print Footer (Clean, with TwinSpace Logo & DiaSpace Watermark) ── */}
+      <div className="print-only mt-8 border-t border-ink-950/15 pt-5 text-center text-xs text-ink-400 space-y-3">
         <div className="flex items-center justify-center gap-2">
-          <img src="/twinspace-analytics-logo.png" alt="TwinSpace 360" className="h-6 w-auto object-contain" />
+          <img src="/twinspace-analytics-logo.png" alt="TwinSpace 360" className="h-5 w-auto object-contain" />
           <span className="font-medium text-ink-600">· Professional 3D Property Intelligence</span>
         </div>
-        <p className="mt-1">
+        <p className="text-[11px]">
           Confidential property walkthrough telemetry report prepared for client review.
         </p>
+        <SheetDiaspaceWatermark />
+      </div>
+
+      {/* ── Screen Footer Watermark Preview ── */}
+      <div className="no-print mt-8 max-w-4xl mx-auto">
+        <SheetDiaspaceWatermark />
       </div>
     </div>
   )

@@ -3,6 +3,8 @@ import { useAdminFinance, useAdminListings } from '@/contexts/AdminDataContext'
 import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { generateNextReceiptNumber } from '@/lib/firebase/finance'
+import { formatExportFilename } from '@/lib/exportFilename'
+import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
 import type { FinanceItem, SavedReceipt } from '@/types/finance'
 
 function formatMoney(amount: number): string {
@@ -340,7 +342,30 @@ export function AdminReceipt() {
 
   function handleExportPDF() {
     const origTitle = document.title
-    document.title = `${receiptNumber || 'Receipt'} — ${clientName || 'TwinSpace'}`
+    const clientOrProp = (clientName.trim() && propertyName.trim())
+      ? `${clientName.trim()} - ${propertyName.trim()}`
+      : (clientName.trim() || propertyName.trim() || 'Client')
+
+    const linkedListing = listings.find((l) => l.id === selectedListingId)
+    const tourType = linkedListing?.propertyType
+      ? `${linkedListing.propertyType} 3D Tour`
+      : items[0]?.description
+        ? items[0].description.toLowerCase().includes('matterport')
+          ? 'Matterport 3D Tour'
+          : items[0].description.toLowerCase().includes('virtual tour')
+            ? '3D Virtual Tour'
+            : items[0].description.toLowerCase().includes('3d')
+              ? '3D Tour'
+              : items[0].description.split('—')[0].split('&')[0].trim() || '3D Virtual Tour'
+        : '3D Virtual Tour'
+
+    const pdfFilename = formatExportFilename({
+      clientOrProperty: clientOrProp,
+      tourType,
+      date: fullPaymentDate || receiptDate || new Date(),
+    })
+
+    document.title = pdfFilename
     window.print()
     setTimeout(() => {
       document.title = origTitle
@@ -1018,6 +1043,9 @@ export function AdminReceipt() {
                 className="w-full text-ink-400 bg-transparent border-none p-0 focus:outline-none disabled:opacity-90"
               />
             </div>
+
+            {/* ── Product of DiaSpace Watermark Footer ── */}
+            <SheetDiaspaceWatermark />
           </div>
         </div>
       )}
