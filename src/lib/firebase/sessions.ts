@@ -1,5 +1,6 @@
 import { where } from 'firebase/firestore'
 import { getCollection, setDocument, deleteDocument } from './firestore'
+import { generateUUID } from '@/lib/uuid'
 
 const COL = 'admin_sessions'
 
@@ -19,7 +20,7 @@ export async function getActiveSession(): Promise<AdminSession | null> {
 
 /** Opens a new session for the given user. Returns the new session document ID. */
 export async function startSession(user: string): Promise<string> {
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   await setDocument(COL, id, {
     id,
     user,
@@ -50,7 +51,7 @@ export async function getAllSessions(): Promise<AdminSession[]> {
     return results
       .filter((s): s is AdminSession => Boolean(s && typeof s === 'object'))
       .map((s) => ({
-        id: String(s.id || crypto.randomUUID()),
+        id: String(s.id || generateUUID()),
         user: String(s.user || 'Administrator'),
         startedAt: s.startedAt || new Date().toISOString(),
         endedAt: s.endedAt || null,

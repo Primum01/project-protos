@@ -1,5 +1,6 @@
 import { getCollection, setDocument, subscribeCollection } from './firestore'
 import { isFirebaseConfigured } from './config'
+import { generateUUID } from '@/lib/uuid'
 
 const COL = 'tour_analytics'
 const LOCAL_STORAGE_KEY = 'ts_tour_analytics_v1'
@@ -37,7 +38,7 @@ function saveLocalRecord(record: AnalyticsRecord): void {
 
 /** Record a real tour view event */
 export async function recordTourView(tourId: string, tourTitle?: string): Promise<void> {
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   const record: AnalyticsRecord = {
     id,
     type: 'tour_view',
@@ -65,7 +66,7 @@ export async function recordSessionDuration(
 ): Promise<void> {
   if (durationSeconds < 2) return // Ignore instant bounces < 2s
 
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   const record: AnalyticsRecord = {
     id,
     type: 'session_duration',
@@ -88,7 +89,7 @@ export async function recordSessionDuration(
 
 /** Record when a user shares or copies a tour link */
 export async function recordLinkShared(tourId: string, tourTitle?: string): Promise<void> {
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   const record: AnalyticsRecord = {
     id,
     type: 'link_shared',

@@ -431,7 +431,7 @@ export function ListingDetail() {
             {listing.description}
           </p>
 
-          {listing.amenities.length > 0 && (
+          {Array.isArray(listing.amenities) && listing.amenities.length > 0 && (
             <>
               <h2 className="mt-10 text-lg font-semibold text-ink-950">Amenities</h2>
               <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">

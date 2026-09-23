@@ -5,6 +5,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { generateNextReceiptNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
+import { generateUUID } from '@/lib/uuid'
 import type { FinanceItem, SavedReceipt } from '@/types/finance'
 
 function formatMoney(amount: number): string {
@@ -26,7 +27,7 @@ export function AdminReceipt() {
   const [activeTab, setActiveTab] = useState<'editor' | 'archive'>('editor')
 
   // Receipt ID & state
-  const [currentId, setCurrentId] = useState<string>(() => crypto.randomUUID())
+  const [currentId, setCurrentId] = useState<string>(() => generateUUID())
   const [isSaved, setIsSaved] = useState<boolean>(false)
   const [isEditing, setIsEditing] = useState<boolean>(true)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -180,7 +181,7 @@ export function AdminReceipt() {
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 2500 },
+      { id: generateUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 2500 },
     ])
   }
 
@@ -202,7 +203,7 @@ export function AdminReceipt() {
 
   function startNewReceipt() {
     const nextNum = generateNextReceiptNumber(receipts)
-    setCurrentId(crypto.randomUUID())
+    setCurrentId(generateUUID())
     setReceiptNumber(nextNum)
     setReceiptDate(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase())
     setFullPaymentDate(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))

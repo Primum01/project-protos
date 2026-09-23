@@ -288,7 +288,7 @@ function listingToCard(listing: Listing): TourCardData {
     bathrooms: listing.bathrooms,
     accent: listing.accent,
     description: listing.description,
-    amenities: listing.amenities,
+    amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
     externalUrl: listing.tourUrl || undefined,
     photoUrl: listing.photoUrl || undefined,
     embedCode: listing.embedCode || undefined,
@@ -301,7 +301,7 @@ function matchesSearch(text: string, query: string) {
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export function Tours() {
-  const { listings, loading } = usePublishedListings()
+  const { listings, loading, error } = usePublishedListings()
 
   usePageMeta({
     title: 'Browse 3D Property Tours — TwinSpace',
@@ -338,6 +338,22 @@ export function Tours() {
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-72 animate-pulse rounded-xl bg-ink-100" />
             ))}
+          </div>
+        ) : error && listings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 py-16 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-xl text-amber-600 mb-3">
+              ⚠️
+            </div>
+            <p className="font-medium text-ink-800">Unable to load properties</p>
+            <p className="mt-1 text-sm text-ink-500 max-w-sm">
+              We encountered a temporary connection issue. Please check your internet or retry.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-full bg-ink-950 px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Retry
+            </button>
           </div>
         ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 py-20 text-center">

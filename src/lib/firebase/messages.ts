@@ -1,6 +1,7 @@
 import { orderBy } from "firebase/firestore"
 import type { ContactMessage } from "@/types/message"
 import { deleteDocument, setDocument, subscribeCollection } from "./firestore"
+import { generateUUID } from "@/lib/uuid"
 
 const COL = "messages"
 
@@ -8,7 +9,7 @@ const COL = "messages"
 export async function createMessage(
   data: Omit<ContactMessage, "id" | "read" | "createdAt">,
 ): Promise<string> {
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   const now = new Date().toISOString()
   await setDocument(COL, id, { ...data, id, read: false, createdAt: now })
   return id

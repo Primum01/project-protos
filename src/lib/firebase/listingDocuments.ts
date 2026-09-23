@@ -13,6 +13,7 @@ import {
 import { getFirebaseApp, isFirebaseConfigured } from './config'
 import { deleteStorageFile, uploadFile } from './storage'
 import type { ListingDocument } from '@/types/listing'
+import { generateUUID } from '@/lib/uuid'
 
 function db() {
   return getFirestore(getFirebaseApp())
@@ -69,7 +70,7 @@ export async function uploadListingDocument(
     throw new Error(check.error || 'Invalid document file.')
   }
 
-  const docId = crypto.randomUUID()
+  const docId = generateUUID()
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
   const storagePath = `listings/${listingId}/documents/${docId}_${sanitizedName}`
 

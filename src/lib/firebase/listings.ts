@@ -1,12 +1,13 @@
 import { orderBy, where } from 'firebase/firestore'
 import type { Listing, ListingFormData } from '@/types/listing'
 import { deleteDocument, getDocument, setDocument, subscribeCollection } from './firestore'
+import { generateUUID } from '@/lib/uuid'
 
 const COL = 'listings'
 
 /** Create a new listing. Returns the generated ID. */
 export async function createListing(data: ListingFormData): Promise<string> {
-  const id = crypto.randomUUID()
+  const id = generateUUID()
   const now = new Date().toISOString()
   await setDocument(COL, id, { ...data, id, createdAt: now, updatedAt: now })
   return id

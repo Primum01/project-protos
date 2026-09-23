@@ -15,6 +15,7 @@ import {
 } from '@/lib/firebase/sessions'
 import { signOut } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { generateUUID } from '@/lib/uuid'
 
 const ID_KEY          = 'ts_session_id'
 const USER_KEY        = 'ts_session_user'
@@ -104,7 +105,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const startedAt = getStored(STARTED_KEY)
     if (user) {
       return {
-        id: id || crypto.randomUUID(),
+        id: id || generateUUID(),
         user,
         startedAt: startedAt || new Date().toISOString(),
         endedAt: null,
@@ -244,7 +245,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setCurrentUser(user)
 
     // 3. Create the Firestore session record (best-effort — never blocks access).
-    const localId = crypto.randomUUID() as string
+    const localId = generateUUID()
     let finalId: string = localId
     try {
       finalId = await startSession(user)

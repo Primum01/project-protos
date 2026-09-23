@@ -5,6 +5,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { generateNextInvoiceNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
+import { generateUUID } from '@/lib/uuid'
 import type { FinanceItem, SavedInvoice } from '@/types/finance'
 
 function formatMoney(amount: number): string {
@@ -26,7 +27,7 @@ export function AdminInvoice() {
   const [activeTab, setActiveTab] = useState<'editor' | 'archive'>('editor')
 
   // Invoice ID & state
-  const [currentId, setCurrentId] = useState<string>(() => crypto.randomUUID())
+  const [currentId, setCurrentId] = useState<string>(() => generateUUID())
   const [isSaved, setIsSaved] = useState<boolean>(false)
   const [isEditing, setIsEditing] = useState<boolean>(true)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -179,7 +180,7 @@ export function AdminInvoice() {
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 2500 },
+      { id: generateUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 2500 },
     ])
   }
 
@@ -201,7 +202,7 @@ export function AdminInvoice() {
 
   function startNewInvoice() {
     const nextNum = generateNextInvoiceNumber(invoices)
-    setCurrentId(crypto.randomUUID())
+    setCurrentId(generateUUID())
     setInvoiceNumber(nextNum)
     setInvoiceDate(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase())
     setFullInvoiceDate(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))

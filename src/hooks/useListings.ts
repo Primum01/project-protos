@@ -30,15 +30,32 @@ export function useAllListings() {
 export function usePublishedListings() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(isFirebaseConfigured)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return
-    const unsub = subscribePublishedListings((data) => {
-      setListings(data)
+    if (!isFirebaseConfigured) {
       setLoading(false)
-    })
-    return unsub
+      return
+    }
+
+    let unsub: (() => void) | undefined
+    try {
+      unsub = subscribePublishedListings((data) => {
+        setListings(data)
+        setLoading(false)
+        setError(null)
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to load published listings'
+      console.error('[usePublishedListings] Failed to initialize Firestore subscription:', e)
+      setError(msg)
+      setLoading(false)
+    }
+
+    return () => {
+      if (unsub) unsub()
+    }
   }, [])
 
-  return { listings, loading }
+  return { listings, loading, error }
 }
