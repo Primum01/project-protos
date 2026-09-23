@@ -8,15 +8,25 @@ export function extractEmbedSrc(input?: string | null): string {
   if (!trimmed) return ''
 
   // 1. Try extracting src from an <iframe ... src="..."> snippet
+  let src = ''
   const srcMatch = trimmed.match(/src=["']([^"']+)["']/i)
   if (srcMatch && srcMatch[1]) {
-    return srcMatch[1]
+    src = srcMatch[1]
+  } else if (/^https?:\/\//i.test(trimmed)) {
+    src = trimmed
   }
 
-  // 2. If it's already a direct web URL
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed
+  if (src && src.includes('my.matterport.com/show/')) {
+    try {
+      const url = new URL(src)
+      if (!url.searchParams.has('nt')) {
+        url.searchParams.set('nt', '0')
+      }
+      return url.toString()
+    } catch {
+      return src
+    }
   }
 
-  return ''
+  return src
 }

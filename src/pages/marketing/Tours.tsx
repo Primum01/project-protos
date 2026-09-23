@@ -103,6 +103,8 @@ function LocationDropdown({
     [options, query],
   )
 
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+
   return (
     <div ref={ref} className="relative w-full sm:w-auto">
       {/* Pill trigger */}
@@ -138,12 +140,12 @@ function LocationDropdown({
             <div className="flex items-center gap-2 rounded-xl bg-ink-100/70 px-3 py-1.5">
               <span className="text-ink-400"><IconSearch /></span>
               <input
-                autoFocus
+                autoFocus={!isTouch}
                 type="text"
                 placeholder="Search location…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-ink-800 placeholder-ink-400 outline-none"
+                className="flex-1 bg-transparent text-base sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
               />
               {query && (
                 <button onClick={() => setQuery("")} className="text-ink-400 hover:text-ink-700 transition-colors">
@@ -215,7 +217,7 @@ function SearchBar({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Search properties…"}
-        className="flex-1 bg-transparent text-sm text-ink-800 placeholder-ink-400 outline-none"
+        className="flex-1 bg-transparent text-base sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
       />
       {value && (
         <button onClick={() => onChange("")} className="text-ink-400 hover:text-ink-700 transition-colors shrink-0">

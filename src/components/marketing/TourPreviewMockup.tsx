@@ -27,11 +27,12 @@ export function TourPreviewMockup() {
         {/* Embedded Matterport 3D viewer fitting 16:9 ratio container */}
         <div className="relative aspect-16/9 w-full bg-ink-950">
           <iframe
-            src="https://my.matterport.com/show/?m=13oTzmx56ar"
+            src="https://my.matterport.com/show/?m=13oTzmx56ar&play=1&qs=1&nt=0&brand=0&title=0&tourcta=0&help=0&hl=0"
             title="Matterport 3D Tour"
             className="h-full w-full border-0"
             allowFullScreen
             allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
+            loading="lazy"
           />
         </div>
       </div>

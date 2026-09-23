@@ -176,3 +176,29 @@
   }
 }
 
+/* ── Mobile Input Scaling & Viewport Stability ────────────────────────────── */
+/* iOS Safari and mobile browsers auto-zoom into the page when focusing any input
+   with font-size < 16px. Enforcing 16px on mobile viewports ensures the keyboard
+   pops up without enlarging the page or requiring the user to pinch-rescale. */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Prevents delayed double-tap zoom triggers while preserving smooth gestures */
+button,
+input,
+select,
+textarea,
+a {
+  touch-action: manipulation;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
