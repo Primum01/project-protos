@@ -155,12 +155,12 @@ export function Contact() {
                 <h2 className="text-base font-semibold text-ink-950">Prefer WhatsApp?</h2>
               </div>
               <a
-                href="https://wa.me/254700000000"
+                href="https://wa.me/254729138397"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 block text-sm text-[#25D366] hover:underline font-medium"
               >
-                +254 700 000 000
+                +254 729 138 397
               </a>
               <p className="mt-6 text-sm text-ink-500">
                 Message us on WhatsApp for a quicker response.
