@@ -72,13 +72,13 @@ export const router = createBrowserRouter([
         path: '/admin',
         errorElement: <RouteErrorBoundary />,
         element: (
-          <AdminDataProvider>
-            <AuthGuard>
+          <AuthGuard>
+            <AdminDataProvider>
               <SessionProvider>
                 <AdminLayout />
               </SessionProvider>
-            </AuthGuard>
-          </AdminDataProvider>
+            </AdminDataProvider>
+          </AuthGuard>
         ),
         children: [
           { index: true, element: <Navigate to="/admin/listings" replace /> },

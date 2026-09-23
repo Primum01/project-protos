@@ -2,6 +2,13 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createListing, getListingById, updateListing } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  deleteListingDocument,
+  isValidDocumentFile,
+  subscribeListingDocuments,
+  uploadListingDocument,
+} from '@/lib/firebase/listingDocuments'
 import { extractEmbedSrc } from '@/lib/embed'
 import { cn } from '@/lib/cn'
 import { Button, Input } from '@/components/ui'
@@ -11,6 +18,7 @@ import {
   LISTING_STATUSES,
   PROPERTY_TYPES,
   type Listing,
+  type ListingDocument,
   type ListingFormData,
 } from '@/types/listing'
 
@@ -234,6 +242,26 @@ function PreviewPanel({
   )
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
+
 const FORM_SECTIONS = [
   {
     id: 'section-property-details',
@@ -250,6 +278,11 @@ const FORM_SECTIONS = [
     label: 'Contact & Payment',
     isComplete: (f: ListingFormData) => Boolean(f.contactName || f.contactPhone || f.paymentMethod),
   },
+  {
+    id: 'section-documents',
+    label: 'Invoice / Receipt',
+    isComplete: () => false,
+  },
 ]
 
 /* ══════════════════════════════════════════════════════ main component */
@@ -257,6 +290,7 @@ export function AdminListingForm() {
   const { id } = useParams<{ id: string }>()
   const isEditing = Boolean(id)
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [form, setForm] = useState<ListingFormData>(DEFAULT_LISTING_FORM)
   const [loadingListing, setLoadingListing] = useState(isEditing)
@@ -265,6 +299,103 @@ export function AdminListingForm() {
   const [showPreview, setShowPreview] = useState(false)
   const [activeSection, setActiveSection] = useState('section-property-details')
   const formRef = useRef<HTMLFormElement>(null)
+
+  // Document state (invoices & receipts)
+  const [documents, setDocuments] = useState<ListingDocument[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(isEditing)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [docError, setDocError] = useState('')
+  const [docSuccess, setDocSuccess] = useState('')
+  const [replacingDocId, setReplacingDocId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const replaceFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Real-time subscription to listing documents
+  useEffect(() => {
+    if (!id || !isFirebaseConfigured) return
+    setLoadingDocs(true)
+    const unsub = subscribeListingDocuments(id, (docs) => {
+      setDocuments(docs)
+      setLoadingDocs(false)
+    })
+    return unsub
+  }, [id])
+
+  async function handleUploadDocument(file: File) {
+    if (!id) return
+    const check = isValidDocumentFile(file)
+    if (!check.valid) {
+      setDocError(check.error || 'Invalid document file.')
+      return
+    }
+    setDocError('')
+    setDocSuccess('')
+    setUploadingDoc(true)
+    setUploadProgress(0)
+    try {
+      await uploadListingDocument(
+        id,
+        file,
+        user?.email || 'team@twinspace360.com',
+        (progress) => setUploadProgress(Math.round(progress * 100)),
+      )
+      setDocSuccess(`"${file.name}" uploaded successfully.`)
+      setTimeout(() => setDocSuccess(''), 4000)
+    } catch (err) {
+      setDocError(err instanceof Error ? err.message : 'Upload failed.')
+    } finally {
+      setUploadingDoc(false)
+      setUploadProgress(0)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleReplaceDocument(oldDoc: ListingDocument, newFile: File) {
+    if (!id) return
+    const check = isValidDocumentFile(newFile)
+    if (!check.valid) {
+      setDocError(check.error || 'Invalid document file.')
+      return
+    }
+    setDocError('')
+    setDocSuccess('')
+    setUploadingDoc(true)
+    setUploadProgress(0)
+    try {
+      await uploadListingDocument(
+        id,
+        newFile,
+        user?.email || 'team@twinspace360.com',
+        (progress) => setUploadProgress(Math.round(progress * 100)),
+      )
+      await deleteListingDocument(id, oldDoc)
+      setDocSuccess(`Document replaced with "${newFile.name}".`)
+      setTimeout(() => setDocSuccess(''), 4000)
+    } catch (err) {
+      setDocError(err instanceof Error ? err.message : 'Replacement failed.')
+    } finally {
+      setUploadingDoc(false)
+      setUploadProgress(0)
+      setReplacingDocId(null)
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDeleteDocument(docItem: ListingDocument) {
+    if (!id) return
+    if (!window.confirm(`Are you sure you want to delete "${docItem.originalFileName}"? This action cannot be undone.`)) {
+      return
+    }
+    setDocError('')
+    try {
+      await deleteListingDocument(id, docItem)
+      setDocSuccess(`"${docItem.originalFileName}" deleted.`)
+      setTimeout(() => setDocSuccess(''), 3000)
+    } catch (err) {
+      setDocError(err instanceof Error ? err.message : 'Delete failed.')
+    }
+  }
 
   // Load existing listing in edit mode
   useEffect(() => {
@@ -663,6 +794,197 @@ export function AdminListingForm() {
             </div>
           </FormSection>
 
+          {/* ── Invoice / Receipt (Admin Only) */}
+          <FormSection id="section-documents" title="Invoice / Receipt">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-ink-900">
+                    Property Invoices & Receipts
+                  </p>
+                  <p className="mt-0.5 text-xs text-ink-500">
+                    Upload and manage official invoices or payment receipts for this property (PDF, JPG, PNG up to 10 MB). Stored securely for admin access only.
+                  </p>
+                </div>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingDoc}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-semibold text-ink-800 shadow-sm transition-colors hover:bg-ink-50 hover:text-ink-950 disabled:opacity-50"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Upload document
+                  </button>
+                )}
+              </div>
+
+              {/* Hidden file inputs */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) void handleUploadDocument(file)
+                }}
+              />
+              <input
+                ref={replaceFileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  const targetDoc = documents.find((d) => d.id === replacingDocId)
+                  if (file && targetDoc) void handleReplaceDocument(targetDoc, file)
+                }}
+              />
+
+              {/* Upload progress indicator */}
+              {uploadingDoc && (
+                <div className="rounded-lg border border-brand-500/20 bg-brand-500/5 p-4">
+                  <div className="flex items-center justify-between text-xs font-medium text-brand-700">
+                    <span>Uploading document…</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-brand-500/20">
+                    <div
+                      className="h-full bg-brand-500 transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Alerts */}
+              {docError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700">
+                  {docError}
+                </div>
+              )}
+              {docSuccess && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs text-emerald-700">
+                  {docSuccess}
+                </div>
+              )}
+
+              {!isEditing ? (
+                <div className="rounded-xl border border-dashed border-ink-950/15 bg-ink-50/50 p-6 text-center">
+                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-ink-100 text-ink-500 mb-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-semibold text-ink-700">
+                    Save listing to attach invoices or receipts
+                  </p>
+                  <p className="mt-1 text-[11px] text-ink-400">
+                    Once saved as a draft or published, you can upload, inspect, replace, and delete document files here.
+                  </p>
+                </div>
+              ) : loadingDocs ? (
+                <div className="py-6 text-center">
+                  <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+                </div>
+              ) : documents.length === 0 ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-ink-950/20 bg-ink-50/30 p-8 text-center transition-colors hover:border-brand-500 hover:bg-brand-500/5"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink-100 text-ink-500 transition-colors group-hover:bg-brand-500/10 group-hover:text-brand-600">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold text-ink-800 group-hover:text-brand-600">
+                    Click to upload invoice or receipt
+                  </p>
+                  <p className="mt-1 text-[11px] text-ink-400">
+                    Supports PDF, JPG, PNG up to 10 MB. Stored privately for admins only.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {documents.map((docItem) => {
+                    const isPdf = docItem.fileType.includes('pdf') || docItem.originalFileName.toLowerCase().endsWith('.pdf')
+                    return (
+                      <div
+                        key={docItem.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-ink-950/10 bg-paper p-3.5 shadow-sm transition-all hover:border-ink-950/20"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={cn(
+                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-bold text-xs',
+                            isPdf ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-purple-50 text-purple-600 border border-purple-200'
+                          )}>
+                            {isPdf ? 'PDF' : 'IMG'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-ink-900" title={docItem.originalFileName}>
+                              {docItem.originalFileName}
+                            </p>
+                            <p className="text-[11px] text-ink-400">
+                              {formatFileSize(docItem.fileSize)} • {formatDate(docItem.uploadedAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <a
+                            href={docItem.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md border border-ink-950/12 bg-paper px-2.5 py-1 text-xs font-medium text-ink-700 hover:bg-ink-50 hover:text-ink-950 transition-colors"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                            View
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplacingDocId(docItem.id)
+                              replaceFileInputRef.current?.click()
+                            }}
+                            disabled={uploadingDoc}
+                            className="inline-flex items-center gap-1 rounded-md border border-ink-950/12 bg-paper px-2.5 py-1 text-xs font-medium text-ink-700 hover:bg-ink-50 hover:text-ink-950 transition-colors disabled:opacity-50"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteDocument(docItem)}
+                            disabled={uploadingDoc}
+                            className="inline-flex items-center rounded-md border border-red-200 bg-red-50/50 p-1 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
+                            title="Delete document"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </FormSection>
+
           {/* ── Error */}
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
@@ -766,7 +1088,7 @@ export function AdminListingForm() {
           <nav className="flex flex-col space-y-1">
             {FORM_SECTIONS.map((sec) => {
               const isCur = activeSection === sec.id
-              const isDone = sec.isComplete(form)
+              const isDone = sec.id === 'section-documents' ? documents.length > 0 : sec.isComplete(form)
               return (
                 <button
                   key={sec.id}

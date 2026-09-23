@@ -14,6 +14,7 @@ import {
   writeFinanceCache,
 } from '@/lib/firebase/finance'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { useAuth } from '@/hooks/useAuth'
 import type { Listing } from '@/types/listing'
 import type { ContactMessage } from '@/types/message'
 import type { SavedInvoice, SavedReceipt } from '@/types/finance'
@@ -100,8 +101,10 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
     isFirebaseConfigured && cachedReceipts.length === 0,
   )
 
+  const { user, isAdmin } = useAuth()
+
   useEffect(() => {
-    if (!isFirebaseConfigured) return
+    if (!isFirebaseConfigured || !user || !isAdmin) return
 
     const unsubListings = subscribeAllListings((data) => {
       setListings(data)
@@ -133,7 +136,7 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
       unsubInvoices()
       unsubReceipts()
     }
-  }, [])
+  }, [user, isAdmin])
 
   async function handleSaveInvoice(invoice: SavedInvoice) {
     await persistInvoice(invoice, invoices)

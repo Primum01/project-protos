@@ -8,9 +8,27 @@ service firebase.storage {
           && request.auth.token.email.lower() == 'team@twinspace360.com';
     }
 
-    // Public visitors can view all uploaded media assets (property photos, tours).
-    // Admin (team@twinspace360.com) can upload, update, and delete media.
-    match /{allPaths=**} {
+    // STRICTLY ADMIN-ONLY: Invoices, receipts, and private business documents
+    match /listings/{listingId}/documents/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+    match /invoices/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+    match /receipts/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // PUBLIC: Property photos, virtual tour media, and general public assets
+    match /listings/{listingId}/photos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /photos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /public/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin();
     }

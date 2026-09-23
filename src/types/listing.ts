@@ -108,3 +108,16 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   deactivationReason: '',
   accent: 'clay',
 }
+
+/** Admin-only document (invoice / receipt / financial proof) attached to a listing */
+export interface ListingDocument {
+  id: string
+  listingId: string
+  originalFileName: string
+  storagePath: string
+  downloadUrl: string
+  fileType: string
+  fileSize: number
+  uploadedAt: string
+  uploadedBy: string
+}

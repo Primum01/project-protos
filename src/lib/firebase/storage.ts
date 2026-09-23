@@ -1,4 +1,5 @@
 import {
+  deleteObject,
   getDownloadURL,
   getStorage,
   ref,
@@ -13,7 +14,7 @@ function storage() {
 
 /**
  * Uploads a file directly to Cloud Storage (client -> bucket, not proxied through
- * an app server) and resolves with its public download URL once complete.
+ * an app server) and resolves with its download URL once complete.
  */
 export function uploadFile(
   path: string,
@@ -33,4 +34,16 @@ export function uploadFile(
       },
     )
   })
+}
+
+/**
+ * Deletes a file from Cloud Storage. Silently handles missing files.
+ */
+export async function deleteStorageFile(path: string): Promise<void> {
+  try {
+    const fileRef = ref(storage(), path)
+    await deleteObject(fileRef)
+  } catch (error) {
+    console.warn(`[Storage] Failed to delete file at ${path}:`, error)
+  }
 }
