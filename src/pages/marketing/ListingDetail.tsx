@@ -324,7 +324,7 @@ export function ListingDetail() {
       <Container>
         <div
           className={cn(
-            'relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br text-white',
+            'relative flex h-[55vh] min-h-[360px] sm:h-auto sm:aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br text-white',
             ACCENT_GRADIENTS[listing.accent] ?? ACCENT_GRADIENTS.clay,
           )}
         >
@@ -338,6 +338,8 @@ export function ListingDetail() {
                     className="h-full w-full border-0 rounded-xl"
                     allowFullScreen
                     allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                    loading="lazy"
                   />
                   {listing.tourUrl && (
                     <a

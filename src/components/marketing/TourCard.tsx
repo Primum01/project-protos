@@ -80,6 +80,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
             className="h-full w-full border-0"
             allowFullScreen
             allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             loading="lazy"
           />
         ) : tour.photoUrl ? (

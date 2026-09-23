@@ -19,9 +19,14 @@ export function extractEmbedSrc(input?: string | null): string {
   if (src && src.includes('my.matterport.com/show/')) {
     try {
       const url = new URL(src)
-      if (!url.searchParams.has('nt')) {
-        url.searchParams.set('nt', '0')
-      }
+      url.searchParams.set('play', '1')
+      url.searchParams.set('qs', '1')
+      url.searchParams.set('brand', '0')
+      url.searchParams.set('title', '0')
+      url.searchParams.set('tourcta', '0')
+      url.searchParams.set('help', '0')
+      url.searchParams.set('hl', '0')
+      url.searchParams.delete('nt')
       return url.toString()
     } catch {
       return src
