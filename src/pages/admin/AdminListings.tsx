@@ -11,6 +11,7 @@ import {
   LISTING_STATUSES,
   DEACTIVATION_REASONS,
 } from '@/types/listing'
+import { backfillExistingProperties } from '@/lib/accountNumber'
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 function statusMeta(status: ListingStatus) {
@@ -195,14 +196,32 @@ export function AdminListings() {
   const [deactivatePicker, setDeactivatePicker] = useState<string | null>(null)
   const [deactivating, setDeactivating] = useState<string | null>(null)
   const [reactivating, setReactivating] = useState<string | null>(null)
+  const [copiedAccId, setCopiedAccId] = useState<string | null>(null)
+  const [migrating, setMigrating] = useState(false)
 
   /* Derived lists */
   const allListings         = listings
   const deactivatedListings = listings.filter((l) => l.deactivated)
+  const unassignedCount     = allListings.filter((l) => !l.accountNumber).length
   const counts = {
     all:         allListings.length,
     deactivated: deactivatedListings.length,
     pricing:     allListings.length,
+  }
+
+  async function handleBackfillAccountNumbers() {
+    if (!window.confirm(`Run account number backfill for ${unassignedCount} listing(s) missing account numbers? This will assign sequential numbers per area based on registration order.`)) {
+      return
+    }
+    setMigrating(true)
+    try {
+      const res = await backfillExistingProperties()
+      alert(`Migration completed! Assigned ${res.migratedCount} account numbers. Synchronized ${res.countersSynchronized.length} area counter(s).`)
+    } catch (err) {
+      alert(`Migration failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setMigrating(false)
+    }
   }
 
   /* Handlers */
@@ -318,9 +337,29 @@ export function AdminListings() {
                   <tr key={listing.id} className={`group transition-colors hover:bg-ink-50/60 ${isDeactivated ? 'opacity-60' : ''}`}>
                     {/* Name */}
                     <td className="px-5 py-4">
-                      <div className="flex flex-col gap-0.5">
-                        <p className="font-medium text-ink-950">{listing.name}</p>
-                        <p className="truncate max-w-[180px] text-xs text-ink-400">{listing.location}</p>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-ink-950">{listing.name}</p>
+                          {listing.accountNumber && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigator.clipboard.writeText(listing.accountNumber!)
+                                setCopiedAccId(listing.id)
+                                setTimeout(() => setCopiedAccId(null), 2000)
+                              }}
+                              title="Click to copy Property Account Number"
+                              className="inline-flex items-center gap-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-200/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand-800 transition-colors"
+                            >
+                              <span>{listing.accountNumber}</span>
+                              <span className="text-[9px] text-brand-600">
+                                {copiedAccId === listing.id ? '✓' : '📋'}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                        <p className="truncate max-w-[200px] text-xs text-ink-400">{listing.location}</p>
                         {/* Inline picker lives under the name cell */}
                         {showPicker && (
                           <DeactivatePicker
@@ -445,8 +484,30 @@ export function AdminListings() {
                   <tr key={listing.id} className="group opacity-80 transition-colors hover:bg-ink-50/60">
                     {/* Name */}
                     <td className="px-5 py-4">
-                      <p className="font-medium text-ink-950">{listing.name}</p>
-                      <p className="truncate max-w-[160px] text-xs text-ink-400">{listing.location}</p>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-ink-950">{listing.name}</p>
+                          {listing.accountNumber && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigator.clipboard.writeText(listing.accountNumber!)
+                                setCopiedAccId(listing.id)
+                                setTimeout(() => setCopiedAccId(null), 2000)
+                              }}
+                              title="Click to copy Property Account Number"
+                              className="inline-flex items-center gap-1 rounded bg-brand-50 hover:bg-brand-100 border border-brand-200/70 px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand-800 transition-colors"
+                            >
+                              <span>{listing.accountNumber}</span>
+                              <span className="text-[9px] text-brand-600">
+                                {copiedAccId === listing.id ? '✓' : '📋'}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                        <p className="truncate max-w-[160px] text-xs text-ink-400">{listing.location}</p>
+                      </div>
                     </td>
                     {/* Type */}
                     <td className="whitespace-nowrap px-5 py-4 text-ink-600">{listing.propertyType}</td>
@@ -546,9 +607,23 @@ export function AdminListings() {
             {loading ? 'Loading…' : `${listings.length} propert${listings.length === 1 ? 'y' : 'ies'}`}
           </p>
         </div>
-        <Button onClick={() => navigate('/admin/listings/new')}>
-          + Add listing
-        </Button>
+        <div className="flex items-center gap-3">
+          {unassignedCount > 0 && isFirebaseConfigured && (
+            <button
+              type="button"
+              onClick={handleBackfillAccountNumbers}
+              disabled={migrating}
+              className="flex items-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-50 hover:bg-brand-100 text-brand-800 px-3 py-2 text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+              title="Assign sequential account numbers to properties missing them"
+            >
+              <span>⚡</span>
+              <span>{migrating ? 'Syncing...' : `Sync Account Nos (${unassignedCount})`}</span>
+            </button>
+          )}
+          <Button onClick={() => navigate('/admin/listings/new')}>
+            + Add listing
+          </Button>
+        </div>
       </div>
 
       {/* Firebase warning */}

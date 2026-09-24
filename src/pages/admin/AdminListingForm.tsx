@@ -21,6 +21,7 @@ import {
   type ListingDocument,
   type ListingFormData,
 } from '@/types/listing'
+import { resolveLocationPrefixes } from '@/lib/accountNumber'
 
 
 /* ──────────────────────────────────────────────────── section wrapper */
@@ -311,6 +312,7 @@ export function AdminListingForm() {
   const [replacingDocId, setReplacingDocId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceFileInputRef = useRef<HTMLInputElement>(null)
+  const [copiedAcc, setCopiedAcc] = useState(false)
 
   // Real-time subscription to listing documents
   useEffect(() => {
@@ -694,17 +696,76 @@ export function AdminListingForm() {
               />
             </div>
 
-            {/* Unique Account Number (internal only, not visible publicly) */}
-            <Input
-              id="listing-account-number"
-              label="Unique Account Number"
-              placeholder="e.g. ACC-08492"
-              value={form.accountNumber ?? ''}
-              onChange={(e) => set('accountNumber', e.target.value)}
-            />
-            <p className="-mt-2 text-xs text-ink-400">
-              Internal client account identifier. Never shown on public tour pages.
-            </p>
+            {/* ── Property Account Number ── */}
+            {form.accountNumber ? (
+              <div className="rounded-xl border border-brand-500/20 bg-brand-500/5 p-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+                    Property Account Number
+                  </label>
+                  <span className="rounded-full bg-brand-500/15 px-2 py-0.5 text-[10px] font-semibold text-brand-800">
+                    Permanent Payment ID
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-ink-950/10 bg-white px-3.5 py-2.5 shadow-xs">
+                  <span className="font-mono text-base font-bold text-ink-950 tracking-wider">
+                    {form.accountNumber}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(form.accountNumber || '')
+                      setCopiedAcc(true)
+                      setTimeout(() => setCopiedAcc(false), 2000)
+                    }}
+                    className="flex items-center gap-1.5 rounded-md bg-ink-50 hover:bg-ink-100 text-ink-700 px-2.5 py-1 text-xs font-medium transition-colors"
+                    title="Copy Account Number"
+                  >
+                    {copiedAcc ? (
+                      <>
+                        <span className="text-emerald-600 font-bold">✓</span>
+                        <span className="text-emerald-700 font-medium">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📋</span>
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-xs text-ink-500">
+                  Unique per-area sequence number. Immutable payment identifier used for invoices, receipts, and M-Pesa.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-ink-950/10 bg-ink-50/70 p-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                    Property Account Number
+                  </label>
+                  <span className="rounded-full bg-ink-200 px-2 py-0.5 text-[10px] font-semibold text-ink-600">
+                    Auto-Generated
+                  </span>
+                </div>
+                {(() => {
+                  const preview = resolveLocationPrefixes(form.city, form.location)
+                  return (
+                    <div className="mt-2 flex items-center justify-between rounded-lg border border-dashed border-ink-950/15 bg-white/70 px-3.5 py-2.5">
+                      <span className="font-mono text-sm font-semibold text-ink-600">
+                        {preview.countyPrefix}-{preview.areaPrefix}-XXXX
+                      </span>
+                      <span className="text-xs text-ink-500">
+                        Area: {preview.canonicalArea} ({preview.canonicalCounty})
+                      </span>
+                    </div>
+                  )
+                })()}
+                <p className="mt-1.5 text-xs text-ink-400">
+                  A unique, monotonically increasing per-area sequence number is automatically generated upon registration.
+                </p>
+              </div>
+            )}
 
             {/* Date paid */}
             <Input

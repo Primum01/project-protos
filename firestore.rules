@@ -82,6 +82,18 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // PROPERTY COUNTERS & ACCOUNT NUMBERS (Per-area atomic sequence counters)
+    // =========================================================================
+    // PUBLIC USERS: Completely denied.
+    // ADMIN: Can read, write, and manage per-area sequence counters and uniqueness locks.
+    match /property_counters/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /account_numbers/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // =========================================================================
     // DEFAULT DENIAL
     // =========================================================================
     // Any other collection or document (such as users, internal collections, etc.)
