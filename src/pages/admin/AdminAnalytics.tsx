@@ -108,7 +108,7 @@ export function AdminAnalytics() {
   })
 
   return (
-    <div className="mx-auto max-w-5xl p-6 lg:p-10">
+    <div className="mx-auto max-w-5xl p-6 lg:p-10 a4-print-container">
       {/* ── Screen Controls (Omitted during PDF export) ── */}
       <div className="no-print mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -195,64 +195,65 @@ export function AdminAnalytics() {
         </div>
       </div>
 
-      {/* ── Formal Print Header (Clean PDF layout with TwinSpace Logo) ── */}
-      <div className="print-only mb-8 border-b border-ink-950/15 pb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <img
-              src="/twinspace-analytics-logo.png"
-              alt="TwinSpace 360"
-              className="h-12 w-auto object-contain"
-            />
-            <p className="mt-1 text-xs text-ink-500">Interactive 3D Virtual Tour Performance</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
-              Report Date
-            </p>
-            <p className="text-sm font-medium text-ink-950">{currentDateStr}</p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-ink-50 p-4 text-xs">
-          <div>
-            <p className="text-ink-400 font-medium">PROPERTY</p>
-            <p className="font-semibold text-ink-950 text-sm mt-0.5">
-              {selectedListing ? selectedListing.name : 'All Published Properties'}
-            </p>
-            {selectedListing && (
-              <p className="text-ink-500">
-                {[selectedListing.location, selectedListing.city, selectedListing.country]
-                  .filter(Boolean)
-                  .join(', ')}
+      {/* ── THE ANALYTICS REPORT CONTAINER (A4 Fitted, 3/4 custom sheet) ── */}
+      <div className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-8 sm:print:p-10 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
+        {/* ── Formal Print Header (Inside sheet for balanced 3/4 page layout) ── */}
+        <div className="print-only border-b border-ink-950/15 pb-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <img
+                src="/twinspace-analytics-logo.png"
+                alt="TwinSpace 360"
+                className="h-12 sm:h-14 print:h-14 w-auto object-contain"
+              />
+              <p className="mt-1 text-xs text-ink-500 font-medium">Interactive 3D Virtual Tour Performance</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+                Report Date
               </p>
-            )}
+              <p className="text-sm font-semibold text-ink-950">{currentDateStr}</p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-ink-400 font-medium">PREPARED FOR / REPORTING PERIOD</p>
-            <p className="font-semibold text-ink-950 text-sm mt-0.5">
-              {clientName || 'Property Host / Client'}
-            </p>
-            <p className="text-ink-500">{activeRangeConfig.label}</p>
+
+          <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl bg-white/70 border border-ink-950/10 p-4 text-xs">
+            <div>
+              <p className="text-ink-400 font-bold uppercase tracking-wider text-[11px]">PROPERTY</p>
+              <p className="font-semibold text-ink-950 text-sm mt-0.5">
+                {selectedListing ? selectedListing.name : 'All Published Properties'}
+              </p>
+              {selectedListing && (
+                <p className="text-ink-500 text-xs mt-0.5">
+                  {[selectedListing.location, selectedListing.city, selectedListing.country]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-ink-400 font-bold uppercase tracking-wider text-[11px]">PREPARED FOR / REPORTING PERIOD</p>
+              <p className="font-semibold text-ink-950 text-sm mt-0.5">
+                {clientName || 'Property Host / Client'}
+              </p>
+              <p className="text-ink-500 text-xs mt-0.5">{activeRangeConfig.label}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── THE DASHBOARD CONTAINER ── */}
-      <div className="rounded-2xl border border-ink-950/10 bg-sand-100/60 p-8 shadow-soft">
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+        {/* Dashboard Title & Badge */}
+        <div className="my-5 print:my-4 flex items-center justify-between">
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-ink-600 print:text-ink-700">
             {selectedListing ? selectedListing.name : 'Tour Performance'} — {activeRangeConfig.label}
           </p>
-          <span className="rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-ink-700 shadow-sm border border-ink-950/5">
+          <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-ink-700 shadow-sm border border-ink-950/10">
             Tour Analytics
           </span>
         </div>
 
         {/* 3 Metrics: Total views, Visitors, Impressions */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 my-auto py-2 print:py-6">
           {/* 1. Total views */}
-          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+          <div className="rounded-xl bg-white/90 p-6 print:p-8 text-center shadow-sm border border-ink-950/10 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
             <div className="no-print">
               <input
                 id="analytics-input-total-views"
@@ -260,24 +261,24 @@ export function AdminAnalytics() {
                 value={currentMetrics.totalViews}
                 onChange={(e) => handleMetricChange('totalViews', e.target.value)}
                 placeholder="0"
-                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                className="w-full text-center font-display text-4xl font-bold text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
                 aria-label="Total views"
               />
               <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
             </div>
-            <p className="print-only font-display text-4xl font-medium text-ink-950">
+            <p className="print-only font-display text-5xl font-bold text-ink-950 tracking-tight">
               {currentMetrics.totalViews || '0'}
             </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+            <p className="mt-3 text-xs sm:text-sm print:text-sm font-bold uppercase tracking-wider text-ink-700">
               Total views
             </p>
-            <p className="mt-1 text-[11px] text-ink-400">
+            <p className="mt-1 text-xs print:text-xs text-ink-500">
               Times your 3D tour was opened and viewed.
             </p>
           </div>
 
           {/* 2. Visitors */}
-          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+          <div className="rounded-xl bg-white/90 p-6 print:p-8 text-center shadow-sm border border-ink-950/10 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
             <div className="no-print">
               <input
                 id="analytics-input-visitors"
@@ -285,24 +286,24 @@ export function AdminAnalytics() {
                 value={currentMetrics.visitors}
                 onChange={(e) => handleMetricChange('visitors', e.target.value)}
                 placeholder="0"
-                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                className="w-full text-center font-display text-4xl font-bold text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
                 aria-label="Visitors"
               />
               <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
             </div>
-            <p className="print-only font-display text-4xl font-medium text-ink-950">
+            <p className="print-only font-display text-5xl font-bold text-ink-950 tracking-tight">
               {currentMetrics.visitors || '0'}
             </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+            <p className="mt-3 text-xs sm:text-sm print:text-sm font-bold uppercase tracking-wider text-ink-700">
               Visitors
             </p>
-            <p className="mt-1 text-[11px] text-ink-400">
+            <p className="mt-1 text-xs print:text-xs text-ink-500">
               People who viewed your 3D tour.
             </p>
           </div>
 
           {/* 3. Impressions */}
-          <div className="rounded-xl bg-white/80 p-6 text-center shadow-sm border border-ink-950/5 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
+          <div className="rounded-xl bg-white/90 p-6 print:p-8 text-center shadow-sm border border-ink-950/10 transition-all focus-within:ring-2 focus-within:ring-brand-500/20 focus-within:border-brand-500/50">
             <div className="no-print">
               <input
                 id="analytics-input-impressions"
@@ -310,34 +311,34 @@ export function AdminAnalytics() {
                 value={currentMetrics.impressions}
                 onChange={(e) => handleMetricChange('impressions', e.target.value)}
                 placeholder="0"
-                className="w-full text-center font-display text-4xl font-medium text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
+                className="w-full text-center font-display text-4xl font-bold text-ink-950 bg-transparent rounded-lg hover:bg-ink-50/70 focus:bg-ink-50 focus:outline-none transition-all py-1 placeholder:text-ink-300"
                 aria-label="Impressions"
               />
               <span className="block mt-1 text-[10px] text-ink-400">Click to enter figure</span>
             </div>
-            <p className="print-only font-display text-4xl font-medium text-ink-950">
+            <p className="print-only font-display text-5xl font-bold text-ink-950 tracking-tight">
               {currentMetrics.impressions || '0'}
             </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-ink-600">
+            <p className="mt-3 text-xs sm:text-sm print:text-sm font-bold uppercase tracking-wider text-ink-700">
               Impressions
             </p>
-            <p className="mt-1 text-[11px] text-ink-400">
+            <p className="mt-1 text-xs print:text-xs text-ink-500">
               Times your 3D tour was shown on a page.
             </p>
           </div>
         </div>
-      </div>
 
-      {/* ── Print Footer (Clean, with TwinSpace Logo & DiaSpace Watermark) ── */}
-      <div className="print-only mt-8 border-t border-ink-950/15 pt-5 text-center text-xs text-ink-400 space-y-3">
-        <div className="flex items-center justify-center gap-2">
-          <img src="/twinspace-analytics-logo.png" alt="TwinSpace 360" className="h-5 w-auto object-contain" />
-          <span className="font-medium text-ink-600">· Professional 3D Property Intelligence</span>
+        {/* ── Print Footer (Clean, with TwinSpace Logo & DiaSpace Watermark) ── */}
+        <div className="print-only border-t border-ink-950/15 pt-5 text-center text-xs text-ink-500 space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <img src="/twinspace-analytics-logo.png" alt="TwinSpace 360" className="h-6 w-auto object-contain" />
+            <span className="font-semibold text-ink-700">· Professional 3D Property Intelligence</span>
+          </div>
+          <p className="text-xs text-ink-500">
+            Confidential property walkthrough telemetry report prepared for client review.
+          </p>
+          <SheetDiaspaceWatermark />
         </div>
-        <p className="text-[11px]">
-          Confidential property walkthrough telemetry report prepared for client review.
-        </p>
-        <SheetDiaspaceWatermark />
       </div>
 
       {/* ── Screen Footer Watermark Preview ── */}

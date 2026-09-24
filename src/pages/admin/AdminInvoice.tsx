@@ -722,7 +722,7 @@ export function AdminInvoice() {
 
       {/* ── THE INVOICE CONTAINER (Signature Accent Design & A4 Fitted) ── */}
       {activeTab === 'editor' && (
-        <div className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-7 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
+        <div className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-8 sm:print:p-10 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
           {/* Saved Watermark / Indicator on screen only */}
           {isSaved && !isEditing && (
             <div className="no-print absolute top-3 right-3 flex items-center gap-1 bg-white/80 backdrop-blur-xs border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700">
@@ -731,29 +731,23 @@ export function AdminInvoice() {
           )}
 
           {/* ── TOP SECTION: LOGO + INVOICE META ── */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between print:flex-row print:items-start print:justify-between gap-4 pb-5 sm:pb-6 print:pb-4 border-b border-ink-950/12">
-            {/* Logo & Company Name */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between print:flex-row print:items-start print:justify-between gap-4 pb-5 sm:pb-6 print:pb-5 border-b border-ink-950/12">
+            {/* Logo */}
             <div>
               <img
                 src="/twinspace-analytics-logo.png"
                 alt="TwinSpace 360"
-                className="h-11 sm:h-13 print:h-10 w-auto object-contain"
-              />
-              <input
-                type="text"
-                value="TwinSpace 360 Limited"
-                readOnly
-                className="mt-1 text-xs print:text-[11px] font-medium text-ink-500 bg-transparent border-none p-0 focus:outline-none"
+                className="h-12 sm:h-14 print:h-14 w-auto object-contain"
               />
             </div>
 
             {/* Invoice Label, Number & Date */}
             <div className="sm:text-right print:text-right flex flex-col items-start sm:items-end print:items-end">
-              <h2 className="text-2xl sm:text-3xl print:text-2xl font-bold tracking-tight text-ink-950 font-display">
+              <h2 className="text-2xl sm:text-3xl print:text-3xl font-bold tracking-tight text-ink-950 font-display">
                 INVOICE
               </h2>
               <div className="mt-1 flex items-center gap-1 sm:justify-end print:justify-end">
-                <span className="text-xs print:text-[11px] font-medium text-ink-400">Invoice No:</span>
+                <span className="text-xs print:text-xs font-semibold text-ink-400">Invoice No:</span>
                 <input
                   type="text"
                   value={invoiceNumber}
@@ -762,7 +756,7 @@ export function AdminInvoice() {
                     setInvoiceNumber(e.target.value)
                     setPaymentDetails(`Paybill: 247247  |  Account: ${e.target.value}`)
                   }}
-                  className="w-28 sm:text-right print:text-right font-mono text-sm print:text-xs font-semibold text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
+                  className="w-32 sm:text-right print:text-right font-mono text-sm print:text-sm font-semibold text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
                 />
               </div>
               <div className="mt-0.5">
@@ -771,17 +765,17 @@ export function AdminInvoice() {
                   value={invoiceDate}
                   disabled={!isEditing}
                   onChange={(e) => setInvoiceDate(e.target.value)}
-                  className="w-32 sm:text-right print:text-right text-xs print:text-[11px] font-medium text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
+                  className="w-36 sm:text-right print:text-right text-xs print:text-xs font-medium text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
                 />
               </div>
             </div>
           </div>
 
           {/* ── MIDDLE SECTION: INVOICE DATE + BILLED TO + PROPERTY ── */}
-          <div className="py-5 sm:py-6 print:py-4 border-b border-ink-950/12 grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-6 print:gap-5">
+          <div className="py-5 sm:py-6 print:py-5 border-b border-ink-950/12 grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-6 print:gap-6">
             {/* Left Column: Dates */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1.5">
                 INVOICE DATE
               </p>
               <input
@@ -789,14 +783,14 @@ export function AdminInvoice() {
                 value={fullInvoiceDate}
                 disabled={!isEditing}
                 onChange={(e) => setFullInvoiceDate(e.target.value)}
-                className="w-full text-sm print:text-xs font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
               />
             </div>
 
             {/* Right Column: Billed To & Property */}
-            <div className="space-y-4 print:space-y-3">
+            <div className="space-y-4 print:space-y-3.5">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
                   BILLED TO
                 </p>
                 <input
@@ -805,7 +799,7 @@ export function AdminInvoice() {
                   value={clientName}
                   disabled={!isEditing}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full text-sm print:text-xs font-semibold text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                  className="w-full text-sm print:text-sm font-semibold text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
                 <input
                   type="text"
@@ -813,17 +807,17 @@ export function AdminInvoice() {
                   value={clientContact}
                   disabled={!isEditing}
                   onChange={(e) => setClientContact(e.target.value)}
-                  className="mt-0.5 w-full text-xs print:text-[11px] text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                  className="mt-0.5 w-full text-xs print:text-xs text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
                 {accountNumber && (
-                  <p className="mt-0.5 text-[10px] font-mono text-ink-400">
+                  <p className="mt-0.5 text-[11px] font-mono text-ink-400">
                     Account No: {accountNumber}
                   </p>
                 )}
               </div>
 
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
                   PROPERTY
                 </p>
                 <input
@@ -832,7 +826,7 @@ export function AdminInvoice() {
                   value={propertyName}
                   disabled={!isEditing}
                   onChange={(e) => setPropertyName(e.target.value)}
-                  className="w-full text-sm print:text-xs font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                  className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
                 <input
                   type="text"
@@ -840,62 +834,62 @@ export function AdminInvoice() {
                   value={propertyLocation}
                   disabled={!isEditing}
                   onChange={(e) => setPropertyLocation(e.target.value)}
-                  className="mt-0.5 w-full text-xs print:text-[11px] text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                  className="mt-0.5 w-full text-xs print:text-xs text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
               </div>
             </div>
           </div>
 
           {/* ── SERVICES TABLE ── */}
-          <div className="py-5 sm:py-6 print:py-4 border-b border-ink-950/12">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-3 print:mb-2">
+          <div className="py-5 sm:py-6 print:py-5 border-b border-ink-950/12">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-3 print:mb-2.5">
               SERVICES
             </p>
 
             <div className="overflow-x-auto print:overflow-visible">
               <table className="w-full text-left print:table-fixed">
                 <thead>
-                  <tr className="border-b border-ink-950/15 text-[10px] font-semibold uppercase tracking-wider text-ink-500">
-                    <th className="pb-2.5 print:pb-1.5 w-[50%]">DESCRIPTION</th>
-                    <th className="pb-2.5 print:pb-1.5 text-center w-14 print:w-[12%]">QTY</th>
-                    <th className="pb-2.5 print:pb-1.5 text-right w-24 print:w-[18%]">RATE</th>
-                    <th className="pb-2.5 print:pb-1.5 text-right w-28 print:w-[20%]">AMOUNT</th>
+                  <tr className="border-b border-ink-950/15 text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+                    <th className="pb-2.5 print:pb-2 w-[50%]">DESCRIPTION</th>
+                    <th className="pb-2.5 print:pb-2 text-center w-14 print:w-[12%]">QTY</th>
+                    <th className="pb-2.5 print:pb-2 text-right w-24 print:w-[18%]">RATE</th>
+                    <th className="pb-2.5 print:pb-2 text-right w-28 print:w-[20%]">AMOUNT</th>
                     <th className="pb-2.5 w-8 no-print" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-ink-950/8 text-xs sm:text-sm print:text-xs">
+                <tbody className="divide-y divide-ink-950/8 text-xs sm:text-sm print:text-sm">
                   {items.map((item) => {
                     const lineAmount = (Number(item.qty) || 0) * (Number(item.rate) || 0)
 
                     return (
                       <tr key={item.id} className="group">
                         {/* Description */}
-                        <td className="py-2.5 print:py-1.5 pr-3">
+                        <td className="py-2.5 print:py-2.5 pr-3">
                           <input
                             type="text"
                             value={item.description}
                             disabled={!isEditing}
                             onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                            className="w-full text-xs sm:text-sm print:text-xs font-medium text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                            className="w-full text-xs sm:text-sm print:text-sm font-medium text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                           />
                         </td>
 
                         {/* Qty */}
-                        <td className="py-2.5 print:py-1.5 px-2 text-center">
+                        <td className="py-2.5 print:py-2.5 px-2 text-center">
                           <input
                             type="number"
                             min={1}
                             value={item.qty}
                             disabled={!isEditing}
                             onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value, 10) || 1)}
-                            className="w-10 print:w-8 text-center font-mono text-xs sm:text-sm print:text-xs text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                            className="w-10 print:w-10 text-center font-mono text-xs sm:text-sm print:text-sm text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                           />
                         </td>
 
                         {/* Rate */}
-                        <td className="py-2.5 print:py-1.5 pl-2 text-right">
+                        <td className="py-2.5 print:py-2.5 pl-2 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <span className="text-[11px] text-ink-400">KSh</span>
+                            <span className="text-[11px] print:text-xs text-ink-400">KSh</span>
                             <input
                               type="number"
                               min={0}
@@ -903,13 +897,13 @@ export function AdminInvoice() {
                               value={item.rate}
                               disabled={!isEditing}
                               onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                              className="w-20 print:w-16 text-right font-mono text-xs sm:text-sm print:text-xs text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                              className="w-20 print:w-20 text-right font-mono text-xs sm:text-sm print:text-sm text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                             />
                           </div>
                         </td>
 
                         {/* Amount */}
-                        <td className="py-2.5 print:py-1.5 pl-3 text-right font-mono font-medium text-ink-950 text-xs sm:text-sm print:text-xs">
+                        <td className="py-2.5 print:py-2.5 pl-3 text-right font-mono font-medium text-ink-950 text-xs sm:text-sm print:text-sm">
                           KSh {formatMoney(lineAmount)}
                         </td>
 
@@ -935,11 +929,11 @@ export function AdminInvoice() {
           </div>
 
           {/* ── FINANCIAL TOTALS SECTION ── */}
-          <div className="py-5 sm:py-6 print:py-3.5 border-b border-ink-950/12 flex justify-end">
-            <div className="w-full sm:w-72 print:w-64 space-y-2 print:space-y-1 text-xs sm:text-sm print:text-xs">
+          <div className="py-5 sm:py-6 print:py-4 border-b border-ink-950/12 flex justify-end">
+            <div className="w-full sm:w-80 print:w-80 space-y-2 print:space-y-1.5 text-xs sm:text-sm print:text-sm">
               {/* Subtotal */}
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
                   SUBTOTAL
                 </span>
                 <span className="font-mono font-medium text-ink-900">
@@ -949,42 +943,42 @@ export function AdminInvoice() {
 
               {/* Discount */}
               <div className="flex items-center justify-between">
-                <span className="text-xs print:text-[11px] font-medium text-ink-500">Discount:</span>
+                <span className="text-xs print:text-xs font-medium text-ink-500">Discount:</span>
                 <div className="flex items-center gap-1 font-mono">
-                  <span className="text-[11px] text-ink-400">- KSh</span>
+                  <span className="text-[11px] print:text-xs text-ink-400">- KSh</span>
                   <input
                     type="number"
                     min={0}
                     value={discount}
                     disabled={!isEditing}
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="w-18 print:w-14 text-right text-xs sm:text-sm print:text-xs text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                    className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                   />
                 </div>
               </div>
 
               {/* Tax / VAT */}
               <div className="flex items-center justify-between">
-                <span className="text-xs print:text-[11px] font-medium text-ink-500">Tax / VAT:</span>
+                <span className="text-xs print:text-xs font-medium text-ink-500">Tax / VAT:</span>
                 <div className="flex items-center gap-1 font-mono">
-                  <span className="text-[11px] text-ink-400">+ KSh</span>
+                  <span className="text-[11px] print:text-xs text-ink-400">+ KSh</span>
                   <input
                     type="number"
                     min={0}
                     value={tax}
                     disabled={!isEditing}
                     onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
-                    className="w-18 print:w-14 text-right text-xs sm:text-sm print:text-xs text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                    className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                   />
                 </div>
               </div>
 
               {/* Total Due */}
-              <div className="pt-2 print:pt-1.5 border-t border-ink-950/15 flex items-center justify-between">
-                <span className="font-bold text-xs sm:text-sm print:text-xs uppercase tracking-wider text-ink-950">
+              <div className="pt-2.5 print:pt-2 border-t border-ink-950/15 flex items-center justify-between">
+                <span className="font-bold text-xs sm:text-sm print:text-sm uppercase tracking-wider text-ink-950">
                   TOTAL DUE
                 </span>
-                <span className="font-display text-lg sm:text-xl print:text-lg font-bold text-ink-950">
+                <span className="font-display text-lg sm:text-xl print:text-xl font-bold text-ink-950">
                   KSh {formatMoney(totalDue)}
                 </span>
               </div>
@@ -992,18 +986,18 @@ export function AdminInvoice() {
           </div>
 
           {/* ── PAYMENT INFORMATION & CLOSING ── */}
-          <div className="pt-5 sm:pt-6 print:pt-3.5 space-y-3.5 print:space-y-2">
+          <div className="pt-5 sm:pt-6 print:pt-5 space-y-3.5 print:space-y-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
                 PAYMENT INFORMATION
               </p>
-              <div className="flex flex-wrap items-center gap-2 print:gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 print:gap-2">
                 <input
                   type="text"
                   value={paymentMethod}
                   disabled={!isEditing}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="font-semibold text-xs sm:text-sm print:text-xs text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                  className="font-semibold text-xs sm:text-sm print:text-sm text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                 />
                 <span className="text-xs text-ink-300">·</span>
                 <input
@@ -1011,12 +1005,12 @@ export function AdminInvoice() {
                   value={paymentDetails}
                   disabled={!isEditing}
                   onChange={(e) => setPaymentDetails(e.target.value)}
-                  className="text-xs print:text-[11px] font-mono text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none flex-1 min-w-[200px] disabled:opacity-90"
+                  className="text-xs print:text-xs font-mono text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none flex-1 min-w-[200px] disabled:opacity-90"
                 />
               </div>
             </div>
 
-            <div className="pt-2 print:pt-1 text-xs print:text-[11px] text-ink-500 space-y-0.5">
+            <div className="pt-2 print:pt-1.5 text-xs print:text-xs text-ink-500 space-y-0.5">
               <input
                 type="text"
                 value={thankYouMessage}
