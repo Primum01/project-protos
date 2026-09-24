@@ -514,7 +514,7 @@ export function AdminListingForm() {
         <div className="flex flex-col lg:flex-row lg:items-start gap-8">
           {/* ── Left side: scrollable form */}
           <div className="min-w-0 flex-1">
-            <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} noValidate className="flex flex-col gap-5">
+            <form ref={formRef} onSubmit={(e: FormEvent) => e.preventDefault()} noValidate className="flex flex-col gap-5 pb-12">
               {/* ── Property details */}
               <FormSection id="section-property-details" title="Property Details">
             <Input
@@ -1054,37 +1054,6 @@ export function AdminListingForm() {
             </div>
           )}
 
-          {/* ── Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-10">
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              className="flex items-center gap-2 rounded-full border border-ink-950/15 bg-paper px-5 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50 hover:text-ink-950"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Preview listing
-            </button>
-            <div className="flex gap-3">
-              <Button
-                id="save-draft-btn"
-                variant="secondary"
-                onClick={() => save(false)}
-                disabled={saving}
-              >
-                {saving ? 'Saving…' : 'Save as draft'}
-              </Button>
-              <Button
-                id="save-publish-btn"
-                onClick={() => save(true)}
-                disabled={saving}
-              >
-                {saving ? 'Saving…' : isEditing ? 'Save & publish' : 'Publish listing'}
-              </Button>
-            </div>
-          </div>
         </form>
       </div>
 

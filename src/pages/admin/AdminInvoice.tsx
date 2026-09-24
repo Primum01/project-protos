@@ -81,9 +81,11 @@ export function AdminInvoice() {
     if (!invoiceNumber) {
       const next = generateNextInvoiceNumber(invoices)
       setInvoiceNumber(next)
-      setPaymentDetails(`Paybill: 247247  |  Account: ${next}`)
+      if (!accountNumber) {
+        setPaymentDetails(`Paybill: 247247  |  Account: ${next}`)
+      }
     }
-  }, [invoices, invoiceNumber])
+  }, [invoices, invoiceNumber, accountNumber])
 
   // Close property dropdown on outside click
   useEffect(() => {
@@ -163,7 +165,13 @@ export function AdminInvoice() {
       if (l.contactName) setClientName(l.contactName)
       const contactParts = [l.contactPhone, l.contactEmail].filter(Boolean)
       if (contactParts.length > 0) setClientContact(contactParts.join(' · '))
-      if (l.accountNumber) setAccountNumber(l.accountNumber)
+      if (l.accountNumber) {
+        setAccountNumber(l.accountNumber)
+        setPaymentDetails(`Paybill: 247247  |  Account: ${l.accountNumber}`)
+      } else {
+        setAccountNumber('')
+        setPaymentDetails(`Paybill: 247247  |  Account: ${invoiceNumber || 'INV-0001'}`)
+      }
     }
   }
 
@@ -175,6 +183,7 @@ export function AdminInvoice() {
     setClientName('')
     setClientContact('')
     setAccountNumber('')
+    setPaymentDetails(`Paybill: 247247  |  Account: ${invoiceNumber || 'INV-0001'}`)
   }
 
   function addItem() {
@@ -243,7 +252,11 @@ export function AdminInvoice() {
     setDiscount(inv.discount)
     setTax(inv.tax)
     setPaymentMethod(inv.paymentMethod)
-    setPaymentDetails(inv.paymentDetails)
+    if (inv.accountNumber && (!inv.paymentDetails || inv.paymentDetails.includes('Account: INV-') || inv.paymentDetails.includes(`Account: ${inv.invoiceNumber}`))) {
+      setPaymentDetails(`Paybill: 247247  |  Account: ${inv.accountNumber}`)
+    } else {
+      setPaymentDetails(inv.paymentDetails || (inv.accountNumber ? `Paybill: 247247  |  Account: ${inv.accountNumber}` : `Paybill: 247247  |  Account: ${inv.invoiceNumber}`))
+    }
     setThankYouMessage(inv.thankYouMessage)
     setTagline(inv.tagline)
     setIsSaved(true)
@@ -753,8 +766,11 @@ export function AdminInvoice() {
                   value={invoiceNumber}
                   disabled={!isEditing}
                   onChange={(e) => {
-                    setInvoiceNumber(e.target.value)
-                    setPaymentDetails(`Paybill: 247247  |  Account: ${e.target.value}`)
+                    const val = e.target.value
+                    setInvoiceNumber(val)
+                    if (!accountNumber) {
+                      setPaymentDetails(`Paybill: 247247  |  Account: ${val}`)
+                    }
                   }}
                   className="w-32 sm:text-right print:text-right font-mono text-sm print:text-sm font-semibold text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
                 />
