@@ -95,6 +95,15 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // IDEMPOTENCY KEYS (Server-Side Duplicate Prevention Store)
+    // =========================================================================
+    // PUBLIC & CLIENT SDKs: Completely denied access.
+    // Accessible ONLY through trusted serverless functions via Firestore REST API or Admin SDK.
+    match /idempotency_keys/{id} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
     // DEFAULT DENIAL
     // =========================================================================
     // Any other collection or document (such as users, internal collections, etc.)

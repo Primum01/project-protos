@@ -1,10 +1,11 @@
-import { type FormEvent, useEffect, useState } from "react"
+import { type FormEvent, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { Button, Input, Section, Textarea } from "@/components/ui"
 import { createMessage } from "@/lib/firebase/messages"
 import { isFirebaseConfigured } from "@/lib/firebase/config"
 import { usePageMeta } from "@/hooks/usePageMeta"
+import { fetchWithIdempotency, generateIdempotencyKey } from "@/lib/idempotency"
 
 const CONTACT_EMAIL = 'info@twinspace360.com'
 
@@ -27,6 +28,9 @@ export function Contact() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  // Track active idempotency key for this submission attempt; preserves key across retries
+  const idempotencyKeyRef = useRef<string>(generateIdempotencyKey())
+
   useEffect(() => {
     const msgFromUrl = searchParams.get('message')
     if (msgFromUrl) {
@@ -40,11 +44,13 @@ export function Contact() {
     setSubmitError(null)
 
     try {
-      // 1. Submit through secure server-side endpoint with rate-limiting and validation
-      const res = await fetch('/api/contact', {
+      // 1. Submit through secure server-side endpoint with automatic idempotency
+      const { response: res, data } = await fetchWithIdempotency('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, message }),
+        idempotencyKey: idempotencyKeyRef.current,
+        maxRetries: 2,
       })
 
       if (res.ok) {
@@ -53,18 +59,17 @@ export function Contact() {
         setPhone("")
         setEmail("")
         setMessage("")
+        idempotencyKeyRef.current = generateIdempotencyKey() // Refresh key for any new future submission
         return
       }
 
       if (res.status === 429) {
-        const data = await res.json().catch(() => ({}))
-        setSubmitError(data.error || 'Too many submissions. Please wait a few moments before trying again.')
+        setSubmitError(data?.error || 'Too many submissions. Please wait a few moments before trying again.')
         return
       }
 
-      if (res.status === 400) {
-        const data = await res.json().catch(() => ({}))
-        setSubmitError(data.error || 'Please check your inputs and try again.')
+      if (res.status === 400 || res.status === 409) {
+        setSubmitError(data?.error || 'Please check your inputs and try again.')
         return
       }
 
