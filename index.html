@@ -25,6 +25,7 @@
     <meta property="og:image" content="https://www.twinspace360.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TwinSpace 360 — Interactive 3D Property Tours" />
     <meta property="og:locale" content="en_US" />
 
     <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
@@ -35,6 +36,7 @@
       content="TwinSpace turns any property into an immersive 3D tour guests can explore before they arrive."
     />
     <meta name="twitter:image" content="https://www.twinspace360.com/og-image.png" />
+    <meta name="twitter:image:alt" content="TwinSpace 360 — Interactive 3D Property Tours" />
 
     <!-- ── Structured Data (JSON-LD) ────────────────────────────────────── -->
     <script type="application/ld+json">
@@ -65,12 +67,35 @@
       }
     </script>
 
-    <!-- ── Favicon & app icons ───────────────────────────────────────── -->
+    <!-- ── Favicon & Cross-Platform Icons ──────────────────────────────── -->
+    <!-- Modern SVG icon for scalable high-DPI displays & dark mode -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Standard multi-size ICO for legacy browsers and desktop shortcuts -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <!-- Google Search & standard desktop browser PNG sizes -->
+    <!-- Google Search guidelines require icons to be a multiple of 48px square (e.g. 48x48, 192x192) -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+
+    <!-- Apple iOS / iPadOS touch icon & web app settings -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="TwinSpace 360" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <!-- Safari pinned tabs -->
+    <link rel="mask-icon" href="/favicon.svg" color="#2D7B8C" />
+
+    <!-- Microsoft Windows Tiles / Edge -->
+    <meta name="application-name" content="TwinSpace 360" />
+    <meta name="msapplication-TileColor" content="#2D7B8C" />
+    <meta name="msapplication-TileImage" content="/icon-192.png" />
+
+    <!-- Progressive Web App Manifest & theme color -->
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#2D7B8C" />
 

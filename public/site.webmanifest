@@ -2,11 +2,19 @@
   "name": "TwinSpace 360",
   "short_name": "TwinSpace",
   "description": "Interactive 3D property tours for hosts and guests",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#2D7B8C",
   "theme_color": "#2D7B8C",
   "icons": [
+    {
+      "src": "/favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
