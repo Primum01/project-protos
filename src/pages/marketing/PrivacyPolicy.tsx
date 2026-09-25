@@ -69,7 +69,7 @@ export function PrivacyPolicy() {
               <div className="mt-3 rounded-lg border border-ink-950/10 bg-ink-50/50 p-4 text-sm space-y-1.5">
                 <p><strong className="text-ink-950">Business Name:</strong> TwinSpace360</p>
                 <p><strong className="text-ink-950">Website:</strong> <a href="https://www.twinspace360.com" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-700">https://www.twinspace360.com</a></p>
-                <p><strong className="text-ink-950">Email:</strong> <a href="mailto:support@twinspace360.com" className="text-brand-600 underline hover:text-brand-700">support@twinspace360.com</a></p>
+                <p><strong className="text-ink-950">Email:</strong> <a href="mailto:twinspace360@gmail.com" className="text-brand-600 underline hover:text-brand-700">twinspace360@gmail.com</a></p>
                 <p><strong className="text-ink-950">Location:</strong> Kenya</p>
               </div>
               <p>
