@@ -1,4 +1,4 @@
-import { collection, doc, getFirestore, onSnapshot, query, where } from 'firebase/firestore'
+import { collection, doc, getFirestore, onSnapshot, query, where, writeBatch } from 'firebase/firestore'
 import { getCollection, setDocument, deleteDocument } from './firestore'
 import { getFirebaseApp, isFirebaseConfigured } from './config'
 import { generateUUID } from '@/lib/uuid'
@@ -54,36 +54,53 @@ export async function getActiveSession(): Promise<AdminSession | null> {
 /**
  * Opens a new session for the given user.
  * STRICT ENFORCEMENT: Under NO circumstance can 2 sessions be active at the same time.
- * Any existing active sessions in Firestore are immediately terminated before the new one is activated.
+ * Any existing active sessions in Firestore are atomically terminated before the new one is activated.
  */
 export async function startSession(user: string): Promise<string> {
   const now = new Date().toISOString()
+  const dbInstance = db()
+  const id = generateUUID()
 
-  // 1. Terminate all existing active sessions
   try {
     const activeSessions = await getCollection<AdminSession>(COL, where('active', '==', true))
+    const batch = writeBatch(dbInstance)
+
+    // 1. Atomically terminate all existing active sessions
     for (const oldSession of activeSessions) {
-      await setDocument(COL, oldSession.id, {
+      const oldRef = doc(dbInstance, COL, oldSession.id)
+      batch.update(oldRef, {
         active: false,
         endedAt: now,
         terminatedBy: user,
       })
     }
-  } catch (err) {
-    console.warn('[sessions] Failed to clean up previous active sessions:', err)
-  }
 
-  // 2. Create and activate the single valid new session
-  const id = generateUUID()
-  await setDocument(COL, id, {
-    id,
-    user,
-    startedAt: now,
-    endedAt: null,
-    active: true,
-    lastHeartbeat: now,
-  })
-  return id
+    // 2. Atomically activate the single new session
+    const newRef = doc(dbInstance, COL, id)
+    batch.set(newRef, {
+      id,
+      user,
+      startedAt: now,
+      endedAt: null,
+      active: true,
+      lastHeartbeat: now,
+    })
+
+    await batch.commit()
+    return id
+  } catch (err) {
+    console.warn('[sessions] Atomic session batch error, falling back:', err)
+    // Fallback: create session directly if batch encountered an issue
+    await setDocument(COL, id, {
+      id,
+      user,
+      startedAt: now,
+      endedAt: null,
+      active: true,
+      lastHeartbeat: now,
+    })
+    return id
+  }
 }
 
 /**

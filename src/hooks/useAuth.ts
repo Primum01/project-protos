@@ -23,9 +23,8 @@ export function useAuth() {
     return unsub
   }, [])
 
-  // If Firebase is not configured (dev mode), bypass as admin.
-  // Otherwise, only team@twinspace360.com is recognized as admin.
-  const isAdmin = !isFirebaseConfigured || isAdminUser(user)
+  // Strict admin authorization: requires valid configuration and matching admin user.
+  const isAdmin = Boolean(isFirebaseConfigured && isAdminUser(user))
 
   return { user, loading, isConfigured: isFirebaseConfigured, isAdmin }
 }

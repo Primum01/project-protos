@@ -47,6 +47,9 @@ setInterval(() => {
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+
   // 1. Enforce POST method only
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -102,11 +105,14 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Message must not exceed 3,000 characters.' })
     }
 
+    // Strip HTML tags from strings to neutralize injection vectors
+    const cleanStr = (s: string) => s.replace(/[<>]/g, '').trim()
+
     const sanitizedData = {
-      name: name.trim(),
+      name: cleanStr(name),
       email: email.trim().toLowerCase(),
-      phone: phone ? phone.trim() : '',
-      message: message.trim(),
+      phone: phone ? cleanStr(phone) : '',
+      message: cleanStr(message),
       submittedAt: new Date().toISOString(),
       clientIp: clientIp === 'unknown' ? '' : clientIp,
     }

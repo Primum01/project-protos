@@ -31,10 +31,13 @@ service cloud.firestore {
     // =========================================================================
     // MESSAGES (Contact / Inquiry Form Submissions)
     // =========================================================================
-    // PUBLIC USERS: Can submit new contact messages. Cannot read, update, or delete.
+    // PUBLIC USERS: Can submit new contact messages (must be unread & within size limits).
+    //               Cannot read, update, or delete any messages.
     // ADMIN: Can read, update (mark read/unread), and delete messages.
     match /messages/{id} {
-      allow create: if true;
+      allow create: if request.resource.data.read == false
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() <= 5000;
       allow read, update, delete: if isAdmin();
     }
 
@@ -63,7 +66,7 @@ service cloud.firestore {
     // PUBLIC USERS: Can record tour view, session duration, and share events.
     // ADMIN: Can read, update, and manage analytics data.
     match /tour_analytics/{id} {
-      allow create: if true;
+      allow create: if request.resource.data.type in ['tour_view', 'session_duration', 'link_shared'];
       allow read, update, delete: if isAdmin();
     }
 
