@@ -25,15 +25,15 @@ service firebase.storage {
     // PUBLIC: Property photos, virtual tour media, and general public assets
     match /listings/{listingId}/photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
     }
     match /photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
     }
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
     }
   }
 }

@@ -119,7 +119,7 @@ export default async function handler(req: any, res: any) {
 
     // 5. Store message server-side if Firebase REST / Admin configuration is present
     const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
-    const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY
+    const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
 
     if (projectId && apiKey) {
       const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/messages?key=${apiKey}`
