@@ -24,7 +24,7 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
 
       // Invoices / receipts / financial attachments for this listing (Admin Only)
-      match /documents/{docId} {
+      match /documents/{document=**} {
         allow read, write: if isAdmin();
       }
     }

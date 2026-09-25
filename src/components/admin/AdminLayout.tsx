@@ -158,7 +158,7 @@ const navItems = [
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, isConfigured } = useAuth()
-  const { currentUser, activeSession, loading: sessionLoading, end } = useSession()
+  const { currentUser, activeSession, loading: sessionLoading, evictedReason, dismissEviction, end } = useSession()
   const navigate = useNavigate()
 
   // Prefetch all admin page chunks so navigation is instant
@@ -183,6 +183,44 @@ export function AdminLayout() {
     } catch {
       /* ignore */
     }
+  }
+
+  // ── Evicted notice (when terminated by another admin on another device) ──
+  if (evictedReason) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-ink-950 p-4">
+        <div className="max-w-md w-full rounded-2xl border border-white/10 bg-paper p-6 sm:p-8 shadow-2xl text-center space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 ring-1 ring-red-500/20">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <h2 className="font-display text-xl font-bold text-ink-950">
+            Session Terminated
+          </h2>
+          <p className="text-sm leading-relaxed text-ink-600">
+            {evictedReason}
+          </p>
+          <p className="text-xs text-ink-400">
+            Under system security policy, only one active admin session is permitted at any time. You have been safely logged out.
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                dismissEviction()
+                navigate('/admin/login', { replace: true })
+              }}
+              className="w-full rounded-xl bg-ink-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-ink-800 transition"
+            >
+              Acknowledge &amp; Return to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ── Session gate ───────────────────────────────────────────────────────────

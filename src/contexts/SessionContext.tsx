@@ -11,6 +11,10 @@ import {
   getActiveSession,
   startSession,
   endSession,
+  subscribeActiveSession,
+  subscribeToSessionDoc,
+  updateSessionHeartbeat,
+  SESSION_MAX_INACTIVITY_MS,
   type AdminSession,
 } from '@/lib/firebase/sessions'
 import { signOut } from '@/lib/firebase/auth'
@@ -22,11 +26,8 @@ const USER_KEY        = 'ts_session_user'
 const STARTED_KEY     = 'ts_session_started'
 const LAST_ACTIVE_KEY = 'ts_session_last_activity'
 
-/** 30 minutes in milliseconds. */
-export const IDLE_TIMEOUT_MS = 30 * 60 * 1000
-
-/** Max ms to wait for a Firestore conflict-check before proceeding anyway. */
-const CONFLICT_CHECK_TIMEOUT = 1000
+/** Idle timeout in milliseconds (30 minutes). */
+export const IDLE_TIMEOUT_MS = SESSION_MAX_INACTIVITY_MS
 
 function getStored(key: string): string | null {
   try {
@@ -62,20 +63,24 @@ interface SessionContextValue {
   currentUser: string | null
   activeSession: AdminSession | null
   loading: boolean
-  select: (user: string) => Promise<SelectResult>
+  evictedReason: string | null
+  select: (user: string, force?: boolean) => Promise<SelectResult>
   end: () => Promise<void>
+  dismissEviction: () => void
 }
 
 const SessionContext = createContext<SessionContextValue>({
   currentUser: null,
   activeSession: null,
   loading: false,
+  evictedReason: null,
   select: async () => ({ status: 'ok', session: {} as AdminSession }),
   end: async () => {},
+  dismissEviction: () => {},
 })
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  // Check if existing session has already timed out (30 mins inactivity)
+  // Check if existing session has already timed out
   const initialExpired = (() => {
     const lastActiveStr = getStored(LAST_ACTIVE_KEY)
     if (!lastActiveStr) return false
@@ -85,91 +90,43 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   if (initialExpired && getStored(USER_KEY)) {
     const id = getStored(ID_KEY)
-    if (id) void endSession(id)
+    if (id) void endSession(id, 'Inactivity timeout')
     removeStored(USER_KEY)
     removeStored(ID_KEY)
     removeStored(STARTED_KEY)
     removeStored(LAST_ACTIVE_KEY)
   }
 
-  // Initialise synchronously from storage so In-Session card is permanently present on refresh
+  // Initialise local session credentials ONLY if they belong to this specific browser
   const [currentUser, setCurrentUser] = useState<string | null>(() => {
     if (initialExpired) return null
     return getStored(USER_KEY)
   })
 
-  const [activeSession, setActiveSession] = useState<AdminSession | null>(() => {
-    if (initialExpired) return null
-    const user = getStored(USER_KEY)
-    const id = getStored(ID_KEY)
-    const startedAt = getStored(STARTED_KEY)
-    if (user) {
-      return {
-        id: id || generateUUID(),
-        user,
-        startedAt: startedAt || new Date().toISOString(),
-        endedAt: null,
-        active: true,
-      }
-    }
-    return null
-  })
-
-  const [loading, setLoading] = useState(
-    isFirebaseConfigured && !getStored(USER_KEY),
-  )
+  const [activeSession, setActiveSession] = useState<AdminSession | null>(null)
+  const [evictedReason, setEvictedReason] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(isFirebaseConfigured)
 
   const lastActivityRef = useRef<number>(Date.now())
 
-  // Update activity timestamp in memory and throttled in storage
   const recordActivity = useCallback(() => {
     const now = Date.now()
     lastActivityRef.current = now
     setStored(LAST_ACTIVE_KEY, String(now))
   }, [])
 
-  // Sync background Firestore session if needed
-  useEffect(() => {
-    if (!isFirebaseConfigured) {
-      setLoading(false)
-      return
-    }
-
-    // If already stored and active, touch activity timestamp
-    if (getStored(USER_KEY)) {
-      setStored(LAST_ACTIVE_KEY, String(Date.now()))
-      setLoading(false)
-    }
-
-    let cancelled = false
-    const timeout = setTimeout(() => { if (!cancelled) setLoading(false) }, 4000)
-    const storedId = getStored(ID_KEY)
-
-    getActiveSession()
-      .then((session) => {
-        if (cancelled) return
-        if (session) {
-          if (!storedId || session.id === storedId) {
-            setStored(USER_KEY, session.user)
-            setStored(ID_KEY, session.id)
-            setStored(STARTED_KEY, session.startedAt)
-            setCurrentUser(session.user)
-            setActiveSession(session)
-          }
-        }
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (!cancelled) { clearTimeout(timeout); setLoading(false) }
-      })
-
-    return () => { cancelled = true; clearTimeout(timeout) }
+  const dismissEviction = useCallback(() => {
+    setEvictedReason(null)
   }, [])
 
   const end = useCallback(async () => {
     const storedId = getStored(ID_KEY)
     if (storedId) {
-      try { await endSession(storedId) } catch { /* best-effort */ }
+      try {
+        await endSession(storedId)
+      } catch {
+        /* best-effort */
+      }
     }
     removeStored(ID_KEY)
     removeStored(USER_KEY)
@@ -179,14 +136,94 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setActiveSession(null)
   }, [])
 
-  // 30-Minute Idle Session Auto-End Monitor
+  // 1. Global real-time active session listener
+  // Keeps track of the single active session in Firestore across the entire system.
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setLoading(false)
+      return
+    }
+
+    const unsub = subscribeActiveSession((liveSession) => {
+      setActiveSession(liveSession)
+      setLoading(false)
+
+      const storedId = getStored(ID_KEY)
+
+      if (storedId) {
+        // If this client holds a session, verify it matches the active session in Firestore
+        if (!liveSession || liveSession.id !== storedId || !liveSession.active) {
+          console.warn('[SessionContext] Active session in Firestore has ended or been replaced.')
+          removeStored(ID_KEY)
+          removeStored(USER_KEY)
+          removeStored(STARTED_KEY)
+          removeStored(LAST_ACTIVE_KEY)
+          setCurrentUser(null)
+
+          const reason = liveSession?.terminatedBy
+            ? `Your session was ended because ${liveSession.terminatedBy} started a session.`
+            : 'Your admin session was ended because another session was started or it timed out.'
+          setEvictedReason(reason)
+        }
+      } else {
+        // CRITICAL INVARIANT:
+        // If this browser does NOT have a local session ID, UNDER NO CIRCUMSTANCE
+        // do we adopt another user's active session!
+        // currentUser MUST remain null so this user is gated at SessionSelect.
+        if (currentUser) {
+          setCurrentUser(null)
+        }
+      }
+    })
+
+    return () => unsub()
+  }, [currentUser])
+
+  // 2. Real-time listener on OUR specific session document (immediate eviction on remote termination)
+  useEffect(() => {
+    const storedId = getStored(ID_KEY)
+    if (!isFirebaseConfigured || !storedId || !currentUser) return
+
+    const unsub = subscribeToSessionDoc(storedId, (docSession) => {
+      if (!docSession || !docSession.active) {
+        console.warn('[SessionContext] Our session document was deactivated in Firestore.')
+        removeStored(ID_KEY)
+        removeStored(USER_KEY)
+        removeStored(STARTED_KEY)
+        removeStored(LAST_ACTIVE_KEY)
+        setCurrentUser(null)
+
+        const reason = docSession?.terminatedBy
+          ? `Your session was ended because ${docSession.terminatedBy} started a new session.`
+          : 'Your admin session was ended.'
+        setEvictedReason(reason)
+      }
+    })
+
+    return () => unsub()
+  }, [currentUser])
+
+  // 3. Heartbeat monitor: Ping Firestore every 60 seconds while active
+  useEffect(() => {
+    const storedId = getStored(ID_KEY)
+    if (!isFirebaseConfigured || !storedId || !currentUser) return
+
+    // Initial heartbeat
+    void updateSessionHeartbeat(storedId)
+
+    const heartbeatInterval = setInterval(() => {
+      void updateSessionHeartbeat(storedId)
+    }, 60000)
+
+    return () => clearInterval(heartbeatInterval)
+  }, [currentUser])
+
+  // 4. Inactivity & Idle Session Auto-End Monitor
   useEffect(() => {
     if (!currentUser) return
 
-    // Record initial activity
     recordActivity()
 
-    // Activity event listeners
     let throttleTimer: ReturnType<typeof setTimeout> | null = null
     const handleUserEvent = () => {
       if (throttleTimer) return
@@ -199,7 +236,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart']
     events.forEach((evt) => window.addEventListener(evt, handleUserEvent, { passive: true }))
 
-    // Periodic check every 15s to detect if 30 minutes has elapsed
     const interval = setInterval(async () => {
       const storedLast = getStored(LAST_ACTIVE_KEY)
       const last = storedLast ? parseInt(storedLast, 10) : lastActivityRef.current
@@ -207,7 +243,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         console.warn('[SessionContext] 30 minute idle timeout triggered. Ending session.')
         clearInterval(interval)
         await end()
-        try { await signOut() } catch { /* ignore */ }
+        try {
+          await signOut()
+        } catch {
+          /* ignore */
+        }
         window.location.href = '/admin/login?reason=idle_timeout'
       }
     }, 15000)
@@ -219,40 +259,53 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, recordActivity, end])
 
-  const select = useCallback(async (user: string): Promise<SelectResult> => {
-    // 1. Race Firestore conflict-check against a short timeout — don't block UI.
+  // 5. Select & Start a Session
+  // Enforces single active session rule. If an active session exists and force is false, blocks entry.
+  const select = useCallback(async (user: string, force = false): Promise<SelectResult> => {
+    // Check Firestore for any currently active session
     let existing: AdminSession | null = null
     try {
-      existing = await Promise.race<AdminSession | null>([
-        getActiveSession(),
-        new Promise<null>((res) => setTimeout(() => res(null), CONFLICT_CHECK_TIMEOUT)),
-      ])
+      existing = await getActiveSession()
     } catch {
-      // If Firestore is unreachable, skip conflict check and proceed.
+      /* ignore */
     }
-    if (existing) {
+
+    const storedId = getStored(ID_KEY)
+
+    // If another session is active and user didn't force termination, block
+    if (existing && existing.active && existing.id !== storedId && !force) {
       setActiveSession(existing)
       return { status: 'blocked', blocking: existing }
+    }
+
+    // If forcing or replacing, explicitly terminate the old session first
+    if (existing && existing.id !== storedId) {
+      try {
+        await endSession(existing.id, user)
+      } catch (err) {
+        console.warn('[SessionContext] Error ending previous session:', err)
+      }
     }
 
     const nowIso = new Date().toISOString()
     const nowMs = String(Date.now())
 
-    // 2. Write user to storage immediately so it survives any re-renders or page refreshes.
-    setStored(USER_KEY, user)
-    setStored(STARTED_KEY, nowIso)
-    setStored(LAST_ACTIVE_KEY, nowMs)
-    setCurrentUser(user)
-
-    // 3. Create the Firestore session record (best-effort — never blocks access).
-    const localId = generateUUID()
-    let finalId: string = localId
+    // Start single new session in Firestore
+    let finalId = generateUUID()
     try {
       finalId = await startSession(user)
     } catch (err) {
-      console.warn('[SessionContext] Firestore session write failed (non-blocking):', err)
+      console.warn('[SessionContext] Firestore startSession failed:', err)
     }
+
+    // Persist to local browser storage
+    setStored(USER_KEY, user)
     setStored(ID_KEY, finalId)
+    setStored(STARTED_KEY, nowIso)
+    setStored(LAST_ACTIVE_KEY, nowMs)
+
+    setCurrentUser(user)
+    setEvictedReason(null)
 
     const session: AdminSession = {
       id: finalId,
@@ -260,13 +313,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       startedAt: nowIso,
       endedAt: null,
       active: true,
+      lastHeartbeat: nowIso,
     }
     setActiveSession(session)
+
     return { status: 'ok', session }
   }, [])
 
   return (
-    <SessionContext.Provider value={{ currentUser, activeSession, loading, select, end }}>
+    <SessionContext.Provider
+      value={{
+        currentUser,
+        activeSession,
+        loading,
+        evictedReason,
+        select,
+        end,
+        dismissEviction,
+      }}
+    >
       {children}
     </SessionContext.Provider>
   )
