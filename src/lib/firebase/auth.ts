@@ -75,12 +75,7 @@ export async function signOut() {
 }
 
 export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
-  return onAuthStateChanged(auth(), (user) => {
-    if (!user || !isAdminUser(user)) {
-      clearAdminStorage()
-    }
-    callback(user)
-  })
+  return onAuthStateChanged(auth(), callback)
 }
 
 export type { FirebaseUser }

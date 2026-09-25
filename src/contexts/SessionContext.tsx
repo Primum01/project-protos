@@ -20,7 +20,7 @@ import {
 import { signOut } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { generateUUID } from '@/lib/uuid'
-import { clearAdminStorage, tabStorage } from '@/lib/storage'
+import { clearAdminStorage } from '@/lib/storage'
 
 const ID_KEY          = 'ts_session_id'
 const USER_KEY        = 'ts_session_user'
@@ -30,27 +30,26 @@ const LAST_ACTIVE_KEY = 'ts_session_last_activity'
 /** Idle timeout in milliseconds (30 minutes). */
 export const IDLE_TIMEOUT_MS = SESSION_MAX_INACTIVITY_MS
 
-// Clear any legacy session data lingering in localStorage from older builds
-try {
-  localStorage.removeItem(ID_KEY)
-  localStorage.removeItem(USER_KEY)
-  localStorage.removeItem(STARTED_KEY)
-  localStorage.removeItem(LAST_ACTIVE_KEY)
-} catch {
-  /* ignore storage access restrictions */
-}
-
 function getStored(key: string): string | null {
-  return tabStorage.get(key)
+  try {
+    return sessionStorage.getItem(key) || localStorage.getItem(key)
+  } catch {
+    return null
+  }
 }
 
 function setStored(key: string, value: string): void {
-  tabStorage.set(key, value)
+  try {
+    sessionStorage.setItem(key, value)
+    localStorage.setItem(key, value)
+  } catch {
+    /* ignore */
+  }
 }
 
 function removeStored(key: string): void {
-  tabStorage.remove(key)
   try {
+    sessionStorage.removeItem(key)
     localStorage.removeItem(key)
   } catch {
     /* ignore */
@@ -87,7 +86,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const lastActiveStr = getStored(LAST_ACTIVE_KEY)
     if (!lastActiveStr) return false
     const lastActive = parseInt(lastActiveStr, 10)
-    return Date.now() - lastActive > IDLE_TIMEOUT_MS
+    return !isNaN(lastActive) && Date.now() - lastActive > IDLE_TIMEOUT_MS
   })()
 
   if (initialExpired && getStored(USER_KEY)) {
@@ -100,7 +99,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     clearAdminStorage()
   }
 
-  // Initialise tab-scoped session credentials (never persistent in Local Storage)
+  // Initialise session operator profile from storage
   const [currentUser, setCurrentUser] = useState<string | null>(() => {
     if (initialExpired) return null
     return getStored(USER_KEY)
@@ -110,6 +109,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [evictedReason, setEvictedReason] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(isFirebaseConfigured)
 
+  const currentSessionIdRef = useRef<string | null>(getStored(ID_KEY))
   const lastActivityRef = useRef<number>(Date.now())
 
   const recordActivity = useCallback(() => {
@@ -123,7 +123,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const end = useCallback(async () => {
-    const storedId = getStored(ID_KEY)
+    const storedId = currentSessionIdRef.current || getStored(ID_KEY)
     if (storedId) {
       try {
         await endSession(storedId)
@@ -131,6 +131,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         /* best-effort */
       }
     }
+    currentSessionIdRef.current = null
     removeStored(ID_KEY)
     removeStored(USER_KEY)
     removeStored(STARTED_KEY)
@@ -152,12 +153,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setActiveSession(liveSession)
       setLoading(false)
 
-      const storedId = getStored(ID_KEY)
+      const storedId = currentSessionIdRef.current || getStored(ID_KEY)
 
-      if (storedId) {
-        // If this client holds a session, verify it matches the active session in Firestore
-        if (!liveSession || liveSession.id !== storedId || !liveSession.active) {
-          console.warn('[SessionContext] Active session in Firestore has ended or been replaced.')
+      if (storedId && liveSession) {
+        // Evict ONLY if another active session has explicitly replaced ours
+        if (liveSession.active && liveSession.id !== storedId) {
+          console.warn('[SessionContext] Active session in Firestore has been replaced by:', liveSession.user)
+          currentSessionIdRef.current = null
           removeStored(ID_KEY)
           removeStored(USER_KEY)
           removeStored(STARTED_KEY)
@@ -165,33 +167,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           clearAdminStorage()
           setCurrentUser(null)
 
-          const reason = liveSession?.terminatedBy
+          const reason = liveSession.terminatedBy
             ? `Your session was ended because ${liveSession.terminatedBy} started a session.`
-            : 'Your admin session was ended because another session was started or it timed out.'
+            : `Your admin session was ended because ${liveSession.user} started a new session.`
           setEvictedReason(reason)
-        }
-      } else {
-        // CRITICAL INVARIANT:
-        // If this browser tab does NOT have a local session ID, UNDER NO CIRCUMSTANCE
-        // do we adopt another user's active session!
-        // currentUser MUST remain null so this user is gated at SessionSelect.
-        if (currentUser) {
-          setCurrentUser(null)
         }
       }
     })
 
     return () => unsub()
-  }, [currentUser])
+  }, [])
 
   // 2. Real-time listener on OUR specific session document (immediate eviction on remote termination)
   useEffect(() => {
-    const storedId = getStored(ID_KEY)
+    const storedId = currentSessionIdRef.current || getStored(ID_KEY)
     if (!isFirebaseConfigured || !storedId || !currentUser) return
 
     const unsub = subscribeToSessionDoc(storedId, (docSession) => {
-      if (!docSession || !docSession.active) {
+      if (docSession && docSession.active === false) {
         console.warn('[SessionContext] Our session document was deactivated in Firestore.')
+        currentSessionIdRef.current = null
         removeStored(ID_KEY)
         removeStored(USER_KEY)
         removeStored(STARTED_KEY)
@@ -199,7 +194,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         clearAdminStorage()
         setCurrentUser(null)
 
-        const reason = docSession?.terminatedBy
+        const reason = docSession.terminatedBy
           ? `Your session was ended because ${docSession.terminatedBy} started a new session.`
           : 'Your admin session was ended.'
         setEvictedReason(reason)
@@ -211,7 +206,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // 3. Heartbeat monitor: Ping Firestore every 60 seconds while active
   useEffect(() => {
-    const storedId = getStored(ID_KEY)
+    const storedId = currentSessionIdRef.current || getStored(ID_KEY)
     if (!isFirebaseConfigured || !storedId || !currentUser) return
 
     // Initial heartbeat
@@ -245,11 +240,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(async () => {
       const storedLast = getStored(LAST_ACTIVE_KEY)
       const last = storedLast ? parseInt(storedLast, 10) : lastActivityRef.current
-      if (Date.now() - last > IDLE_TIMEOUT_MS) {
+      if (!isNaN(last) && Date.now() - last > IDLE_TIMEOUT_MS) {
         console.warn('[SessionContext] 30 minute idle timeout triggered. Ending session.')
         clearInterval(interval)
         await end()
-        clearAdminStorage()
         try {
           await signOut()
         } catch {
@@ -277,7 +271,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
 
-    const storedId = getStored(ID_KEY)
+    const storedId = currentSessionIdRef.current || getStored(ID_KEY)
 
     // If another session is active and user didn't force termination, block
     if (existing && existing.active && existing.id !== storedId && !force) {
@@ -305,7 +299,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       console.warn('[SessionContext] Firestore startSession failed:', err)
     }
 
-    // Persist to ephemeral tab storage (sessionStorage only)
+    currentSessionIdRef.current = finalId
     setStored(USER_KEY, user)
     setStored(ID_KEY, finalId)
     setStored(STARTED_KEY, nowIso)

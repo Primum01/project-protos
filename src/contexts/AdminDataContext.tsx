@@ -12,7 +12,7 @@ import {
 } from '@/lib/firebase/finance'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { useAuth } from '@/hooks/useAuth'
-import { clearAdminStorage } from '@/lib/storage'
+import { clearAdminCaches } from '@/lib/storage'
 import type { Listing } from '@/types/listing'
 import type { ContactMessage } from '@/types/message'
 import type { SavedInvoice, SavedReceipt } from '@/types/finance'
@@ -72,7 +72,7 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
       setInvoices([])
       setReceipts([])
       clearFinanceMemory()
-      clearAdminStorage()
+      clearAdminCaches()
       return
     }
 
