@@ -6,24 +6,13 @@ import {
 import { isFirebaseConfigured } from './config'
 import type { SavedInvoice, SavedReceipt } from '@/types/finance'
 
-export const LS_INVOICES = 'ts_admin_invoices_cache'
-export const LS_RECEIPTS = 'ts_admin_receipts_cache'
+// In-memory volatile fallback (never written to disk or Local Storage)
+let memoryInvoices: SavedInvoice[] = []
+let memoryReceipts: SavedReceipt[] = []
 
-export function readFinanceCache<T>(key: string): T[] {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T[]) : []
-  } catch {
-    return []
-  }
-}
-
-export function writeFinanceCache<T>(key: string, data: T[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch {
-    /* storage full — skip */
-  }
+export function clearFinanceMemory(): void {
+  memoryInvoices = []
+  memoryReceipts = []
 }
 
 /**
@@ -82,7 +71,7 @@ export function generateNextReceiptNumber(existingReceipts: SavedReceipt[]): str
 }
 
 /**
- * Save an invoice to Firestore and local storage.
+ * Save an invoice to Firestore and volatile memory.
  * Enforces strict uniqueness of invoiceNumber.
  */
 export async function persistInvoice(
@@ -102,12 +91,11 @@ export async function persistInvoice(
     throw new Error(`Invoice number "${invoice.invoiceNumber}" already exists and cannot be replicated.`)
   }
 
-  // Update local storage cache
-  const nextList = [
+  // Update volatile memory fallback
+  memoryInvoices = [
     invoice,
-    ...existingInvoices.filter((inv) => inv.id !== invoice.id),
+    ...memoryInvoices.filter((inv) => inv.id !== invoice.id),
   ]
-  writeFinanceCache(LS_INVOICES, nextList)
 
   // Persist to Firestore if configured
   if (isFirebaseConfigured) {
@@ -116,11 +104,10 @@ export async function persistInvoice(
 }
 
 /**
- * Delete an invoice from Firestore and local storage.
+ * Delete an invoice from Firestore and volatile memory.
  */
-export async function removeInvoice(id: string, existingInvoices: SavedInvoice[]): Promise<void> {
-  const nextList = existingInvoices.filter((inv) => inv.id !== id)
-  writeFinanceCache(LS_INVOICES, nextList)
+export async function removeInvoice(id: string, _existingInvoices: SavedInvoice[]): Promise<void> {
+  memoryInvoices = memoryInvoices.filter((inv) => inv.id !== id)
 
   if (isFirebaseConfigured) {
     await deleteDocument('invoices', id)
@@ -128,7 +115,7 @@ export async function removeInvoice(id: string, existingInvoices: SavedInvoice[]
 }
 
 /**
- * Save a receipt to Firestore and local storage.
+ * Save a receipt to Firestore and volatile memory.
  * Enforces strict uniqueness of receiptNumber.
  */
 export async function persistReceipt(
@@ -148,12 +135,11 @@ export async function persistReceipt(
     throw new Error(`Receipt number "${receipt.receiptNumber}" already exists and cannot be replicated.`)
   }
 
-  // Update local storage cache
-  const nextList = [
+  // Update volatile memory fallback
+  memoryReceipts = [
     receipt,
-    ...existingReceipts.filter((rec) => rec.id !== receipt.id),
+    ...memoryReceipts.filter((rec) => rec.id !== receipt.id),
   ]
-  writeFinanceCache(LS_RECEIPTS, nextList)
 
   // Persist to Firestore if configured
   if (isFirebaseConfigured) {
@@ -162,11 +148,10 @@ export async function persistReceipt(
 }
 
 /**
- * Delete a receipt from Firestore and local storage.
+ * Delete a receipt from Firestore and volatile memory.
  */
-export async function removeReceipt(id: string, existingReceipts: SavedReceipt[]): Promise<void> {
-  const nextList = existingReceipts.filter((rec) => rec.id !== id)
-  writeFinanceCache(LS_RECEIPTS, nextList)
+export async function removeReceipt(id: string, _existingReceipts: SavedReceipt[]): Promise<void> {
+  memoryReceipts = memoryReceipts.filter((rec) => rec.id !== id)
 
   if (isFirebaseConfigured) {
     await deleteDocument('receipts', id)
@@ -178,7 +163,7 @@ export async function removeReceipt(id: string, existingReceipts: SavedReceipt[]
  */
 export function subscribeInvoices(callback: (invoices: SavedInvoice[]) => void) {
   if (!isFirebaseConfigured) {
-    callback(readFinanceCache<SavedInvoice>(LS_INVOICES))
+    callback([...memoryInvoices])
     return () => {}
   }
   return subscribeCollection<SavedInvoice>('invoices', callback)
@@ -189,7 +174,7 @@ export function subscribeInvoices(callback: (invoices: SavedInvoice[]) => void) 
  */
 export function subscribeReceipts(callback: (receipts: SavedReceipt[]) => void) {
   if (!isFirebaseConfigured) {
-    callback(readFinanceCache<SavedReceipt>(LS_RECEIPTS))
+    callback([...memoryReceipts])
     return () => {}
   }
   return subscribeCollection<SavedReceipt>('receipts', callback)

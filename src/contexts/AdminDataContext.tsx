@@ -2,43 +2,20 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { subscribeAllListings } from '@/lib/firebase/listings'
 import { subscribeMessages } from '@/lib/firebase/messages'
 import {
-  LS_INVOICES,
-  LS_RECEIPTS,
   persistInvoice,
   persistReceipt,
-  readFinanceCache,
   removeInvoice,
   removeReceipt,
   subscribeInvoices,
   subscribeReceipts,
-  writeFinanceCache,
+  clearFinanceMemory,
 } from '@/lib/firebase/finance'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { useAuth } from '@/hooks/useAuth'
+import { clearAdminStorage } from '@/lib/storage'
 import type { Listing } from '@/types/listing'
 import type { ContactMessage } from '@/types/message'
 import type { SavedInvoice, SavedReceipt } from '@/types/finance'
-
-/* ── localStorage cache keys ─────────────────────────────────────────────── */
-const LS_LISTINGS = 'ts_admin_listings_cache'
-const LS_MESSAGES = 'ts_admin_messages_cache'
-
-function readCache<T>(key: string): T[] {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T[]) : []
-  } catch {
-    return []
-  }
-}
-
-function writeCache<T>(key: string, data: T[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch {
-    /* storage full — silently skip */
-  }
-}
 
 interface AdminDataContextValue {
   listings: Listing[]
@@ -72,62 +49,51 @@ const AdminDataContext = createContext<AdminDataContextValue>({
 
 /**
  * Starts real-time Firestore subscriptions for listings + messages + invoices + receipts.
- * On first render it seeds state from localStorage so the UI is never blank —
- * Firestore updates replace the cache within milliseconds.
- * Mount this as high as possible in the admin tree so data loads in parallel
- * with auth/session checks rather than waiting for them to finish.
+ * Maintains volatile in-memory state only (no sensitive customer or financial data in Local Storage).
+ * Purges memory and admin storage when unauthenticated or on logout.
  */
 export function AdminDataProvider({ children }: { children: ReactNode }) {
-  // Seed from cache for instant render — loading=false if cache has data
-  const cachedListings = readCache<Listing>(LS_LISTINGS)
-  const cachedMessages = readCache<ContactMessage>(LS_MESSAGES)
-  const cachedInvoices = readFinanceCache<SavedInvoice>(LS_INVOICES)
-  const cachedReceipts = readFinanceCache<SavedReceipt>(LS_RECEIPTS)
-
-  const [listings, setListings] = useState<Listing[]>(cachedListings)
-  const [listingsLoading, setListingsLoading] = useState(
-    isFirebaseConfigured && cachedListings.length === 0,
-  )
-  const [messages, setMessages] = useState<ContactMessage[]>(cachedMessages)
-  const [messagesLoading, setMessagesLoading] = useState(
-    isFirebaseConfigured && cachedMessages.length === 0,
-  )
-  const [invoices, setInvoices] = useState<SavedInvoice[]>(cachedInvoices)
-  const [invoicesLoading, setInvoicesLoading] = useState(
-    isFirebaseConfigured && cachedInvoices.length === 0,
-  )
-  const [receipts, setReceipts] = useState<SavedReceipt[]>(cachedReceipts)
-  const [receiptsLoading, setReceiptsLoading] = useState(
-    isFirebaseConfigured && cachedReceipts.length === 0,
-  )
+  const [listings, setListings] = useState<Listing[]>([])
+  const [listingsLoading, setListingsLoading] = useState(isFirebaseConfigured)
+  const [messages, setMessages] = useState<ContactMessage[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(isFirebaseConfigured)
+  const [invoices, setInvoices] = useState<SavedInvoice[]>([])
+  const [invoicesLoading, setInvoicesLoading] = useState(isFirebaseConfigured)
+  const [receipts, setReceipts] = useState<SavedReceipt[]>([])
+  const [receiptsLoading, setReceiptsLoading] = useState(isFirebaseConfigured)
 
   const { user, isAdmin } = useAuth()
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !user || !isAdmin) return
+    if (!isFirebaseConfigured || !user || !isAdmin) {
+      // Clear sensitive records from memory and local/session caches
+      setListings([])
+      setMessages([])
+      setInvoices([])
+      setReceipts([])
+      clearFinanceMemory()
+      clearAdminStorage()
+      return
+    }
 
     const unsubListings = subscribeAllListings((data) => {
       setListings(data)
       setListingsLoading(false)
-      writeCache(LS_LISTINGS, data)
     })
 
     const unsubMessages = subscribeMessages((data) => {
       setMessages(data)
       setMessagesLoading(false)
-      writeCache(LS_MESSAGES, data)
     })
 
     const unsubInvoices = subscribeInvoices((data) => {
       setInvoices(data)
       setInvoicesLoading(false)
-      writeFinanceCache(LS_INVOICES, data)
     })
 
     const unsubReceipts = subscribeReceipts((data) => {
       setReceipts(data)
       setReceiptsLoading(false)
-      writeFinanceCache(LS_RECEIPTS, data)
     })
 
     return () => {
@@ -186,13 +152,13 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
   )
 }
 
-/** Drop-in replacement for useAllListings() — reads from shared admin cache. */
+/** Drop-in replacement for useAllListings() — reads from volatile memory cache. */
 export function useAdminListings() {
   const { listings, listingsLoading } = useContext(AdminDataContext)
   return { listings, loading: listingsLoading, error: null }
 }
 
-/** Drop-in replacement for useMessages() — reads from shared admin cache. */
+/** Drop-in replacement for useMessages() — reads from volatile memory cache. */
 export function useAdminMessages() {
   const { messages, messagesLoading } = useContext(AdminDataContext)
   return { messages, loading: messagesLoading, error: null }

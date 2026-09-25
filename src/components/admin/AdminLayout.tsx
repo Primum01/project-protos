@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { signOut } from '@/lib/firebase/auth'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/hooks/useAuth'
 import { useSession } from '@/contexts/SessionContext'
 import { SessionSelect } from '@/pages/admin/SessionSelect'
+import { clearAdminStorage, tabStorage } from '@/lib/storage'
 
 /* ── Inline icons ─────────────────────────────────────────────────────── */
 function IconBuilding() {
@@ -157,7 +158,7 @@ const navItems = [
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, isConfigured } = useAuth()
+  const { user, isAdmin, isConfigured, loading: authLoading } = useAuth()
   const { currentUser, activeSession, loading: sessionLoading, evictedReason, dismissEviction, end } = useSession()
   const navigate = useNavigate()
 
@@ -179,9 +180,11 @@ export function AdminLayout() {
     try {
       await end()      // Log session end in Firestore first
       await signOut()  // Then Firebase sign-out
-      navigate('/admin/login')
     } catch {
       /* ignore */
+    } finally {
+      clearAdminStorage()
+      navigate('/admin/login', { replace: true })
     }
   }
 
@@ -211,6 +214,7 @@ export function AdminLayout() {
               type="button"
               onClick={() => {
                 dismissEviction()
+                clearAdminStorage()
                 navigate('/admin/login', { replace: true })
               }}
               className="w-full rounded-xl bg-ink-950 py-2.5 text-sm font-semibold text-white shadow hover:bg-ink-800 transition"
@@ -223,14 +227,17 @@ export function AdminLayout() {
     )
   }
 
-  // ── Session gate ───────────────────────────────────────────────────────────
+  // ── Authentication & Session gate ──────────────────────────────────────────
   if (isConfigured) {
-    if (sessionLoading) {
+    if (authLoading || sessionLoading) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-ink-950">
           <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
         </div>
       )
+    }
+    if (!user || !isAdmin) {
+      return <Navigate to="/admin/login" replace />
     }
     if (!currentUser) {
       return <SessionSelect />
@@ -265,7 +272,7 @@ export function AdminLayout() {
           </div>
           <p className="mt-1.5 text-sm font-medium text-white/90">{currentUser}</p>
           <p className="mt-0.5 text-[11px] text-white/35">
-            <SessionClock startedAt={activeSession?.startedAt || localStorage.getItem('ts_session_started') || ''} />
+            <SessionClock startedAt={activeSession?.startedAt || tabStorage.get('ts_session_started') || ''} />
           </p>
         </div>
       )}

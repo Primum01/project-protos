@@ -13,6 +13,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth'
 import { getFirebaseApp } from './config'
+import { clearAdminStorage } from '@/lib/storage'
 
 /** The only email address recognized with admin privileges in TwinSpace. */
 export const ADMIN_EMAIL = 'team@twinspace360.com'
@@ -47,6 +48,7 @@ export async function signInWithEmail(email: string, password: string) {
   await setPersistence(auth(), browserSessionPersistence)
   const credential = await signInWithEmailAndPassword(auth(), email, password)
   if (!isAdminEmail(credential.user.email)) {
+    clearAdminStorage()
     await firebaseSignOut(auth())
     throw new Error('Unauthorised: invalid admin credentials.')
   }
@@ -56,6 +58,7 @@ export async function signInWithEmail(email: string, password: string) {
 export async function signInWithGoogle() {
   const credential = await signInWithPopup(auth(), new GoogleAuthProvider())
   if (!isAdminEmail(credential.user.email)) {
+    clearAdminStorage()
     await firebaseSignOut(auth())
     throw new Error('Unauthorised: invalid admin credentials.')
   }
@@ -67,11 +70,17 @@ export async function resetPassword(email: string) {
 }
 
 export async function signOut() {
+  clearAdminStorage()
   await firebaseSignOut(auth())
 }
 
 export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
-  return onAuthStateChanged(auth(), callback)
+  return onAuthStateChanged(auth(), (user) => {
+    if (!user || !isAdminUser(user)) {
+      clearAdminStorage()
+    }
+    callback(user)
+  })
 }
 
 export type { FirebaseUser }

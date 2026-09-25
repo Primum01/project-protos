@@ -4,6 +4,7 @@ import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
+import { tabStorage } from '@/lib/storage'
 
 type TimeRange = '1w' | '1m' | '3m' | '6m' | '1y'
 
@@ -23,9 +24,16 @@ interface MetricData {
 
 const STORAGE_KEY = 'ts_admin_analytics_metrics_v1'
 
+// Clean up any legacy localStorage entry from older builds
+try {
+  localStorage.removeItem(STORAGE_KEY)
+} catch {
+  /* ignore */
+}
+
 function getInitialMetrics(): Record<string, MetricData> {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
+    const saved = tabStorage.get(STORAGE_KEY)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -73,7 +81,7 @@ export function AdminAnalytics() {
         },
       }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+        tabStorage.set(STORAGE_KEY, JSON.stringify(next))
       } catch {
         // ignore
       }

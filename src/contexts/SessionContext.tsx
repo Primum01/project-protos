@@ -20,6 +20,7 @@ import {
 import { signOut } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { generateUUID } from '@/lib/uuid'
+import { clearAdminStorage, tabStorage } from '@/lib/storage'
 
 const ID_KEY          = 'ts_session_id'
 const USER_KEY        = 'ts_session_user'
@@ -29,27 +30,28 @@ const LAST_ACTIVE_KEY = 'ts_session_last_activity'
 /** Idle timeout in milliseconds (30 minutes). */
 export const IDLE_TIMEOUT_MS = SESSION_MAX_INACTIVITY_MS
 
+// Clear any legacy session data lingering in localStorage from older builds
+try {
+  localStorage.removeItem(ID_KEY)
+  localStorage.removeItem(USER_KEY)
+  localStorage.removeItem(STARTED_KEY)
+  localStorage.removeItem(LAST_ACTIVE_KEY)
+} catch {
+  /* ignore storage access restrictions */
+}
+
 function getStored(key: string): string | null {
-  try {
-    return localStorage.getItem(key) || sessionStorage.getItem(key)
-  } catch {
-    return null
-  }
+  return tabStorage.get(key)
 }
 
 function setStored(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value)
-    sessionStorage.setItem(key, value)
-  } catch {
-    /* ignore */
-  }
+  tabStorage.set(key, value)
 }
 
 function removeStored(key: string): void {
+  tabStorage.remove(key)
   try {
     localStorage.removeItem(key)
-    sessionStorage.removeItem(key)
   } catch {
     /* ignore */
   }
@@ -95,9 +97,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     removeStored(ID_KEY)
     removeStored(STARTED_KEY)
     removeStored(LAST_ACTIVE_KEY)
+    clearAdminStorage()
   }
 
-  // Initialise local session credentials ONLY if they belong to this specific browser
+  // Initialise tab-scoped session credentials (never persistent in Local Storage)
   const [currentUser, setCurrentUser] = useState<string | null>(() => {
     if (initialExpired) return null
     return getStored(USER_KEY)
@@ -132,6 +135,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     removeStored(USER_KEY)
     removeStored(STARTED_KEY)
     removeStored(LAST_ACTIVE_KEY)
+    clearAdminStorage()
     setCurrentUser(null)
     setActiveSession(null)
   }, [])
@@ -158,6 +162,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           removeStored(USER_KEY)
           removeStored(STARTED_KEY)
           removeStored(LAST_ACTIVE_KEY)
+          clearAdminStorage()
           setCurrentUser(null)
 
           const reason = liveSession?.terminatedBy
@@ -167,7 +172,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
       } else {
         // CRITICAL INVARIANT:
-        // If this browser does NOT have a local session ID, UNDER NO CIRCUMSTANCE
+        // If this browser tab does NOT have a local session ID, UNDER NO CIRCUMSTANCE
         // do we adopt another user's active session!
         // currentUser MUST remain null so this user is gated at SessionSelect.
         if (currentUser) {
@@ -191,6 +196,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         removeStored(USER_KEY)
         removeStored(STARTED_KEY)
         removeStored(LAST_ACTIVE_KEY)
+        clearAdminStorage()
         setCurrentUser(null)
 
         const reason = docSession?.terminatedBy
@@ -243,6 +249,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         console.warn('[SessionContext] 30 minute idle timeout triggered. Ending session.')
         clearInterval(interval)
         await end()
+        clearAdminStorage()
         try {
           await signOut()
         } catch {
@@ -298,7 +305,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       console.warn('[SessionContext] Firestore startSession failed:', err)
     }
 
-    // Persist to local browser storage
+    // Persist to ephemeral tab storage (sessionStorage only)
     setStored(USER_KEY, user)
     setStored(ID_KEY, finalId)
     setStored(STARTED_KEY, nowIso)
