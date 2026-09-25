@@ -54,6 +54,8 @@ const ListingDetail   = lazyWithRetry(() => import('@/pages/marketing/ListingDet
 const Pricing         = lazyWithRetry(() => import('@/pages/marketing/Pricing').then(m => ({ default: m.Pricing })), 'Pricing')
 const TourDetail      = lazyWithRetry(() => import('@/pages/marketing/TourDetail').then(m => ({ default: m.TourDetail })), 'TourDetail')
 const Tours           = lazyWithRetry(() => import('@/pages/marketing/Tours').then(m => ({ default: m.Tours })), 'Tours')
+const PrivacyPolicy   = lazyWithRetry(() => import('@/pages/marketing/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })), 'PrivacyPolicy')
+const TermsAndConditions = lazyWithRetry(() => import('@/pages/marketing/TermsAndConditions').then(m => ({ default: m.TermsAndConditions })), 'TermsAndConditions')
 const AdminDashboard  = lazyWithRetry(() => import('@/pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })), 'AdminDashboard')
 const AdminListingForm = lazyWithRetry(() => import('@/pages/admin/AdminListingForm').then(m => ({ default: m.AdminListingForm })), 'AdminListingForm')
 const AdminListings   = lazyWithRetry(() => import('@/pages/admin/AdminListings').then(m => ({ default: m.AdminListings })), 'AdminListings')
@@ -105,6 +107,10 @@ export const router = createBrowserRouter([
       { path: '/listing/:id', element: <ListingDetail /> },
       { path: '/about', element: <About /> },
       { path: '/contact', element: <Contact /> },
+      { path: '/privacy', element: <PrivacyPolicy /> },
+      { path: '/privacy-policy', element: <Navigate to="/privacy" replace /> },
+      { path: '/terms', element: <TermsAndConditions /> },
+      { path: '/terms-and-conditions', element: <Navigate to="/terms" replace /> },
 
       // ── Admin login (public)
       { path: '/admin/login', element: <AdminLogin /> },

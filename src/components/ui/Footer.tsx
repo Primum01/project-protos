@@ -20,8 +20,8 @@ const columns = [
   {
     title: 'Legal',
     links: [
-      { label: 'Privacy', to: '/privacy' },
-      { label: 'Terms', to: '/terms' },
+      { label: 'Privacy Policy', to: '/privacy' },
+      { label: 'Terms and Conditions', to: '/terms' },
     ],
   },
 ]
