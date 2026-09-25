@@ -10,27 +10,30 @@ service firebase.storage {
 
     // STRICTLY ADMIN-ONLY: Invoices, receipts, and private business documents
     match /listings/{listingId}/documents/{allPaths=**} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
     match /invoices/{allPaths=**} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
     match /receipts/{allPaths=**} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
 
     // PUBLIC: Property photos, virtual tour media, and general public assets
     match /listings/{listingId}/photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
     match /photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
     }
   }
 }

@@ -38,24 +38,60 @@ export function Contact() {
     event.preventDefault()
     setSubmitting(true)
     setSubmitError(null)
-    if (isFirebaseConfigured) {
-      try {
-        await createMessage({ name, phone, email, message })
+
+    try {
+      // 1. Submit through secure server-side endpoint with rate-limiting and validation
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, message }),
+      })
+
+      if (res.ok) {
         setSent(true)
         setName("")
         setPhone("")
         setEmail("")
         setMessage("")
-      } catch {
-        setSubmitError("Something went wrong. Please try again or email us directly.")
-      } finally {
-        setSubmitting(false)
+        return
       }
-    } else {
-      // Fallback when Firebase isn't configured
+
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}))
+        setSubmitError(data.error || 'Too many submissions. Please wait a few moments before trying again.')
+        return
+      }
+
+      if (res.status === 400) {
+        const data = await res.json().catch(() => ({}))
+        setSubmitError(data.error || 'Please check your inputs and try again.')
+        return
+      }
+
+      // If server returned non-200 and not handled (e.g. 404 in standalone local vite dev), fall back
+      throw new Error(`Server endpoint returned ${res.status}`)
+    } catch {
+      // 2. Fallback to client SDK if configured (e.g. during standalone local development)
+      if (isFirebaseConfigured) {
+        try {
+          await createMessage({ name, phone, email, message })
+          setSent(true)
+          setName("")
+          setPhone("")
+          setEmail("")
+          setMessage("")
+          return
+        } catch {
+          setSubmitError("Something went wrong. Please try again or email us directly.")
+          return
+        }
+      }
+
+      // 3. Offline / Unconfigured fallback
       const subject = encodeURIComponent(`New enquiry from ${name || "the TwinSpace site"}`)
       const body = encodeURIComponent(`${message}\n\nFrom ${name}\nPhone: ${phone}\nEmail: ${email}`)
       window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`
+    } finally {
       setSubmitting(false)
     }
   }
