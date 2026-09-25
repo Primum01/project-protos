@@ -14,13 +14,12 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // LISTINGS (Properties)
+    // LISTINGS (Properties & Virtual Tours)
     // =========================================================================
-    // PUBLIC USERS: Can only read/search listings where published == true.
-    // ADMIN: Can read all listings (published and drafts), and can create,
-    //        update, publish/unpublish, and permanently delete listings.
+    // PUBLIC USERS: Can view property listings.
+    // ADMIN: Can create, update, publish/unpublish, and permanently delete listings.
     match /listings/{id} {
-      allow read: if (resource != null && resource.data.published == true) || isAdmin();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
 
       // Invoices / receipts / financial attachments for this listing (Admin Only)
@@ -32,22 +31,10 @@ service cloud.firestore {
     // =========================================================================
     // MESSAGES (Contact / Inquiry Form Submissions)
     // =========================================================================
-    // PUBLIC USERS: Can create contact messages strictly adhering to the schema.
-    //               Cannot read, update, or delete any messages.
+    // PUBLIC USERS: Can submit new contact messages. Cannot read, update, or delete.
     // ADMIN: Can read, update (mark read/unread), and delete messages.
     match /messages/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['id', 'name', 'email', 'phone', 'message', 'read', 'createdAt'])
-                    && request.resource.data.id is string
-                    && request.resource.data.name is string
-                    && request.resource.data.name.size() >= 2
-                    && request.resource.data.name.size() <= 100
-                    && request.resource.data.email is string
-                    && request.resource.data.email.size() <= 150
-                    && request.resource.data.message is string
-                    && request.resource.data.message.size() >= 5
-                    && request.resource.data.message.size() <= 5000
-                    && request.resource.data.read == false
-                    && request.resource.data.createdAt is string;
+      allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
@@ -76,11 +63,7 @@ service cloud.firestore {
     // PUBLIC USERS: Can record tour view, session duration, and share events.
     // ADMIN: Can read, update, and manage analytics data.
     match /tour_analytics/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['id', 'type', 'tourId', 'tourTitle', 'durationSeconds', 'timestamp'])
-                    && request.resource.data.id is string
-                    && request.resource.data.type in ['tour_view', 'session_duration', 'link_shared']
-                    && request.resource.data.tourId is string
-                    && request.resource.data.timestamp is string;
+      allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
