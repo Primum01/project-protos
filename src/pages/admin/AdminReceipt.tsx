@@ -59,14 +59,14 @@ export function AdminReceipt() {
 
   // Line Items
   const [items, setItems] = useState<FinanceItem[]>([
-    { id: '1', description: '3D Virtual Tour Shoot & Scanning', qty: 1, rate: 25000 },
-    { id: '2', description: 'Hosting & Tour Management (Quarterly)', qty: 1, rate: 3500 },
+    { id: '1', description: '3D Virtual Tour Shoot & Scanning', qty: 1, rate: 0 },
+    { id: '2', description: 'Hosting & Tour Management (Quarterly)', qty: 1, rate: 0 },
   ])
 
   // Adjustments
   const [discount, setDiscount] = useState<number>(0)
   const [isTaxCustom, setIsTaxCustom] = useState<boolean>(false)
-  const [tax, setTax] = useState<number>(() => Math.round(28500 * 0.16))
+  const [tax, setTax] = useState<number>(0)
 
   // Payment Details
   const [paymentMethod, setPaymentMethod] = useState('M-Pesa')
@@ -189,7 +189,7 @@ export function AdminReceipt() {
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { id: generateUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 2500 },
+      { id: generateUUID(), description: 'Additional 3D Tour Service', qty: 1, rate: 0 },
     ])
   }
 
@@ -223,12 +223,12 @@ export function AdminReceipt() {
     setSelectedListingId('custom')
     setPropertySearchQuery('')
     setItems([
-      { id: '1', description: '3D Virtual Tour Shoot & Scanning', qty: 1, rate: 25000 },
-      { id: '2', description: 'Hosting & Tour Management (Quarterly)', qty: 1, rate: 3500 },
+      { id: '1', description: '3D Virtual Tour Shoot & Scanning', qty: 1, rate: 0 },
+      { id: '2', description: 'Hosting & Tour Management (Quarterly)', qty: 1, rate: 0 },
     ])
     setDiscount(0)
     setIsTaxCustom(false)
-    setTax(Math.round((25000 + 3500) * 0.16))
+    setTax(0)
     setTransactionRef('M-Pesa Ref: QK9182XX9')
     setIsSaved(false)
     setIsEditing(true)
@@ -916,9 +916,10 @@ export function AdminReceipt() {
                               type="number"
                               min={0}
                               step={100}
-                              value={item.rate}
+                              placeholder="0"
+                              value={item.rate === 0 ? '' : item.rate}
                               disabled={!isEditing}
-                              onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                              onChange={(e) => updateItem(item.id, 'rate', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                               className="w-20 print:w-20 text-right font-mono text-xs sm:text-sm print:text-sm text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                             />
                           </div>
@@ -971,9 +972,10 @@ export function AdminReceipt() {
                   <input
                     type="number"
                     min={0}
-                    value={discount}
+                    placeholder="0"
+                    value={discount === 0 ? '' : discount}
                     disabled={!isEditing}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => setDiscount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
                   />
                 </div>
@@ -1021,10 +1023,11 @@ export function AdminReceipt() {
                     type="number"
                     min={0}
                     step={1}
-                    value={tax}
+                    placeholder="0"
+                    value={tax === 0 ? '' : tax}
                     disabled={!isEditing}
                     onChange={(e) => {
-                      const val = parseFloat(e.target.value)
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value)
                       setTax(isNaN(val) ? 0 : val)
                       setIsTaxCustom(true)
                     }}
