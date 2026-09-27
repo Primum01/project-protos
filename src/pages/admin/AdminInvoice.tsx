@@ -5,6 +5,7 @@ import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { generateNextInvoiceNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
+import { generateDocumentPdf, type GeneratedPdfResult } from '@/lib/pdfGenerator'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
 import { generateUUID } from '@/lib/uuid'
 import { updateListing } from '@/lib/firebase/listings'
@@ -101,6 +102,10 @@ export function AdminInvoice() {
   const [sendModalEmail, setSendModalEmail] = useState('')
   const [sendModalPhone, setSendModalPhone] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  // Document Sheet Ref & Generated PDF State
+  const documentSheetRef = useRef<HTMLDivElement>(null)
+  const [generatedPdf, setGeneratedPdf] = useState<GeneratedPdfResult | null>(null)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   // Invoice Metadata
   const [invoiceNumber, setInvoiceNumber] = useState('')
@@ -651,6 +656,45 @@ export function AdminInvoice() {
     }
   }
 
+  // Compute consistent naming meta for PDF exports and attachments
+  function getExportMeta() {
+    const clientOrProp = (clientName.trim() && propertyName.trim())
+      ? `${clientName.trim()} - ${propertyName.trim()}`
+      : (clientName.trim() || propertyName.trim() || 'Client')
+
+    const linkedListing = listings.find((l) => l.id === selectedListingId)
+    const tourType = linkedListing?.propertyType
+      ? `${linkedListing.propertyType} 3D Tour`
+      : items[0]?.description
+        ? items[0].description.toLowerCase().includes('matterport')
+          ? 'Matterport 3D Tour'
+          : items[0].description.toLowerCase().includes('virtual tour')
+            ? '3D Virtual Tour'
+            : items[0].description.toLowerCase().includes('3d')
+              ? '3D Tour'
+              : items[0].description.split('—')[0].split('&')[0].trim() || '3D Virtual Tour'
+        : '3D Virtual Tour'
+
+    return { clientOrProperty: clientOrProp, tourType, date: invoiceDate || fullInvoiceDate || new Date() }
+  }
+
+  // Generate PDF from the current document sheet template
+  async function generateCurrentPdf(): Promise<GeneratedPdfResult | null> {
+    if (!documentSheetRef.current) return null
+    setIsGeneratingPdf(true)
+    try {
+      const meta = getExportMeta()
+      const result = await generateDocumentPdf(documentSheetRef.current, meta)
+      setGeneratedPdf(result)
+      return result
+    } catch (err) {
+      console.error('Failed to generate PDF template:', err)
+      return null
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
   // Open Dispatch Modal
   function openSendModal() {
     const emailToUse = clientEmail || (clientContact.includes('@') ? clientContact.split('·').find((p) => p.includes('@'))?.trim() || '' : '')
@@ -659,9 +703,11 @@ export function AdminInvoice() {
     setSendModalEmail(emailToUse)
     setSendModalPhone(phoneToUse)
     setIsSendModalOpen(true)
+    // Generate PDF in background as soon as send is toggled
+    generateCurrentPdf()
   }
 
-  // Send via Serverless Email (no-reply@twinspace360.com)
+  // Send via Serverless Email (no-reply@twinspace360.com) with attached PDF
   async function handleSendEmail() {
     if (!sendModalEmail.trim()) {
       alert('Please enter a valid recipient email address.')
@@ -670,6 +716,11 @@ export function AdminInvoice() {
 
     setIsSendingEmail(true)
     try {
+      let activePdf = generatedPdf
+      if (!activePdf) {
+        activePdf = await generateCurrentPdf()
+      }
+
       const payload = {
         type: 'invoice',
         recipientEmail: sendModalEmail.trim(),
@@ -687,6 +738,10 @@ export function AdminInvoice() {
         tax,
         totalAmount: totalDue,
         paymentDetailsOrRef: paymentDetails,
+        pdfAttachment: activePdf ? {
+          filename: activePdf.filename,
+          content: activePdf.base64,
+        } : undefined,
       }
 
       const res = await fetch('/api/finance/send-invoice', {
@@ -712,7 +767,7 @@ export function AdminInvoice() {
       setIsSendModalOpen(false)
       setSaveStatus({
         type: 'success',
-        message: data.message || `Invoice ${invoiceNumber} sent via email to ${sendModalEmail} from no-reply@twinspace360.com.`,
+        message: data.message || `Invoice ${invoiceNumber} sent via email to ${sendModalEmail} with attached PDF (${activePdf?.filename || 'document.pdf'}).`,
       })
     } catch (err: any) {
       const failureLog: SendingLog = {
@@ -733,12 +788,20 @@ export function AdminInvoice() {
     }
   }
 
-  // WhatsApp Handoff / Web Dispatch
-  function handleSendWhatsApp() {
+  // WhatsApp Handoff / Web Dispatch with PDF download
+  async function handleSendWhatsApp() {
     const rawPhone = sendModalPhone.trim() || clientPhone.trim()
     if (!rawPhone) {
       alert('Please enter a valid WhatsApp phone number.')
       return
+    }
+
+    let activePdf = generatedPdf
+    if (!activePdf) {
+      activePdf = await generateCurrentPdf()
+    }
+    if (activePdf) {
+      activePdf.download()
     }
 
     const cleanPhone = rawPhone.replace(/[^\d]/g, '')
@@ -787,7 +850,7 @@ export function AdminInvoice() {
     setIsSendModalOpen(false)
     setSaveStatus({
       type: 'success',
-      message: `Invoice ${invoiceNumber} prepared and handed off to WhatsApp. Marked as Sent.`,
+      message: `Invoice ${invoiceNumber} PDF downloaded (${activePdf?.filename || 'document.pdf'}) and WhatsApp handoff opened. Marked as Sent.`,
     })
   }
 
@@ -1447,7 +1510,7 @@ export function AdminInvoice() {
 
       {/* ── THE INVOICE CONTAINER (Signature Accent Design & A4 Fitted) ── */}
       {activeTab === 'editor' && (
-        <div className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-8 sm:print:p-10 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
+        <div ref={documentSheetRef} className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-8 sm:print:p-10 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
           {/* Saved Watermark / Indicator on screen only */}
           {isSaved && !isEditing && (
             <div className="no-print absolute top-3 right-3 flex items-center gap-1 bg-white/80 backdrop-blur-xs border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700">
@@ -1887,6 +1950,52 @@ export function AdminInvoice() {
               </button>
             </div>
 
+            {/* ── Generated PDF Attachment Status Card ── */}
+            <div className="mb-4 rounded-xl border border-brand-500/20 bg-brand-50/40 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-8 w-8 rounded-lg bg-brand-500/10 text-brand-700 flex items-center justify-center shrink-0 text-base">
+                    📄
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[11px] font-bold text-ink-950 truncate max-w-[210px]" title={generatedPdf?.filename || 'Generating...'}>
+                        {isGeneratingPdf ? 'Generating PDF template...' : (generatedPdf?.filename || 'Invoice PDF')}
+                      </span>
+                      {generatedPdf && !isGeneratingPdf && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.2 text-[9px] font-bold text-emerald-800">
+                          Ready
+                        </span>
+                      )}
+                      {isGeneratingPdf && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-800 animate-pulse">
+                          Rendering...
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-ink-500 truncate">
+                      {isGeneratingPdf
+                        ? 'Capturing signature design template'
+                        : sendModalMethod === 'email'
+                          ? 'Included as attached PDF on send'
+                          : 'PDF downloads automatically on dispatch'}
+                    </p>
+                  </div>
+                </div>
+
+                {generatedPdf && !isGeneratingPdf && (
+                  <button
+                    type="button"
+                    onClick={() => generatedPdf.download()}
+                    className="shrink-0 text-[11px] font-semibold text-brand-700 hover:text-brand-900 bg-white border border-brand-200 hover:border-brand-300 rounded-lg px-2.5 py-1 transition-colors flex items-center gap-1 shadow-2xs"
+                    title="Download PDF to preview"
+                  >
+                    <span>⬇️</span> Download
+                  </button>
+                )}
+              </div>
+            </div>
+
             {sendModalMethod === 'email' ? (
               <div className="space-y-3 text-xs">
                 <div>
@@ -1915,6 +2024,9 @@ export function AdminInvoice() {
                   <p><strong>Subject:</strong> Twinspace Invoice – {invoiceNumber}</p>
                   <p><strong>Property:</strong> {propertyName}</p>
                   <p><strong>Amount:</strong> KSh {formatMoney(totalDue)}</p>
+                  {generatedPdf && (
+                    <p className="text-emerald-700 font-medium"><strong>Attachment:</strong> {generatedPdf.filename}</p>
+                  )}
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
@@ -1929,7 +2041,7 @@ export function AdminInvoice() {
                   <Button
                     size="sm"
                     onClick={handleSendEmail}
-                    disabled={isSendingEmail}
+                    disabled={isSendingEmail || isGeneratingPdf}
                     className="bg-ink-950 text-white hover:bg-ink-900"
                   >
                     {isSendingEmail ? 'Sending...' : 'Send via Email'}
@@ -1948,7 +2060,7 @@ export function AdminInvoice() {
                     className="w-full rounded-lg border border-ink-300 px-3 py-2 text-ink-900 focus:border-brand-500 focus:outline-none"
                   />
                   <p className="mt-1 text-[10px] text-ink-400">
-                    Opens WhatsApp Web / App handoff with a formatted invoice breakdown.
+                    Opens WhatsApp Web / App handoff and downloads the generated PDF.
                   </p>
                 </div>
 
@@ -1990,9 +2102,10 @@ export function AdminInvoice() {
                   <Button
                     size="sm"
                     onClick={handleSendWhatsApp}
+                    disabled={isGeneratingPdf}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
-                    Open WhatsApp Handoff
+                    {isGeneratingPdf ? 'Preparing PDF...' : 'Open WhatsApp & Download PDF'}
                   </Button>
                 </div>
               </div>

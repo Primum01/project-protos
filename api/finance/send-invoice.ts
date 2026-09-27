@@ -20,6 +20,10 @@ interface SendDocumentPayload {
   totalAmount: number
   paymentMethod?: string
   paymentDetailsOrRef?: string
+  pdfAttachment?: {
+    filename: string
+    content: string // Base64-encoded PDF
+  }
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/
@@ -263,18 +267,31 @@ export default async function handler(req: any, res: any) {
     // Live dispatch via Resend API if configured
     const resendApiKey = process.env.RESEND_API_KEY
     if (resendApiKey) {
+      const emailPayload: any = {
+        from: senderEmail,
+        to: [recipient],
+        subject,
+        html,
+      }
+
+      if (body.pdfAttachment && body.pdfAttachment.content) {
+        emailPayload.attachments = [
+          {
+            filename: body.pdfAttachment.filename.endsWith('.pdf')
+              ? body.pdfAttachment.filename
+              : `${body.pdfAttachment.filename}.pdf`,
+            content: body.pdfAttachment.content,
+          },
+        ]
+      }
+
       const resendResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          from: senderEmail,
-          to: [recipient],
-          subject,
-          html,
-        }),
+        body: JSON.stringify(emailPayload),
       })
 
       if (!resendResponse.ok) {
@@ -293,13 +310,15 @@ export default async function handler(req: any, res: any) {
         messageId: resendData.id,
         recipient,
         sender: 'no-reply@twinspace360.com',
-        message: `Email dispatched successfully to ${recipient} from no-reply@twinspace360.com.`,
+        hasPdfAttachment: Boolean(body.pdfAttachment?.content),
+        message: `Email dispatched successfully to ${recipient} from no-reply@twinspace360.com${body.pdfAttachment ? ` with PDF (${body.pdfAttachment.filename}) attached` : ''}.`,
       })
     }
 
     // In local dev or environments without external API keys:
-    // Log dispatch cleanly and return structured success without falsifying delivery
-    console.log(`[send-invoice] Prepared dispatch to ${recipient} from no-reply@twinspace360.com (Live RESEND_API_KEY not set in env).`)
+    console.log(
+      `[send-invoice] Prepared dispatch to ${recipient} from no-reply@twinspace360.com (Live RESEND_API_KEY not set in env). Attached PDF: ${body.pdfAttachment?.filename || 'None'}`,
+    )
 
     return res.status(200).json({
       success: true,
@@ -307,7 +326,8 @@ export default async function handler(req: any, res: any) {
       simulated: true,
       recipient,
       sender: 'no-reply@twinspace360.com',
-      message: `Email prepared for ${recipient} from no-reply@twinspace360.com. (Server mail gateway ready; live API key not set in environment).`,
+      hasPdfAttachment: Boolean(body.pdfAttachment?.content),
+      message: `Email prepared for ${recipient} from no-reply@twinspace360.com${body.pdfAttachment ? ` with PDF (${body.pdfAttachment.filename}) attached` : ''}. (Server mail gateway ready; live API key not set in environment).`,
     })
   } catch (err: any) {
     console.error('[send-invoice] Handler error:', err)
