@@ -67,10 +67,11 @@ function PricingRow({ plan }: { plan: ShootPricingPlan }) {
             value={draft}
             onChange={(e) => { setDraft(e.target.value); setSaved(false) }}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-            className="w-44 rounded-lg border border-ink-950/15 bg-ink-50 px-3.5 py-2 text-sm font-medium text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
+            className="w-40 rounded-lg border border-ink-950/15 bg-ink-50 px-3.5 py-2 text-sm font-medium text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
             placeholder="e.g. Ksh 1,200"
           />
         </div>
+        <span className="text-xs text-ink-500 font-medium whitespace-nowrap">/ mo baseline</span>
       </div>
 
       {/* Save / status */}
@@ -117,11 +118,11 @@ export function AdminShootPricing() {
       <div className="mb-8">
         <h1 className="text-xl font-semibold text-ink-950">Shoot Pricing</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Edit the prices that appear on the public{' '}
+          Configure baseline monthly prices for each plan tier. The public{' '}
           <a href="/pricing" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
             /pricing
           </a>{' '}
-          page. Changes go live instantly.
+          page uses these monthly baselines to automatically calculate Quarterly, Semi-annually, and Annually packages with savings discounts.
         </p>
       </div>
 

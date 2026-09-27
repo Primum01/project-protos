@@ -182,9 +182,9 @@ function CardDetail() {
 }
 
 /* ── Billing cycle calculation helpers ─────────────────────────── */
-type BillingCycle = 'monthly' | 'quarterly' | 'annually'
+type BillingCycle = 'quarterly' | 'semi-annually' | 'annually'
 
-const BILLING_CYCLES: BillingCycle[] = ['monthly', 'quarterly', 'annually']
+const BILLING_CYCLES: BillingCycle[] = ['quarterly', 'semi-annually', 'annually']
 
 interface PlanPricingDisplay {
   displayPrice: string
@@ -214,18 +214,22 @@ function getPlanPricing(rawPrice: string, cycle: BillingCycle): PlanPricingDispl
     }
   }
 
-  if (cycle === 'monthly') {
-    return {
-      displayPrice: `Ksh ${monthlyVal.toLocaleString()}`,
-      originalPrice: null,
-      savingsPct: null,
-      savingsKsh: null,
-    }
-  }
-
   if (cycle === 'quarterly') {
     const rawTotal = monthlyVal * 3
     const discount = 500
+    const finalPrice = Math.max(0, rawTotal - discount)
+    const pct = Math.round((discount / rawTotal) * 100)
+    return {
+      displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
+      originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
+      savingsPct: pct,
+      savingsKsh: discount,
+    }
+  }
+
+  if (cycle === 'semi-annually') {
+    const rawTotal = monthlyVal * 6
+    const discount = 800
     const finalPrice = Math.max(0, rawTotal - discount)
     const pct = Math.round((discount / rawTotal) * 100)
     return {
@@ -252,21 +256,21 @@ function getPlanPricing(rawPrice: string, cycle: BillingCycle): PlanPricingDispl
 /* ── Main page ─────────────────────────────────────────────────── */
 export function Pricing() {
   const [activeMethod, setActiveMethod] = useState<Method>(null)
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('quarterly')
   const [plans, setPlans] = useState<ShootPricingPlan[]>(DEFAULT_SHOOT_PRICING)
   const [plansLoading, setPlansLoading] = useState(isFirebaseConfigured)
 
   // Per-billing-cycle active card indices for mobile carousel
   const [cycleIndices, setCycleIndices] = useState<Record<BillingCycle, number>>({
-    monthly: 0,
     quarterly: 0,
+    'semi-annually': 0,
     annually: 0,
   })
 
   // Container refs per billing cycle to track scroll positions independently
   const containerRefs = useRef<Record<BillingCycle, HTMLDivElement | null>>({
-    monthly: null,
     quarterly: null,
+    'semi-annually': null,
     annually: null,
   })
 
@@ -342,7 +346,7 @@ export function Pricing() {
   usePageMeta({
     title: 'Pricing — Simple Plans for Every Host',
     description:
-      'Start free with one property tour, then scale as your portfolio grows. No long-term contracts. Pay via M-Pesa or card.',
+      'Flexible virtual tour packages designed to fit your property and business needs. Pay via M-Pesa or card.',
     path: '/pricing',
   })
 
@@ -379,31 +383,18 @@ export function Pricing() {
       <Section
         eyebrow="Pricing"
         title="Simple pricing that scales with your portfolio"
-        description="Start free with one property, then add tours as you grow. No long-term contracts."
+        description="Flexible virtual tour packages designed to fit your property and business needs."
         align="center"
       >
         {/* Billing cycle toggle */}
         <div className="mb-10 flex justify-center px-2 sm:px-4">
-          <div className="inline-flex w-full max-w-xs sm:max-w-md sm:w-auto items-center justify-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1 sm:p-1.5 shadow-sm">
-            <button
-              type="button"
-              id="billing-cycle-monthly-btn"
-              onClick={() => setBillingCycle('monthly')}
-              className={cn(
-                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
-                billingCycle === 'monthly'
-                  ? 'bg-paper text-ink-950 shadow-sm'
-                  : 'text-ink-600 hover:text-ink-950',
-              )}
-            >
-              Monthly
-            </button>
+          <div className="inline-flex w-full max-w-sm sm:max-w-md sm:w-auto items-center justify-center rounded-full border border-ink-950/10 bg-ink-100/70 p-1 sm:p-1.5 shadow-sm">
             <button
               type="button"
               id="billing-cycle-quarterly-btn"
               onClick={() => setBillingCycle('quarterly')}
               className={cn(
-                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
                 billingCycle === 'quarterly'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -413,10 +404,23 @@ export function Pricing() {
             </button>
             <button
               type="button"
+              id="billing-cycle-semi-annually-btn"
+              onClick={() => setBillingCycle('semi-annually')}
+              className={cn(
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
+                billingCycle === 'semi-annually'
+                  ? 'bg-paper text-ink-950 shadow-sm'
+                  : 'text-ink-600 hover:text-ink-950',
+              )}
+            >
+              Semi-annually
+            </button>
+            <button
+              type="button"
               id="billing-cycle-annually-btn"
               onClick={() => setBillingCycle('annually')}
               className={cn(
-                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
+                'flex-1 sm:flex-initial rounded-full px-2.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 text-center whitespace-nowrap',
                 billingCycle === 'annually'
                   ? 'bg-paper text-ink-950 shadow-sm'
                   : 'text-ink-600 hover:text-ink-950',
@@ -426,6 +430,7 @@ export function Pricing() {
             </button>
           </div>
         </div>
+
 
         {plansLoading ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
