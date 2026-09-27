@@ -1,3 +1,16 @@
+export type InvoiceStatus = 'draft' | 'generated' | 'sent' | 'paid' | 'overdue'
+
+export type BillingFrequency = 'Monthly' | 'Quarterly' | 'Biannual' | 'Annual'
+
+export interface SendingLog {
+  id: string
+  date: string
+  method: 'email' | 'whatsapp'
+  recipient: string
+  status: 'sent' | 'prepared' | 'failed'
+  error?: string
+}
+
 export interface FinanceItem {
   id: string
   description: string
@@ -12,6 +25,8 @@ export interface SavedInvoice {
   fullInvoiceDate: string
   clientName: string
   clientContact: string
+  clientEmail?: string
+  clientPhone?: string
   accountNumber?: string
   propertyName: string
   propertyLocation: string
@@ -27,6 +42,16 @@ export interface SavedInvoice {
   tagline: string
   createdAt: string
   updatedAt: string
+
+  // Semi-automated renewal extensions:
+  status?: InvoiceStatus
+  billingFrequency?: BillingFrequency
+  periodStart?: string
+  periodEnd?: string
+  renewalDate?: string
+  previousInvoiceId?: string
+  receiptId?: string
+  sendingHistory?: SendingLog[]
 }
 
 export interface SavedReceipt {
@@ -36,6 +61,8 @@ export interface SavedReceipt {
   fullPaymentDate: string
   clientName: string
   clientContact: string
+  clientEmail?: string
+  clientPhone?: string
   accountNumber?: string
   propertyName: string
   propertyLocation: string
@@ -51,4 +78,10 @@ export interface SavedReceipt {
   tagline: string
   createdAt: string
   updatedAt: string
+
+  // Linked invoice & renewal extensions:
+  invoiceId?: string
+  invoiceNumber?: string
+  billingFrequency?: BillingFrequency
+  sendingHistory?: SendingLog[]
 }

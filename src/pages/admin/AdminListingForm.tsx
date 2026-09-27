@@ -808,11 +808,12 @@ export function AdminListingForm() {
             {/* Package */}
             <div>
               <p className="mb-2 text-sm font-medium text-ink-800">Package</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {(
                   [
                     { value: 'monthly', label: 'Monthly', period: '30 days' },
                     { value: 'quarterly', label: 'Quarterly', period: '90 days' },
+                    { value: 'biannual', label: 'Biannual', period: '180 days' },
                     { value: 'annually', label: 'Annually', period: '365 days' },
                   ] as const
                 ).map((pkg) => (

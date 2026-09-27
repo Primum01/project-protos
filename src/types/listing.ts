@@ -56,7 +56,7 @@ export const ACCENT_GRADIENTS: Record<ListingAccent, string> = {
 
 
 export type PaymentMethod = 'credit_card' | 'mpesa' | ''
-export type SubscriptionPackage = 'monthly' | 'quarterly' | 'annually'
+export type SubscriptionPackage = 'monthly' | 'quarterly' | 'biannual' | 'annually'
 
 export interface Listing {
   id: string
