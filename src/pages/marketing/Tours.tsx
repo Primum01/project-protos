@@ -57,6 +57,21 @@ function IconSearch() {
     </svg>
   )
 }
+function IconBuilding() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+      <line x1="9" y1="22" x2="9" y2="18" />
+      <line x1="15" y1="22" x2="15" y2="18" />
+      <line x1="9" y1="6" x2="9" y2="6.01" />
+      <line x1="15" y1="6" x2="15" y2="6.01" />
+      <line x1="9" y1="10" x2="9" y2="10.01" />
+      <line x1="15" y1="10" x2="15" y2="10.01" />
+      <line x1="9" y1="14" x2="9" y2="14.01" />
+      <line x1="15" y1="14" x2="15" y2="14.01" />
+    </svg>
+  )
+}
 function IconX() {
   return (
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
@@ -65,7 +80,105 @@ function IconX() {
   )
 }
 
-/* ── iOS Dropdown ───────────────────────────────────────────────────────── */
+/* ── Tour Type Options ──────────────────────────────────────────────────── */
+const TOUR_TYPES = [
+  "AirBnB",
+  "Rentals",
+  "Apartments For Sale",
+  "Hotels",
+  "Commercial Spaces",
+] as const
+
+/* ── Tour Type Pill Dropdown ────────────────────────────────────────────── */
+function TourTypeDropdown({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [])
+
+  return (
+    <div ref={ref} className="relative w-full sm:w-auto">
+      {/* Pill trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Filter by Tour Type"
+        className={`
+          flex w-full sm:w-auto items-center justify-between gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium
+          shadow-sm transition-all duration-200 select-none whitespace-nowrap min-w-0
+          ${open
+            ? "border-ink-950/20 bg-ink-950 text-white shadow-lg"
+            : "border-ink-950/10 bg-white text-ink-800 hover:border-ink-950/20 hover:shadow-md"
+          }
+        `}
+      >
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span className="shrink-0"><IconBuilding /></span>
+          <span className="truncate">{value || "AirBnB"}</span>
+        </div>
+        <span className="shrink-0"><IconChevron open={open} /></span>
+      </button>
+
+      {/* Panel */}
+      {open && (
+        <div
+          role="listbox"
+          style={{ animation: "iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both", transformOrigin: "top right" }}
+          className="absolute right-0 sm:right-auto sm:left-0 top-[calc(100%+8px)] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
+        >
+          <div className="py-1">
+            {TOUR_TYPES.map((type, i) => {
+              const selected = value === type
+              return (
+                <button
+                  key={type}
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(type)
+                    setOpen(false)
+                  }}
+                  className={`
+                    flex w-full items-center justify-between gap-3 px-4 py-3
+                    text-sm transition-colors duration-100
+                    ${i < TOUR_TYPES.length - 1 ? "border-b border-ink-950/5" : ""}
+                    ${selected ? "bg-brand-50 font-semibold text-brand-700" : "text-ink-700 hover:bg-ink-50/70"}
+                  `}
+                >
+                  <span>{type}</span>
+                  {selected && <IconCheck />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Location Dropdown ──────────────────────────────────────────────────── */
 function LocationDropdown({
   options,
   value,
@@ -113,19 +226,19 @@ function LocationDropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={`
-          flex w-full sm:w-auto items-center justify-between sm:justify-start gap-2 rounded-full border px-4 sm:px-5 py-2.5 text-sm font-medium
-          shadow-sm transition-all duration-200 select-none whitespace-nowrap
+          flex w-full sm:w-auto items-center justify-between gap-1.5 sm:gap-2 rounded-full border px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium
+          shadow-sm transition-all duration-200 select-none whitespace-nowrap min-w-0
           ${open
             ? "border-ink-950/20 bg-ink-950 text-white shadow-lg"
             : "border-ink-950/10 bg-white text-ink-800 hover:border-ink-950/20 hover:shadow-md"
           }
         `}
       >
-        <div className="flex items-center gap-2">
-          <IconPin />
-          <span>{value || "All locations"}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span className="shrink-0"><IconPin /></span>
+          <span className="truncate">{value || "All locations"}</span>
         </div>
-        <IconChevron open={open} />
+        <span className="shrink-0"><IconChevron open={open} /></span>
       </button>
 
       {/* Panel */}
@@ -133,7 +246,7 @@ function LocationDropdown({
         <div
           role="listbox"
           style={{ animation: "iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both", transformOrigin: "top left" }}
-          className="absolute left-0 top-[calc(100%+8px)] z-50 w-full sm:w-64 overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
+          className="absolute left-0 top-[calc(100%+8px)] z-50 w-64 max-w-[calc(100vw-2rem)] sm:w-64 overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
         >
           {/* Search inside panel */}
           <div className="border-b border-ink-950/8 px-3 py-2.5">
@@ -228,11 +341,13 @@ function SearchBar({
   )
 }
 
-/* ── Filter bar combining dropdown + search ─────────────────────────────── */
+/* ── Filter bar combining dropdowns + search ────────────────────────────── */
 function FilterBar({
   options,
   location,
   onLocation,
+  tourType,
+  onTourType,
   search,
   onSearch,
   count,
@@ -240,32 +355,108 @@ function FilterBar({
   options: string[]
   location: string
   onLocation: (v: string) => void
+  tourType: string
+  onTourType: (v: string) => void
   search: string
   onSearch: (v: string) => void
   count: number
 }) {
   return (
     <div className="mb-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-        <LocationDropdown options={options} value={location} onChange={onLocation} />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-1">
+        {/* On mobile: row of 2 compact pills side-by-side. On desktop: inline sequence */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+          <LocationDropdown options={options} value={location} onChange={onLocation} />
+          <TourTypeDropdown value={tourType} onChange={onTourType} />
+        </div>
         <SearchBar value={search} onChange={onSearch} />
       </div>
 
       {/* Active chips */}
-      {location && (
-        <button
-          onClick={() => onLocation("")}
-          className="self-start flex items-center gap-1.5 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-80"
-        >
-          {location} <IconX />
-        </button>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {location && (
+          <button
+            onClick={() => onLocation("")}
+            className="self-start flex items-center gap-1.5 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-80"
+          >
+            {location} <IconX />
+          </button>
+        )}
+      </div>
 
       <span className="text-xs sm:text-sm text-ink-400 tabular-nums whitespace-nowrap self-end sm:self-auto sm:ml-auto">
         {count} {count === 1 ? "property" : "properties"}
       </span>
     </div>
   )
+}
+
+/* ── Tour Type Match Helper ─────────────────────────────────────────────── */
+function matchesTourType(listing: Listing, type: string): boolean {
+  if (!type) return true
+
+  const pType = (listing.propertyType || "").toLowerCase()
+  const name = (listing.name || "").toLowerCase()
+  const desc = (listing.description || "").toLowerCase()
+  const status = (listing.status || "").toLowerCase()
+  const combined = `${pType} ${name} ${desc} ${status}`
+
+  switch (type) {
+    case "AirBnB":
+      return (
+        combined.includes("airbnb") ||
+        combined.includes("short let") ||
+        combined.includes("holiday") ||
+        combined.includes("stay") ||
+        ["apartment", "studio", "penthouse", "villa", "cottage", "townhouse", "house"].some((t) => pType.includes(t)) ||
+        (!pType.includes("commercial") && !pType.includes("office") && !combined.includes("for sale"))
+      )
+
+    case "Rentals":
+      return (
+        combined.includes("rent") ||
+        combined.includes("to let") ||
+        combined.includes("lease") ||
+        status === "rented" ||
+        ["apartment", "studio", "villa", "house", "townhouse"].some((t) => pType.includes(t))
+      )
+
+    case "Apartments For Sale":
+      return (
+        combined.includes("sale") ||
+        combined.includes("buy") ||
+        combined.includes("selling") ||
+        status === "sold" ||
+        pType.includes("apartment") ||
+        pType.includes("penthouse")
+      )
+
+    case "Hotels":
+      return (
+        combined.includes("hotel") ||
+        combined.includes("resort") ||
+        combined.includes("lodge") ||
+        combined.includes("suite") ||
+        combined.includes("hospitality") ||
+        combined.includes("inn") ||
+        combined.includes("boutique")
+      )
+
+    case "Commercial Spaces":
+      return (
+        pType.includes("commercial") ||
+        pType.includes("office") ||
+        combined.includes("commercial") ||
+        combined.includes("office") ||
+        combined.includes("retail") ||
+        combined.includes("warehouse") ||
+        combined.includes("shop") ||
+        combined.includes("showroom")
+      )
+
+    default:
+      return combined.includes(type.toLowerCase())
+  }
 }
 
 /* ── Data helpers ───────────────────────────────────────────────────────── */
@@ -311,6 +502,7 @@ export function Tours() {
   })
 
   const [location, setLocation] = useState("")
+  const [tourType, setTourType] = useState("AirBnB")
   const [search, setSearch] = useState("")
 
   const locationOptions = useMemo(() => buildOptions(listings.map((l) => l.location)), [listings])
@@ -318,11 +510,12 @@ export function Tours() {
   const filtered = useMemo(() => {
     return listings.filter((l) => {
       const locationMatch = !location || l.location?.toLowerCase().includes(location.toLowerCase())
+      const typeMatch = matchesTourType(l, tourType)
       const searchMatch = !search || [l.name, l.location, l.city, l.propertyType, l.description]
         .some((f) => matchesSearch(f ?? "", search))
-      return locationMatch && searchMatch
+      return locationMatch && typeMatch && searchMatch
     })
-  }, [listings, location, search])
+  }, [listings, location, tourType, search])
 
   return (
     <MarketingLayout>
@@ -371,6 +564,8 @@ export function Tours() {
               options={locationOptions}
               location={location}
               onLocation={setLocation}
+              tourType={tourType}
+              onTourType={setTourType}
               search={search}
               onSearch={setSearch}
               count={filtered.length}
@@ -382,7 +577,7 @@ export function Tours() {
             ) : (
               <p className="text-ink-400">
                 No listings match your filters.{" "}
-                <button onClick={() => { setLocation(""); setSearch("") }} className="text-brand-600 underline">Clear all</button>
+                <button onClick={() => { setLocation(""); setSearch(""); setTourType("AirBnB"); }} className="text-brand-600 underline">Clear all</button>
               </p>
             )}
           </>
