@@ -101,6 +101,81 @@ export function addMonths(date: Date, months: number): Date {
 }
 
 /**
+ * Number of days for each billing frequency.
+ * Quarterly: 90 days
+ * Biannual: 180 days
+ * Annual: 365 days
+ * Monthly: 30 days
+ */
+export function getFrequencyDays(freq: BillingFrequency | SubscriptionPackage | string): number {
+  const normalized = normalizeBillingFrequency(freq)
+  switch (normalized) {
+    case 'Quarterly':
+      return 90
+    case 'Biannual':
+      return 180
+    case 'Annual':
+      return 365
+    case 'Monthly':
+    default:
+      return 30
+  }
+}
+
+/**
+ * Add N days to a date.
+ */
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date.getTime())
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+/**
+ * Calculate the Due Date for an invoice based on when the tour was paid and package frequency.
+ * E.g. If client package is quarterly, set the due date to be 90 days from the date the tour was paid.
+ */
+export function calculateDueDateFromPayment(
+  datePaid: string | Date | null | undefined,
+  pkg?: SubscriptionPackage | string | null,
+): Date {
+  let paid: Date | null = null
+  if (datePaid instanceof Date) {
+    paid = new Date(datePaid.getTime())
+  } else if (typeof datePaid === 'string' && datePaid.trim()) {
+    paid = parseLocalDate(datePaid)
+  }
+  if (!paid || isNaN(paid.getTime())) {
+    paid = new Date()
+  }
+
+  const days = getFrequencyDays(pkg || 'monthly')
+  return addDays(paid, days)
+}
+
+/**
+ * Calculate the next renewal date after payment is made (for receipts).
+ * E.g. Another 90 days from the day payment was made for quarterly.
+ */
+export function calculateRenewalDateFromPayment(
+  paymentDate: string | Date | null | undefined,
+  pkg?: SubscriptionPackage | string | null,
+): Date {
+  let paid: Date | null = null
+  if (paymentDate instanceof Date) {
+    paid = new Date(paymentDate.getTime())
+  } else if (typeof paymentDate === 'string' && paymentDate.trim()) {
+    paid = parseLocalDate(paymentDate)
+  }
+  if (!paid || isNaN(paid.getTime())) {
+    paid = new Date()
+  }
+
+  const days = getFrequencyDays(pkg || 'monthly')
+  return addDays(paid, days)
+}
+
+/**
  * Calculate the next renewal date based on the client's payment start date and billing frequency.
  */
 export function calculateRenewalDate(
@@ -110,8 +185,8 @@ export function calculateRenewalDate(
   const paid = parseLocalDate(datePaid)
   if (!paid) return null
 
-  const months = getFrequencyMonths(pkg || 'monthly')
-  return addMonths(paid, months)
+  const days = getFrequencyDays(pkg || 'monthly')
+  return addDays(paid, days)
 }
 
 /**
@@ -328,7 +403,7 @@ ${receipt.invoiceNumber ? `*Invoice Ref:* ${receipt.invoiceNumber}\n` : ''}*Paym
 *Client:* ${receipt.clientName || 'Valued Client'}
 *Property:* ${receipt.propertyName || 'Virtual Tour Property'}
 ${receipt.propertyLocation ? `*Location:* ${receipt.propertyLocation}\n` : ''}*Account ID:* ${receipt.accountNumber || num}
-*Payment Method:* ${receipt.paymentMethod || 'M-Pesa'}
+${receipt.billingFrequency ? `*Billing Period:* ${receipt.billingFrequency}\n` : ''}${receipt.renewalDate ? `*Next Renewal Date:* ${receipt.renewalDate}\n` : ''}*Payment Method:* ${receipt.paymentMethod || 'M-Pesa'}
 ${receipt.transactionRef ? `*Transaction Ref:* ${receipt.transactionRef}\n` : ''}
 *Items Paid:*
 ${itemsText}

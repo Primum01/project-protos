@@ -7,7 +7,15 @@ import { generateNextReceiptNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
 import { generateUUID } from '@/lib/uuid'
-import { formatWhatsAppReceiptMessage } from '@/lib/subscriptionRenewal'
+import { updateListing } from '@/lib/firebase/listings'
+import {
+  calculateRenewalDateFromPayment,
+  formatDisplayDate,
+  formatISODate,
+  formatWhatsAppReceiptMessage,
+  getFrequencyDays,
+  normalizeBillingFrequency,
+} from '@/lib/subscriptionRenewal'
 import type { FinanceItem, SavedReceipt, BillingFrequency, SendingLog } from '@/types/finance'
 
 function formatMoney(amount: number): string {
@@ -49,6 +57,7 @@ export function AdminReceipt() {
   const [invoiceId, setInvoiceId] = useState<string>('')
   const [invoiceNumber, setInvoiceNumber] = useState<string>('')
   const [billingFrequency, setBillingFrequency] = useState<BillingFrequency>('Monthly')
+  const [renewalDate, setRenewalDate] = useState<string>('')
   const [clientEmail, setClientEmail] = useState<string>('')
   const [clientPhone, setClientPhone] = useState<string>('')
   const [sendingHistory, setSendingHistory] = useState<SendingLog[]>([])
@@ -176,7 +185,16 @@ export function AdminReceipt() {
 
       setInvoiceId(targetInvoice.id)
       setInvoiceNumber(targetInvoice.invoiceNumber || '')
-      setBillingFrequency(targetInvoice.billingFrequency || 'Monthly')
+      const paidInvoiceFreq = targetInvoice.billingFrequency || 'Monthly'
+      setBillingFrequency(paidInvoiceFreq)
+
+      // Switch to renewal date: another 90 days (or frequency cycle) from the day payment was made
+      const paymentDateVal =
+        targetInvoice.fullInvoiceDate ||
+        new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      setFullPaymentDate(paymentDateVal)
+      const nextRenewalDate = calculateRenewalDateFromPayment(paymentDateVal, paidInvoiceFreq)
+      setRenewalDate(formatDisplayDate(nextRenewalDate))
 
       setItems(
         targetInvoice.items && targetInvoice.items.length
@@ -294,6 +312,29 @@ export function AdminReceipt() {
       const contactParts = [l.contactPhone, l.contactEmail].filter(Boolean)
       if (contactParts.length > 0) setClientContact(contactParts.join(' · '))
       if (l.accountNumber) setAccountNumber(l.accountNumber)
+
+      // In the receipt section, billing frequency should be of the invoice that has been paid for
+      const paidInvoicesForProp = invoices.filter(
+        (inv) => inv.listingId === id && inv.status === 'paid',
+      )
+      let resolvedFreq: BillingFrequency = normalizeBillingFrequency(l.package)
+      if (paidInvoicesForProp.length > 0) {
+        const latestPaidInv = paidInvoicesForProp[0]
+        if (latestPaidInv.billingFrequency) {
+          resolvedFreq = latestPaidInv.billingFrequency
+        }
+        setInvoiceId(latestPaidInv.id)
+        setInvoiceNumber(latestPaidInv.invoiceNumber)
+      } else {
+        setInvoiceId('')
+        setInvoiceNumber('')
+      }
+      setBillingFrequency(resolvedFreq)
+
+      // Only switch to renewal when generating a receipt, which is another 90 days from the day payment was made
+      const payDate = fullPaymentDate || new Date()
+      const renewalObj = calculateRenewalDateFromPayment(payDate, resolvedFreq)
+      setRenewalDate(formatDisplayDate(renewalObj))
     }
   }
 
@@ -309,6 +350,8 @@ export function AdminReceipt() {
     setAccountNumber('')
     setInvoiceId('')
     setInvoiceNumber('')
+    setBillingFrequency('Monthly')
+    setRenewalDate('')
   }
 
   function addItem() {
@@ -352,6 +395,7 @@ export function AdminReceipt() {
     setInvoiceId('')
     setInvoiceNumber('')
     setBillingFrequency('Monthly')
+    setRenewalDate('')
     setSendingHistory([])
     setItems([
       { id: '1', description: '3D Virtual Tour Shoot & Scanning', qty: 1, rate: 0 },
@@ -384,7 +428,11 @@ export function AdminReceipt() {
     setPropertySearchQuery(rec.propertyName || '')
     setInvoiceId(rec.invoiceId || '')
     setInvoiceNumber(rec.invoiceNumber || '')
-    setBillingFrequency(rec.billingFrequency || 'Monthly')
+    const freq = rec.billingFrequency || 'Monthly'
+    setBillingFrequency(freq)
+    setRenewalDate(
+      rec.renewalDate || formatDisplayDate(calculateRenewalDateFromPayment(rec.fullPaymentDate, freq)),
+    )
     setSendingHistory(rec.sendingHistory || [])
     setItems(rec.items)
     setDiscount(rec.discount)
@@ -428,6 +476,10 @@ export function AdminReceipt() {
         return
       }
 
+      const effectiveRenewalDate =
+        renewalDate.trim() ||
+        formatDisplayDate(calculateRenewalDateFromPayment(fullPaymentDate, billingFrequency))
+
       const receiptToSave: SavedReceipt = {
         id: currentId,
         receiptNumber: numTrimmed,
@@ -453,6 +505,7 @@ export function AdminReceipt() {
         invoiceId: invoiceId || undefined,
         invoiceNumber: invoiceNumber.trim() || undefined,
         billingFrequency,
+        renewalDate: effectiveRenewalDate,
         sendingHistory,
         createdAt: originalSnapshotRef.current?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -471,6 +524,12 @@ export function AdminReceipt() {
             updatedAt: new Date().toISOString(),
           })
         }
+      }
+
+      // Advance/sync the listing's renewal date upon generating/saving the payment receipt
+      if (selectedListingId && selectedListingId !== 'custom') {
+        const nextRenObj = calculateRenewalDateFromPayment(fullPaymentDate, billingFrequency)
+        await updateListing(selectedListingId, { datePaid: formatISODate(nextRenObj) })
       }
 
       originalSnapshotRef.current = receiptToSave
@@ -686,6 +745,7 @@ export function AdminReceipt() {
       invoiceId,
       invoiceNumber,
       billingFrequency,
+      renewalDate,
       createdAt: '',
       updatedAt: '',
     }
@@ -1153,11 +1213,34 @@ export function AdminReceipt() {
                   type="text"
                   value={fullPaymentDate}
                   disabled={!isEditing}
-                  onChange={(e) => setFullPaymentDate(e.target.value)}
+                  onChange={(e) => {
+                    const newPay = e.target.value
+                    setFullPaymentDate(newPay)
+                    const ren = calculateRenewalDateFromPayment(newPay, billingFrequency)
+                    setRenewalDate(formatDisplayDate(ren))
+                  }}
                   className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
                 <p className="mt-1 text-xs print:text-xs text-emerald-700 font-medium flex items-center gap-1">
                   <span>✓</span> Payment verified &amp; cleared
+                </p>
+              </div>
+
+              {/* RENEWAL DATE */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  RENEWAL DATE
+                </p>
+                <input
+                  type="text"
+                  placeholder="e.g. 30 September 2026"
+                  value={renewalDate}
+                  disabled={!isEditing}
+                  onChange={(e) => setRenewalDate(e.target.value)}
+                  className="w-full text-sm print:text-sm font-semibold text-emerald-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+                <p className="mt-0.5 text-[10px] text-ink-400 print:hidden">
+                  Next cycle: {getFrequencyDays(billingFrequency)} days from payment date
                 </p>
               </div>
 
@@ -1176,15 +1259,20 @@ export function AdminReceipt() {
                 />
               </div>
 
-              {/* BILLING FREQUENCY */}
+              {/* BILLING FREQUENCY (OF PAID INVOICE) */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
-                  BILLING FREQUENCY
+                  BILLING FREQUENCY {invoiceNumber ? '(PAID INVOICE)' : ''}
                 </p>
                 {isEditing ? (
                   <select
                     value={billingFrequency}
-                    onChange={(e) => setBillingFrequency(e.target.value as BillingFrequency)}
+                    onChange={(e) => {
+                      const newFreq = e.target.value as BillingFrequency
+                      setBillingFrequency(newFreq)
+                      const ren = calculateRenewalDateFromPayment(fullPaymentDate, newFreq)
+                      setRenewalDate(formatDisplayDate(ren))
+                    }}
                     className="w-full text-xs font-semibold text-ink-800 bg-paper/60 rounded-md border border-ink-950/20 px-2 py-1 focus:border-brand-500 focus:outline-none"
                   >
                     <option value="Monthly">Monthly</option>
@@ -1622,6 +1710,8 @@ export function AdminReceipt() {
                       thankYouMessage,
                       tagline,
                       invoiceNumber,
+                      billingFrequency,
+                      renewalDate,
                       createdAt: '',
                       updatedAt: '',
                     })}

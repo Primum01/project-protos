@@ -83,5 +83,6 @@ export interface SavedReceipt {
   invoiceId?: string
   invoiceNumber?: string
   billingFrequency?: BillingFrequency
+  renewalDate?: string
   sendingHistory?: SendingLog[]
 }

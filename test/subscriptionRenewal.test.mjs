@@ -11,6 +11,10 @@ import {
   getFrequencyMonths,
   addMonths,
   calculateRenewalDate,
+  calculateDueDateFromPayment,
+  calculateRenewalDateFromPayment,
+  getFrequencyDays,
+  addDays,
   daysUntil,
   isEligibleForRenewalInvoice,
   findExistingRenewalInvoice,
@@ -268,4 +272,34 @@ describe('Subscription Renewal System Tests', () => {
       assert.ok(text.includes('KES 1,740'))
     })
   })
+
+  describe('Client Billing Frequency & Due Date / Renewal Calculation', () => {
+    it('correctly maps frequency days (Monthly=30, Quarterly=90, Biannual=180, Annual=365)', () => {
+      assert.equal(getFrequencyDays('Monthly'), 30)
+      assert.equal(getFrequencyDays('Quarterly'), 90)
+      assert.equal(getFrequencyDays('Biannual'), 180)
+      assert.equal(getFrequencyDays('Annual'), 365)
+    })
+
+    it('sets the due date to be exactly 90 days from the date the tour was paid for quarterly package', () => {
+      const datePaid = '2026-06-01'
+      const dueDate = calculateDueDateFromPayment(datePaid, 'Quarterly')
+      // 90 days after 2026-06-01: June has 30 days (29 left), July has 31 (60 passed), August has 30 -> 2026-08-30
+      assert.equal(formatISODate(dueDate), '2026-08-30')
+    })
+
+    it('sets the due date to be 30 days from the date the tour was paid for monthly package', () => {
+      const datePaid = '2026-06-01'
+      const dueDate = calculateDueDateFromPayment(datePaid, 'Monthly')
+      assert.equal(formatISODate(dueDate), '2026-07-01')
+    })
+
+    it('switches to renewal when generating receipt which is another 90 days from the day payment was made', () => {
+      const paymentDate = '2026-08-30'
+      const nextRenewal = calculateRenewalDateFromPayment(paymentDate, 'Quarterly')
+      // 90 days after 2026-08-30: Aug has 1 day left, Sept has 30 (31), Oct has 31 (62), Nov has 28 -> 2026-11-28
+      assert.equal(formatISODate(nextRenewal), '2026-11-28')
+    })
+  })
 })
+

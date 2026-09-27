@@ -18,12 +18,14 @@ import {
 } from '@/lib/firebase/pricing'
 import {
   advanceRenewalDate,
+  calculateDueDateFromPayment,
   calculateRenewalDate,
   calculateSubscriptionPrice,
   findExistingRenewalInvoice,
   formatDisplayDate,
   formatISODate,
   formatWhatsAppInvoiceMessage,
+  getFrequencyDays,
   normalizeBillingFrequency,
   parseLocalDate,
 } from '@/lib/subscriptionRenewal'
@@ -376,15 +378,15 @@ export function AdminInvoice() {
         setPaymentDetails(`Paybill: 247247  |  Account: ${invoiceNumber || 'INV-0001'}`)
       }
 
-      if (l.datePaid) {
-        const ren = calculateRenewalDate(l.datePaid, l.package)
-        if (ren) {
-          setRenewalDate(formatDisplayDate(ren))
-          setPeriodEnd(formatDisplayDate(ren))
-          setPeriodStart(formatDisplayDate(parseLocalDate(l.datePaid) || new Date()))
-        }
-      }
-      setBillingFrequency(normalizeBillingFrequency(l.package))
+      // Automatically pick billing frequency from client package
+      const clientFreq = normalizeBillingFrequency(l.package)
+      setBillingFrequency(clientFreq)
+
+      // Automatically set due date to be 90 days from the date the tour was paid (or frequency days)
+      const dueDate = calculateDueDateFromPayment(l.datePaid, clientFreq)
+      setRenewalDate(formatDisplayDate(dueDate))
+      setPeriodEnd(formatDisplayDate(dueDate))
+      setPeriodStart(formatDisplayDate(l.datePaid ? parseLocalDate(l.datePaid) || new Date() : new Date()))
     }
   }
 
@@ -1514,10 +1516,10 @@ export function AdminInvoice() {
                 />
               </div>
 
-              {/* RENEWAL / DUE DATE */}
+              {/* DUE DATE */}
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
-                  RENEWAL / DUE DATE
+                  DUE DATE
                 </p>
                 <input
                   type="text"
@@ -1527,6 +1529,9 @@ export function AdminInvoice() {
                   onChange={(e) => setRenewalDate(e.target.value)}
                   className="w-full text-sm print:text-sm font-semibold text-brand-700 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
+                <p className="mt-0.5 text-[10px] text-ink-400 print:hidden">
+                  {getFrequencyDays(billingFrequency)} days from tour payment date
+                </p>
               </div>
 
               {/* BILLING FREQUENCY */}
@@ -1537,7 +1542,14 @@ export function AdminInvoice() {
                 {isEditing ? (
                   <select
                     value={billingFrequency}
-                    onChange={(e) => setBillingFrequency(e.target.value as BillingFrequency)}
+                    onChange={(e) => {
+                      const newFreq = e.target.value as BillingFrequency
+                      setBillingFrequency(newFreq)
+                      const target = listings.find((l) => l.id === selectedListingId)
+                      const dueDate = calculateDueDateFromPayment(target?.datePaid, newFreq)
+                      setRenewalDate(formatDisplayDate(dueDate))
+                      setPeriodEnd(formatDisplayDate(dueDate))
+                    }}
                     className="w-full text-xs font-semibold text-ink-900 bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none pb-0.5"
                   >
                     <option value="Monthly">Monthly</option>
