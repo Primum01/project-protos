@@ -65,7 +65,8 @@ export function AdminReceipt() {
 
   // Adjustments
   const [discount, setDiscount] = useState<number>(0)
-  const [tax, setTax] = useState<number>(0)
+  const [isTaxCustom, setIsTaxCustom] = useState<boolean>(false)
+  const [tax, setTax] = useState<number>(() => Math.round(28500 * 0.16))
 
   // Payment Details
   const [paymentMethod, setPaymentMethod] = useState('M-Pesa')
@@ -103,6 +104,13 @@ export function AdminReceipt() {
   const totalPaid = useMemo(() => {
     return Math.max(0, subtotal - (Number(discount) || 0) + (Number(tax) || 0))
   }, [subtotal, discount, tax])
+
+  // Automatically calculate 16% VAT when subtotal changes, unless manually customized or omitted by admin
+  useEffect(() => {
+    if (!isTaxCustom) {
+      setTax(Math.round(subtotal * 0.16))
+    }
+  }, [subtotal, isTaxCustom])
 
   // Filter listings by property name, contact name, or contact phone/email
   const filteredListings = useMemo(() => {
@@ -219,7 +227,8 @@ export function AdminReceipt() {
       { id: '2', description: 'Hosting & Tour Management (Quarterly)', qty: 1, rate: 3500 },
     ])
     setDiscount(0)
-    setTax(0)
+    setIsTaxCustom(false)
+    setTax(Math.round((25000 + 3500) * 0.16))
     setTransactionRef('M-Pesa Ref: QK9182XX9')
     setIsSaved(false)
     setIsEditing(true)
@@ -243,6 +252,7 @@ export function AdminReceipt() {
     setItems(rec.items)
     setDiscount(rec.discount)
     setTax(rec.tax)
+    setIsTaxCustom(true)
     setPaymentMethod(rec.paymentMethod)
     setTransactionRef(rec.transactionRef)
     setThankYouMessage(rec.thankYouMessage)
@@ -971,16 +981,55 @@ export function AdminReceipt() {
 
               {/* Tax / VAT */}
               <div className="flex items-center justify-between">
-                <span className="text-xs print:text-xs font-medium text-ink-500">Tax / VAT:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs print:text-xs font-medium text-ink-500">
+                    Tax / VAT {!isTaxCustom ? '(16%)' : ''}:
+                  </span>
+                  {isEditing && (
+                    <div className="no-print flex items-center gap-1">
+                      {!isTaxCustom ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTax(0)
+                            setIsTaxCustom(true)
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-medium text-ink-400 hover:text-amber-700 hover:bg-amber-50 border border-ink-950/10 transition-colors"
+                          title="Omit VAT from this receipt"
+                        >
+                          Omit
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsTaxCustom(false)
+                            setTax(Math.round(subtotal * 0.16))
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/60 transition-colors"
+                          title="Recalculate automatic 16% VAT"
+                        >
+                          Auto 16%
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center gap-1 font-mono">
                   <span className="text-[11px] print:text-xs text-ink-400">+ KSh</span>
                   <input
                     type="number"
                     min={0}
+                    step={1}
                     value={tax}
                     disabled={!isEditing}
-                    onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value)
+                      setTax(isNaN(val) ? 0 : val)
+                      setIsTaxCustom(true)
+                    }}
                     className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                    title={isTaxCustom ? 'Custom VAT amount (editable)' : 'Automatic 16% VAT (editable)'}
                   />
                 </div>
               </div>
