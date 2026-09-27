@@ -107,6 +107,15 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // ADMIN 2FA OTP STORE (Server-Side Temporary Authentication Codes)
+    // =========================================================================
+    // PUBLIC & CLIENT SDKs: Completely denied access.
+    // Accessible ONLY through trusted serverless functions via Firestore REST API or Admin SDK.
+    match /admin_otp_store/{id} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
     // DEFAULT DENIAL
     // =========================================================================
     // Any other collection or document (such as users, internal collections, etc.)

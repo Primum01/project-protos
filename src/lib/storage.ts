@@ -16,6 +16,8 @@ export const ADMIN_SESSION_KEYS = [
   'ts_session_user',
   'ts_session_started',
   'ts_session_last_activity',
+  'ts_2fa_token',
+  'ts_2fa_verified_at',
 ] as const
 
 export const ALL_ADMIN_KEYS = [

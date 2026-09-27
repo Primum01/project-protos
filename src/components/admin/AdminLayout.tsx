@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn'
 import { useAuth } from '@/hooks/useAuth'
 import { useSession } from '@/contexts/SessionContext'
 import { SessionSelect } from '@/pages/admin/SessionSelect'
+import { is2FAVerified } from '@/lib/auth2fa'
+import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
 
 /* ── Inline icons ─────────────────────────────────────────────────────── */
@@ -158,6 +160,7 @@ const navItems = [
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isVerified2FA, setIsVerified2FA] = useState<boolean>(() => is2FAVerified())
   const { user, isAdmin, isConfigured, loading: authLoading } = useAuth()
   const { currentUser, activeSession, loading: sessionLoading, evictedReason, dismissEviction, end } = useSession()
   const navigate = useNavigate()
@@ -183,6 +186,7 @@ export function AdminLayout() {
     } catch {
       /* ignore */
     } finally {
+      setIsVerified2FA(false)
       clearAdminStorage()
       navigate('/admin/login', { replace: true })
     }
@@ -227,7 +231,7 @@ export function AdminLayout() {
     )
   }
 
-  // ── Authentication & Session gate ──────────────────────────────────────────
+  // ── Authentication, 2FA & Session gate ──────────────────────────────────────────
   if (isConfigured) {
     if (authLoading || sessionLoading) {
       return (
@@ -239,6 +243,11 @@ export function AdminLayout() {
     if (!user || !isAdmin) {
       return <Navigate to="/admin/login" replace />
     }
+    // Step 1: 2FA Email Verification Gate
+    if (!isVerified2FA) {
+      return <Admin2FAGate onVerified={() => setIsVerified2FA(true)} />
+    }
+    // Step 2: Choose active administrator identity
     if (!currentUser) {
       return <SessionSelect />
     }
