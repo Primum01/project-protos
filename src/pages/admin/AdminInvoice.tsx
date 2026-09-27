@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAdminFinance, useAdminListings } from '@/contexts/AdminDataContext'
+import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import { generateNextInvoiceNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
@@ -41,12 +42,12 @@ export function AdminInvoice() {
 
   usePageMeta({
     title: 'Generate Invoice — TwinSpace Admin',
-    description: 'Create, archive, and export professional client invoices with automated renewal detection.',
+    description: 'Create, archive, and export professional client invoices.',
     path: '/admin/invoice',
     noIndex: true,
   })
 
-  // Pricing plans and discounts for price calculations
+  // Pricing configuration
   const [pricingDiscounts, setPricingDiscounts] = useState<PricingDiscounts>(DEFAULT_PRICING_DISCOUNTS)
   const [shootPlans, setShootPlans] = useState<ShootPricingPlan[]>(DEFAULT_SHOOT_PRICING)
 
@@ -68,7 +69,7 @@ export function AdminInvoice() {
   const [isEditing, setIsEditing] = useState<boolean>(true)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
 
-  // Status & Semi-Automated Renewal Fields
+  // Status & Subscription Fields
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus>('draft')
   const [billingFrequency, setBillingFrequency] = useState<BillingFrequency>('Monthly')
   const [renewalDate, setRenewalDate] = useState<string>('')
@@ -86,7 +87,7 @@ export function AdminInvoice() {
   const [isPropertyDropdownOpen, setIsPropertyDropdownOpen] = useState(false)
   const propertySearchRef = useRef<HTMLDivElement>(null)
 
-  // Archive Search Filter
+  // Archive Search Filter (by contact name / contact number)
   const [archiveSearchQuery, setArchiveSearchQuery] = useState('')
 
   // Client History Tab Selection
@@ -221,7 +222,7 @@ export function AdminInvoice() {
         loadArchivedInvoice(existing)
         setSaveStatus({
           type: 'warning',
-          message: `Invoice already generated for this renewal period (${existing.invoiceNumber}). Duplicate invoice generation prevented.`,
+          message: `Invoice already generated for this renewal period (${existing.invoiceNumber}). Showing existing invoice.`,
         })
         return
       }
@@ -327,7 +328,7 @@ export function AdminInvoice() {
     })
   }, [listings, propertySearchQuery])
 
-  // Filter saved archive invoices
+  // Filter saved archive invoices by contact name or contact number (phone/email)
   const filteredInvoices = useMemo(() => {
     if (!archiveSearchQuery.trim()) return invoices
     const q = archiveSearchQuery.toLowerCase()
@@ -375,7 +376,6 @@ export function AdminInvoice() {
         setPaymentDetails(`Paybill: 247247  |  Account: ${invoiceNumber || 'INV-0001'}`)
       }
 
-      // Check if this property has a renewal date
       if (l.datePaid) {
         const ren = calculateRenewalDate(l.datePaid, l.package)
         if (ren) {
@@ -522,7 +522,7 @@ export function AdminInvoice() {
         return
       }
 
-      // Uniqueness check for invoice number
+      // Check if invoice number is already taken by another invoice
       const conflict = invoices.find(
         (inv) => inv.id !== currentId && inv.invoiceNumber.trim().toUpperCase() === numTrimmed.toUpperCase(),
       )
@@ -651,7 +651,6 @@ export function AdminInvoice() {
 
   // Open Dispatch Modal
   function openSendModal() {
-    // Extract default email and phone if clientContact contains them
     const emailToUse = clientEmail || (clientContact.includes('@') ? clientContact.split('·').find((p) => p.includes('@'))?.trim() || '' : '')
     const phoneToUse = clientPhone || (clientContact.replace(/[^0-9+]/g, '').length >= 9 ? clientContact.split('·').find((p) => p.replace(/[^0-9]/g, '').length >= 9)?.trim() || '' : '')
 
@@ -699,7 +698,6 @@ export function AdminInvoice() {
         throw new Error(data.error || 'Server error sending email.')
       }
 
-      // Record dispatch success in history
       const logEntry: SendingLog = {
         id: generateUUID(),
         date: new Date().toISOString(),
@@ -715,7 +713,6 @@ export function AdminInvoice() {
         message: data.message || `Invoice ${invoiceNumber} sent via email to ${sendModalEmail} from no-reply@twinspace360.com.`,
       })
     } catch (err: any) {
-      // Record failure in history
       const failureLog: SendingLog = {
         id: generateUUID(),
         date: new Date().toISOString(),
@@ -776,7 +773,6 @@ export function AdminInvoice() {
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`
     window.open(waUrl, '_blank')
 
-    // Record preparation / handoff
     const logEntry: SendingLog = {
       id: generateUUID(),
       date: new Date().toISOString(),
@@ -827,7 +823,7 @@ export function AdminInvoice() {
 
   return (
     <div className="a4-print-container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:max-w-none">
-      {/* ── Screen Action Header & Tabs ── */}
+      {/* ── Screen Action Header & Tabs (Omitted in PDF export) ── */}
       <div className="no-print mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -835,33 +831,33 @@ export function AdminInvoice() {
               <span className="rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-brand-600">
                 Finance
               </span>
-              <span className="text-xs text-ink-400">· Invoice & Subscription Renewal</span>
+              <span className="text-xs text-ink-400">· Invoice Management</span>
             </div>
             <h1 className="mt-1 text-2xl font-semibold text-ink-950">
-              Invoice Management
+              Invoice
             </h1>
             <p className="mt-0.5 max-w-2xl text-xs text-ink-500 leading-relaxed">
-              Create manual invoices, auto-generate renewal invoices, track payment status, and dispatch via Email &amp; WhatsApp.
+              Auto-generates unique sequential numbers. Create, edit, save to archive, and export to A4 PDF.
             </p>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 bg-ink-950/5 p-1 rounded-xl">
+          {/* Tab buttons: Editor vs Client History vs Archive */}
+          <div className="flex items-center gap-2 bg-ink-950/5 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setActiveTab('editor')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'editor'
                   ? 'bg-white text-ink-950 shadow-sm font-semibold'
                   : 'text-ink-600 hover:text-ink-950'
               }`}
             >
-              📄 Editor
+              📄 Invoice Editor
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('history')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${
                 activeTab === 'history'
                   ? 'bg-white text-ink-950 shadow-sm font-semibold'
                   : 'text-ink-600 hover:text-ink-950'
@@ -872,7 +868,7 @@ export function AdminInvoice() {
             <button
               type="button"
               onClick={() => setActiveTab('archive')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'archive'
                   ? 'bg-white text-ink-950 shadow-sm font-semibold'
                   : 'text-ink-600 hover:text-ink-950'
@@ -886,7 +882,7 @@ export function AdminInvoice() {
           </div>
         </div>
 
-        {/* Status Notification Alerts */}
+        {/* Status Alerts */}
         {saveStatus && (
           <div
             className={`mt-4 rounded-xl p-3 text-xs font-medium flex items-center justify-between transition-all ${
@@ -904,458 +900,220 @@ export function AdminInvoice() {
             <button
               type="button"
               onClick={() => setSaveStatus(null)}
-              className="text-ink-400 hover:text-ink-700 ml-4 font-bold"
+              className="text-ink-400 hover:text-ink-700"
             >
               ✕
             </button>
           </div>
         )}
-      </div>
 
-      {/* ═════════════════════════════════════════════════════════════════════ */}
-      {/* TAB 1: INVOICE EDITOR & PREVIEW                                      */}
-      {/* ═════════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'editor' && (
-        <>
-          {/* Editor Action Bar */}
-          <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-950/8 bg-white p-3 shadow-soft">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-ink-400 font-medium">Status:</span>
+        {/* Editor Controls Bar */}
+        {activeTab === 'editor' && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-950/8 bg-paper p-3.5 shadow-soft">
+            {/* Search Filter for Choosing Property */}
+            <div className="relative flex-1 min-w-[280px]" ref={propertySearchRef}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-ink-500 shrink-0">
+                  Property / Contact:
+                </span>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search by contact name, phone, or property..."
+                    value={propertySearchQuery}
+                    onFocus={() => setIsPropertyDropdownOpen(true)}
+                    onChange={(e) => {
+                      setPropertySearchQuery(e.target.value)
+                      setIsPropertyDropdownOpen(true)
+                    }}
+                    disabled={isSaved && !isEditing}
+                    className="w-full rounded-lg border border-ink-950/15 bg-paper pl-3 pr-8 py-1.5 text-xs text-ink-950 placeholder:text-ink-400 transition-colors focus:border-brand-500 focus:outline-none disabled:bg-ink-50 disabled:text-ink-400"
+                  />
+                  {propertySearchQuery && isEditing && (
+                    <button
+                      type="button"
+                      onClick={handleClearProperty}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-400 hover:text-ink-700"
+                      title="Clear selection"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search results dropdown */}
+              {isPropertyDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-ink-950/12 bg-white p-1.5 shadow-lifted">
+                  <div
+                    onClick={() => handleListingSelect('custom')}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-xs text-ink-600 hover:bg-sand-100/50 hover:text-ink-950 transition-colors"
+                  >
+                    <span className="font-semibold">+ Custom Property</span> (Type manually)
+                  </div>
+                  {filteredListings.length === 0 ? (
+                    <div className="px-3 py-3 text-xs text-ink-400 text-center">
+                      No matching properties or contacts found
+                    </div>
+                  ) : (
+                    filteredListings.map((l) => (
+                      <div
+                        key={l.id}
+                        onClick={() => handleListingSelect(l.id)}
+                        className={`cursor-pointer rounded-lg px-3 py-2 text-xs transition-colors ${
+                          selectedListingId === l.id
+                            ? 'bg-brand-500/10 text-brand-900 font-medium'
+                            : 'hover:bg-sand-100/60 text-ink-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-semibold">
+                          <span>{l.name}</span>
+                          <span className="text-[10px] text-ink-400 font-normal">{l.city || l.location}</span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-500">
+                          {l.contactName && <span>👤 {l.contactName}</span>}
+                          {l.contactPhone && <span>📞 {l.contactPhone}</span>}
+                          {l.contactEmail && <span>✉️ {l.contactEmail}</span>}
+                          {l.accountNumber && (
+                            <span className="font-mono text-brand-600 text-[10px]">
+                              Acc: {l.accountNumber}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons: Save / Edit / New / Send / Paid / Export */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {/* Status Badge */}
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider border ${
                   invoiceStatus === 'paid'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : invoiceStatus === 'sent'
-                      ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
                       : invoiceStatus === 'overdue'
-                        ? 'bg-red-100 text-red-800 border border-red-200'
+                        ? 'bg-red-50 text-red-700 border-red-200'
                         : invoiceStatus === 'generated'
-                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                          : 'bg-ink-100 text-ink-700 border border-ink-200'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : 'bg-ink-50 text-ink-600 border-ink-200'
                 }`}
               >
                 {invoiceStatus}
               </span>
 
-              {renewalDate && (
-                <span className="text-xs text-ink-500 ml-2">
-                  Renewal Due: <strong className="text-ink-800">{renewalDate}</strong> ({billingFrequency})
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
               {isSaved && !isEditing ? (
                 <>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 hover:bg-sand-100 shadow-soft"
+                    className="gap-1.5 shadow-sm"
                   >
-                    ✏️ Edit Invoice
-                  </button>
+                    ✏️ Edit
+                  </Button>
 
-                  {/* Dispatch / Send Options */}
-                  <button
-                    type="button"
+                  {/* Send Invoice Modal Trigger */}
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={openSendModal}
-                    className="rounded-lg border border-brand-200 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 text-xs font-medium text-brand-800 shadow-soft"
+                    className="gap-1.5 shadow-sm bg-brand-50 text-brand-800 hover:bg-brand-100 border-brand-200"
                   >
-                    📤 Send Invoice
-                  </button>
+                    📤 Send
+                  </Button>
 
                   {/* Mark as Paid */}
                   {invoiceStatus !== 'paid' ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={handleMarkAsPaid}
-                      className="rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-800 shadow-soft"
+                      className="gap-1.5 shadow-sm bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border-emerald-200"
                     >
-                      💰 Mark as Paid
-                    </button>
+                      💰 Mark Paid
+                    </Button>
                   ) : (
-                    /* Generate Receipt from Paid Invoice */
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => navigate(`/admin/receipt?invoiceId=${currentId}&action=generate_receipt`)}
-                      className="rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 text-xs font-medium text-purple-800 shadow-soft"
+                      className="gap-1.5 shadow-sm bg-purple-50 text-purple-800 hover:bg-purple-100 border-purple-200"
                     >
-                      🧾 Generate Receipt
-                    </button>
+                      🧾 Receipt
+                    </Button>
                   )}
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={startNewInvoice}
+                    className="gap-1 shadow-sm"
+                  >
+                    + New
+                  </Button>
                 </>
               ) : (
                 <>
-                  <button
-                    type="button"
+                  {isSaved && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      className="text-xs text-ink-500 hover:text-ink-800"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
                     onClick={() => handleSave()}
-                    className="rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-3.5 py-1.5 text-xs font-medium shadow-soft"
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft"
                   >
                     💾 Save Invoice
-                  </button>
-                  {isSaved && (
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 hover:bg-sand-100 shadow-soft"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={addItem}
+                    className="gap-1"
+                  >
+                    + Line
+                  </Button>
                 </>
               )}
 
-              <button
-                type="button"
-                onClick={handleExportPDF}
-                className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 hover:bg-sand-100 shadow-soft"
-              >
-                🖨️ Export PDF (A4)
-              </button>
-
-              <button
-                type="button"
-                onClick={startNewInvoice}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-ink-500 hover:text-ink-900"
-              >
-                + New Invoice
-              </button>
+              <Button size="sm" onClick={handleExportPDF} className="gap-1.5 shadow-soft">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export PDF
+              </Button>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Property Selection / Pre-fill Selector */}
-          <div className="no-print mb-6 rounded-2xl border border-ink-950/8 bg-white p-4 shadow-soft">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-500 mb-2">
-              Auto-fill from Property / Client Subscription
-            </label>
-            <div className="relative" ref={propertySearchRef}>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Search by property, client name, phone, or account number..."
-                  value={propertySearchQuery}
-                  onFocus={() => setIsPropertyDropdownOpen(true)}
-                  onChange={(e) => {
-                    setPropertySearchQuery(e.target.value)
-                    setIsPropertyDropdownOpen(true)
-                  }}
-                  className="w-full rounded-xl border border-ink-950/12 bg-white px-3.5 py-2 text-xs text-ink-900 shadow-soft focus:border-brand-500 focus:outline-none"
-                />
-                {selectedListingId !== 'custom' && (
-                  <button
-                    type="button"
-                    onClick={handleClearProperty}
-                    className="rounded-xl border border-ink-950/10 px-3 py-2 text-xs font-medium text-ink-500 hover:bg-ink-50"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {isPropertyDropdownOpen && (
-                <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-ink-950/10 bg-white p-1 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => handleListingSelect('custom')}
-                    className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-ink-600 hover:bg-ink-50"
-                  >
-                    ✏️ Manual / Custom Client (Enter details manually)
-                  </button>
-                  {filteredListings.map((l) => (
-                    <button
-                      key={l.id}
-                      type="button"
-                      onClick={() => handleListingSelect(l.id)}
-                      className="w-full rounded-lg px-3 py-2 text-left text-xs hover:bg-ink-50 flex flex-col gap-0.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-ink-900">{l.name}</span>
-                        {l.accountNumber && (
-                          <span className="text-[10px] font-mono text-brand-600 font-bold">{l.accountNumber}</span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-ink-500 flex gap-2">
-                        {l.contactName && <span>{l.contactName}</span>}
-                        {l.contactPhone && <span>· {l.contactPhone}</span>}
-                        {l.package && <span className="uppercase text-[10px] bg-ink-100 px-1 rounded">{l.package}</span>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── A4 Printable Document Layout ── */}
-          <div className="relative overflow-hidden rounded-2xl border border-ink-950/8 bg-white p-6 sm:p-10 shadow-soft print:border-none print:shadow-none print:p-8">
-            <SheetDiaspaceWatermark />
-
-            {/* Document Header */}
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between border-b border-ink-950/8 pb-6">
-              <div>
-                <span className="font-display text-2xl font-bold tracking-tight text-ink-950">TWINSPACE</span>
-                <span className="block text-[11px] font-semibold uppercase tracking-widest text-brand-600">
-                  Virtual Tours &amp; Digital Twins
-                </span>
-                <p className="mt-2 text-xs text-ink-500">
-                  Nairobi, Kenya &bull; info@twinspace360.com &bull; +254 700 000 000
-                </p>
-              </div>
-
-              <div className="sm:text-right">
-                <span className="inline-block rounded-full bg-ink-950 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">
-                  INVOICE
-                </span>
-                <div className="mt-2 space-y-1 text-xs">
-                  <div className="flex sm:justify-end gap-2 text-ink-600">
-                    <span className="text-ink-400">Invoice #:</span>
-                    <input
-                      type="text"
-                      disabled={!isEditing}
-                      value={invoiceNumber}
-                      onChange={(e) => setInvoiceNumber(e.target.value.toUpperCase())}
-                      className="font-mono font-bold text-ink-950 disabled:bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none w-28 text-right"
-                    />
-                  </div>
-                  <div className="flex sm:justify-end gap-2 text-ink-600">
-                    <span className="text-ink-400">Date:</span>
-                    <input
-                      type="text"
-                      disabled={!isEditing}
-                      value={invoiceDate}
-                      onChange={(e) => setInvoiceDate(e.target.value)}
-                      className="font-medium text-ink-900 disabled:bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none w-28 text-right"
-                    />
-                  </div>
-                  {renewalDate && (
-                    <div className="flex sm:justify-end gap-2 text-ink-600">
-                      <span className="text-ink-400">Due Date:</span>
-                      <input
-                        type="text"
-                        disabled={!isEditing}
-                        value={renewalDate}
-                        onChange={(e) => setRenewalDate(e.target.value)}
-                        className="font-semibold text-brand-700 disabled:bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none w-28 text-right"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Billed To / Property Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-6 text-xs">
-              <div className="space-y-1.5">
-                <p className="font-semibold uppercase tracking-wider text-ink-400 text-[10px]">Billed To</p>
-                <input
-                  type="text"
-                  placeholder="Client / Company Name"
-                  disabled={!isEditing}
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  className="block w-full font-bold text-sm text-ink-950 disabled:bg-transparent border-b border-dashed border-ink-200 focus:border-brand-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Email or Phone / WhatsApp"
-                  disabled={!isEditing}
-                  value={clientContact}
-                  onChange={(e) => setClientContact(e.target.value)}
-                  className="block w-full text-ink-600 disabled:bg-transparent border-b border-dashed border-ink-200 focus:border-brand-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:text-right">
-                <p className="font-semibold uppercase tracking-wider text-ink-400 text-[10px]">Property Details</p>
-                <input
-                  type="text"
-                  placeholder="Property Name"
-                  disabled={!isEditing}
-                  value={propertyName}
-                  onChange={(e) => setPropertyName(e.target.value)}
-                  className="block w-full sm:text-right font-semibold text-ink-900 disabled:bg-transparent border-b border-dashed border-ink-200 focus:border-brand-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Location / County"
-                  disabled={!isEditing}
-                  value={propertyLocation}
-                  onChange={(e) => setPropertyLocation(e.target.value)}
-                  className="block w-full sm:text-right text-ink-500 disabled:bg-transparent border-b border-dashed border-ink-200 focus:border-brand-500 focus:outline-none"
-                />
-                <div className="flex sm:justify-end gap-1.5 items-center">
-                  <span className="text-ink-400 text-[11px]">Account ID:</span>
-                  <input
-                    type="text"
-                    placeholder="e.g. NBI-KIL-0001"
-                    disabled={!isEditing}
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-                    className="font-mono font-bold text-brand-600 text-xs disabled:bg-transparent border-b border-dashed border-ink-200 focus:border-brand-500 focus:outline-none w-32 sm:text-right"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Line Items Table */}
-            <div className="my-6 overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-ink-950/8 bg-ink-50/50 text-left text-ink-500">
-                    <th className="py-2.5 px-3 font-semibold uppercase tracking-wider">Description</th>
-                    <th className="py-2.5 px-3 text-center font-semibold uppercase tracking-wider w-20">Qty</th>
-                    <th className="py-2.5 px-3 text-right font-semibold uppercase tracking-wider w-28">Rate (KES)</th>
-                    <th className="py-2.5 px-3 text-right font-semibold uppercase tracking-wider w-28">Amount</th>
-                    {isEditing && <th className="py-2.5 px-2 text-center w-10 no-print"></th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-ink-950/6">
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="py-2.5 px-3">
-                        <input
-                          type="text"
-                          disabled={!isEditing}
-                          value={item.description}
-                          onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                          className="w-full text-ink-900 font-medium disabled:bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <input
-                          type="number"
-                          min="1"
-                          disabled={!isEditing}
-                          value={item.qty}
-                          onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value, 10) || 1)}
-                          className="w-14 text-center text-ink-700 disabled:bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className="py-2.5 px-3 text-right">
-                        <input
-                          type="number"
-                          min="0"
-                          disabled={!isEditing}
-                          value={item.rate === 0 ? '' : item.rate}
-                          placeholder="0"
-                          onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                          className="w-24 text-right text-ink-700 disabled:bg-transparent focus:outline-none"
-                        />
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-semibold text-ink-950">
-                        {formatMoney((Number(item.qty) || 1) * (Number(item.rate) || 0))}
-                      </td>
-                      {isEditing && (
-                        <td className="py-2.5 px-2 text-center no-print">
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ×
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="no-print mt-3 text-xs font-semibold text-brand-600 hover:text-brand-800"
-                >
-                  + Add Line Item
-                </button>
-              )}
-            </div>
-
-            {/* Financial Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 my-6 border-t border-ink-950/8 pt-6 text-xs">
-              <div className="space-y-2">
-                <p className="font-semibold uppercase tracking-wider text-ink-400 text-[10px]">Payment Instructions</p>
-                <div className="rounded-xl border border-ink-950/8 bg-ink-50/50 p-3 text-xs">
-                  <input
-                    type="text"
-                    disabled={!isEditing}
-                    value={paymentDetails}
-                    onChange={(e) => setPaymentDetails(e.target.value)}
-                    className="w-full font-semibold text-ink-900 disabled:bg-transparent focus:outline-none"
-                  />
-                  <p className="mt-1 text-[11px] text-ink-500">
-                    Use M-Pesa Paybill with your unique property Account ID for instant receipt reconciliation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-ink-600">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold text-ink-900">KES {formatMoney(subtotal)}</span>
-                </div>
-                <div className="flex justify-between items-center text-ink-600">
-                  <span className="flex items-center gap-1">
-                    VAT (16%):
-                    {isEditing && (
-                      <span className="text-[10px] text-ink-400 no-print">(auto-computed)</span>
-                    )}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span>KES</span>
-                    <input
-                      type="number"
-                      disabled={!isEditing}
-                      value={tax}
-                      onChange={(e) => {
-                        setIsTaxCustom(true)
-                        setTax(parseFloat(e.target.value) || 0)
-                      }}
-                      className="w-20 text-right font-semibold text-ink-900 disabled:bg-transparent border-b border-dashed border-ink-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t border-ink-950/8 pt-2 flex justify-between text-sm font-bold text-ink-950">
-                  <span>Total Amount Due:</span>
-                  <span className="text-brand-600 text-base">KES {formatMoney(totalDue)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Footer */}
-            <div className="border-t border-ink-950/8 pt-6 mt-8 text-center text-xs text-ink-400 space-y-1">
-              <input
-                type="text"
-                disabled={!isEditing}
-                value={thankYouMessage}
-                onChange={(e) => setThankYouMessage(e.target.value)}
-                className="w-full text-center font-medium text-ink-600 disabled:bg-transparent focus:outline-none"
-              />
-              <p className="text-[11px] text-ink-400">{tagline}</p>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ═════════════════════════════════════════════════════════════════════ */}
-      {/* TAB 2: CLIENT & SUBSCRIPTION HISTORY                                 */}
-      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/* ── CLIENT & SUBSCRIPTION HISTORY VIEW ── */}
       {activeTab === 'history' && (
         <div className="no-print space-y-6">
-          {/* Client / Property Selector */}
-          <div className="rounded-2xl border border-ink-950/8 bg-white p-5 shadow-soft">
-            <h2 className="text-base font-semibold text-ink-950">Client Invoice &amp; Subscription History</h2>
-            <p className="text-xs text-ink-500 mt-0.5">
-              Select a property or client to view their complete financial lifecycle, invoice history, payment receipts, and dispatch logs.
+          <div className="rounded-2xl border border-ink-950/10 bg-white p-6 shadow-soft">
+            <h2 className="text-lg font-semibold text-ink-950">Client Invoice &amp; Subscription History</h2>
+            <p className="text-xs text-ink-500 mt-1">
+              Select a property or client to view their financial lifecycle, invoices, receipts, and dispatch logs.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-3">
               <select
                 value={historySelectedListingId}
                 onChange={(e) => setHistorySelectedListingId(e.target.value)}
-                className="rounded-xl border border-ink-950/12 bg-white px-3.5 py-2 text-xs font-medium text-ink-900 shadow-soft focus:border-brand-500 focus:outline-none"
+                className="rounded-xl border border-ink-950/15 bg-paper px-3.5 py-2 text-xs font-medium text-ink-900 shadow-soft focus:border-brand-500 focus:outline-none"
               >
                 <option value="">-- Choose a property/client --</option>
                 {listings.map((l) => (
@@ -1367,7 +1125,6 @@ export function AdminInvoice() {
             </div>
           </div>
 
-          {/* Client Details Card */}
           {historySelectedListingId ? (
             (() => {
               const currentListing = listings.find((l) => l.id === historySelectedListingId)
@@ -1381,14 +1138,14 @@ export function AdminInvoice() {
                 <div className="space-y-6">
                   {/* Summary Profile */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="rounded-xl border border-ink-950/8 bg-white p-4 shadow-soft">
+                    <div className="rounded-xl border border-ink-950/10 bg-white p-4 shadow-soft">
                       <span className="text-[10px] font-semibold uppercase text-ink-400">Client Profile</span>
                       <p className="mt-1 font-semibold text-sm text-ink-950">{currentListing.contactName || 'Valued Client'}</p>
                       <p className="text-xs text-ink-600">{currentListing.contactEmail || 'No email'}</p>
                       <p className="text-xs text-ink-500">{currentListing.contactPhone || 'No phone'}</p>
                     </div>
 
-                    <div className="rounded-xl border border-ink-950/8 bg-white p-4 shadow-soft">
+                    <div className="rounded-xl border border-ink-950/10 bg-white p-4 shadow-soft">
                       <span className="text-[10px] font-semibold uppercase text-ink-400">Property &amp; Account</span>
                       <p className="mt-1 font-semibold text-sm text-ink-950">{currentListing.name}</p>
                       <p className="text-xs text-ink-500">{currentListing.location || currentListing.city}</p>
@@ -1397,7 +1154,7 @@ export function AdminInvoice() {
                       </p>
                     </div>
 
-                    <div className="rounded-xl border border-ink-950/8 bg-white p-4 shadow-soft">
+                    <div className="rounded-xl border border-ink-950/10 bg-white p-4 shadow-soft">
                       <span className="text-[10px] font-semibold uppercase text-ink-400">Subscription Status</span>
                       <p className="mt-1 font-semibold text-sm text-ink-950">
                         {normalizeBillingFrequency(currentListing.package)} Package
@@ -1408,10 +1165,10 @@ export function AdminInvoice() {
                     </div>
                   </div>
 
-                  {/* Invoices History Table */}
-                  <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-white shadow-soft">
-                    <div className="border-b border-ink-950/8 bg-ink-50/50 px-5 py-3 flex items-center justify-between">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-700">
+                  {/* Invoices Table */}
+                  <div className="overflow-hidden rounded-xl border border-ink-950/10 bg-white shadow-soft">
+                    <div className="border-b border-ink-950/10 bg-sand-100/40 px-5 py-3 flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-800">
                         Invoices for this Subscription ({clientInvoices.length})
                       </h3>
                     </div>
@@ -1419,7 +1176,7 @@ export function AdminInvoice() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-ink-950/8 bg-ink-50/30 text-left text-ink-400">
+                            <tr className="border-b border-ink-950/8 bg-ink-50/50 text-left text-ink-400">
                               <th className="py-2.5 px-4 font-semibold uppercase">Invoice #</th>
                               <th className="py-2.5 px-4 font-semibold uppercase">Date</th>
                               <th className="py-2.5 px-4 font-semibold uppercase">Period / Renewal</th>
@@ -1432,7 +1189,7 @@ export function AdminInvoice() {
                             {clientInvoices
                               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                               .map((inv) => (
-                                <tr key={inv.id} className="hover:bg-ink-50/50">
+                                <tr key={inv.id} className="hover:bg-sand-100/30">
                                   <td className="py-3 px-4 font-mono font-bold text-ink-950">
                                     {inv.invoiceNumber}
                                   </td>
@@ -1441,7 +1198,7 @@ export function AdminInvoice() {
                                     {inv.renewalDate || inv.billingFrequency || 'Standard'}
                                   </td>
                                   <td className="py-3 px-4 text-right font-semibold text-ink-950">
-                                    KES {formatMoney(inv.totalDue)}
+                                    KSh {formatMoney(inv.totalDue)}
                                   </td>
                                   <td className="py-3 px-4 text-center">
                                     <span
@@ -1487,9 +1244,9 @@ export function AdminInvoice() {
                   </div>
 
                   {/* Linked Receipts Table */}
-                  <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-white shadow-soft">
-                    <div className="border-b border-ink-950/8 bg-ink-50/50 px-5 py-3">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-700">
+                  <div className="overflow-hidden rounded-xl border border-ink-950/10 bg-white shadow-soft">
+                    <div className="border-b border-ink-950/10 bg-sand-100/40 px-5 py-3">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-800">
                         Payment Receipts ({clientReceipts.length})
                       </h3>
                     </div>
@@ -1497,7 +1254,7 @@ export function AdminInvoice() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="border-b border-ink-950/8 bg-ink-50/30 text-left text-ink-400">
+                            <tr className="border-b border-ink-950/8 bg-ink-50/50 text-left text-ink-400">
                               <th className="py-2.5 px-4 font-semibold uppercase">Receipt #</th>
                               <th className="py-2.5 px-4 font-semibold uppercase">Date</th>
                               <th className="py-2.5 px-4 font-semibold uppercase">Invoice Ref</th>
@@ -1508,12 +1265,12 @@ export function AdminInvoice() {
                           </thead>
                           <tbody className="divide-y divide-ink-950/6">
                             {clientReceipts.map((rec) => (
-                              <tr key={rec.id} className="hover:bg-ink-50/50">
+                              <tr key={rec.id} className="hover:bg-sand-100/30">
                                 <td className="py-3 px-4 font-mono font-bold text-ink-950">{rec.receiptNumber}</td>
                                 <td className="py-3 px-4 text-ink-600">{rec.receiptDate}</td>
                                 <td className="py-3 px-4 text-ink-700">{rec.invoiceNumber || '—'}</td>
                                 <td className="py-3 px-4 text-right font-semibold text-emerald-700">
-                                  KES {formatMoney(rec.totalPaid)}
+                                  KSh {formatMoney(rec.totalPaid)}
                                 </td>
                                 <td className="py-3 px-4 text-ink-600">{rec.paymentMethod}</td>
                                 <td className="py-3 px-4 text-right">
@@ -1545,111 +1302,546 @@ export function AdminInvoice() {
         </div>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════════ */}
-      {/* TAB 3: ARCHIVE LIST                                                  */}
-      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/* ── ARCHIVE VIEW (Searchable by Contact Name / Contact Number) ── */}
       {activeTab === 'archive' && (
-        <div className="no-print space-y-4">
-          <div className="rounded-2xl border border-ink-950/8 bg-white p-4 shadow-soft flex items-center justify-between gap-4">
-            <input
-              type="text"
-              placeholder="Search archive by client, property, invoice number, or status..."
-              value={archiveSearchQuery}
-              onChange={(e) => setArchiveSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-ink-950/12 bg-white px-3.5 py-2 text-xs text-ink-900 shadow-soft focus:border-brand-500 focus:outline-none"
-            />
-            {archiveSearchQuery && (
-              <button
-                type="button"
-                onClick={() => setArchiveSearchQuery('')}
-                className="text-xs text-ink-400 hover:text-ink-700 font-semibold"
-              >
-                Clear
-              </button>
-            )}
+        <div className="no-print rounded-2xl border border-ink-950/10 bg-white p-6 shadow-soft">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-ink-950/10">
+            <div>
+              <h2 className="text-lg font-semibold text-ink-950">Invoice Archive</h2>
+              <p className="text-xs text-ink-500">
+                Search and manage previously generated and saved client invoices.
+              </p>
+            </div>
+
+            <Button size="sm" onClick={startNewInvoice} className="shrink-0 gap-1.5 shadow-sm">
+              + Create New Invoice
+            </Button>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-white shadow-soft">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-ink-950/8 bg-ink-50/50 text-left text-ink-400">
-                    <th className="py-3 px-4 font-semibold uppercase">Invoice #</th>
-                    <th className="py-3 px-4 font-semibold uppercase">Date</th>
-                    <th className="py-3 px-4 font-semibold uppercase">Client</th>
-                    <th className="py-3 px-4 font-semibold uppercase">Property</th>
-                    <th className="py-3 px-4 font-semibold uppercase text-right">Amount</th>
-                    <th className="py-3 px-4 font-semibold uppercase text-center">Status</th>
-                    <th className="py-3 px-4 font-semibold uppercase text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-ink-950/6">
-                  {filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-ink-50/50">
-                      <td className="py-3 px-4 font-mono font-bold text-ink-950">{inv.invoiceNumber}</td>
-                      <td className="py-3 px-4 text-ink-600">{inv.invoiceDate}</td>
-                      <td className="py-3 px-4 font-medium text-ink-900">{inv.clientName || '—'}</td>
-                      <td className="py-3 px-4 text-ink-700">{inv.propertyName || '—'}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-ink-950">KES {formatMoney(inv.totalDue)}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                            inv.status === 'paid'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : inv.status === 'sent'
-                                ? 'bg-blue-100 text-blue-800'
-                                : inv.status === 'generated'
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : 'bg-ink-100 text-ink-600'
-                          }`}
-                        >
-                          {inv.status || 'draft'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => loadArchivedInvoice(inv)}
-                          className="text-brand-600 hover:text-brand-800 font-semibold"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => loadArchivedInvoice(inv, true)}
-                          className="text-ink-600 hover:text-ink-950 font-semibold"
-                        >
-                          Print
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteArchived(inv.id, inv.invoiceNumber)}
-                          className="text-red-500 hover:text-red-700 font-semibold"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredInvoices.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-ink-400">
-                        No invoices found in archive.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Search bar for Contact Name / Contact Number */}
+          <div className="mt-4">
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400 text-xs">
+                🔍
+              </span>
+              <input
+                type="text"
+                placeholder="Search archive by contact name, number, property, or invoice number..."
+                value={archiveSearchQuery}
+                onChange={(e) => setArchiveSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-ink-950/15 bg-paper pl-9 pr-8 py-2 text-xs text-ink-950 placeholder:text-ink-400 transition-colors focus:border-brand-500 focus:outline-none"
+              />
+              {archiveSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setArchiveSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400 hover:text-ink-700"
+                >
+                  ✕
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Archive List */}
+          <div className="mt-4 divide-y divide-ink-950/8">
+            {filteredInvoices.length === 0 ? (
+              <div className="py-12 text-center text-xs text-ink-400">
+                {archiveSearchQuery
+                  ? `No saved invoices matching "${archiveSearchQuery}"`
+                  : 'No invoices have been saved yet. Click "Create New Invoice" to get started.'}
+              </div>
+            ) : (
+              filteredInvoices.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-3.5 hover:bg-sand-100/30 px-2 rounded-xl transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-ink-950">
+                        {inv.invoiceNumber}
+                      </span>
+                      <span className="text-[11px] text-ink-400">· {inv.invoiceDate}</span>
+                      <span
+                        className={`rounded px-1.5 py-0.2 text-[10px] font-bold uppercase ${
+                          inv.status === 'paid'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : inv.status === 'sent'
+                              ? 'bg-blue-100 text-blue-800'
+                              : inv.status === 'generated'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-ink-100 text-ink-600'
+                        }`}
+                      >
+                        {inv.status || 'draft'}
+                      </span>
+                      {inv.accountNumber && (
+                        <span className="rounded bg-brand-500/10 px-1.5 py-0.2 font-mono text-[10px] font-medium text-brand-700">
+                          {inv.accountNumber}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-800">
+                      <span className="font-semibold text-ink-950">
+                        {inv.clientName || 'Client name not set'}
+                      </span>
+                      {inv.clientContact && (
+                        <>
+                          <span className="text-ink-300">·</span>
+                          <span className="text-ink-600 font-medium">{inv.clientContact}</span>
+                        </>
+                      )}
+                    </div>
+                    {inv.propertyName && (
+                      <p className="text-[11px] text-ink-400">
+                        📍 {inv.propertyName} {inv.propertyLocation ? `(${inv.propertyLocation})` : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:text-right shrink-0">
+                    <div className="mr-2">
+                      <p className="text-[10px] uppercase font-bold text-ink-400">Total Due</p>
+                      <p className="font-mono text-sm font-bold text-ink-950">
+                        KSh {formatMoney(inv.totalDue)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => loadArchivedInvoice(inv, false)}
+                        className="text-xs h-8 px-2.5"
+                      >
+                        Open / Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => loadArchivedInvoice(inv, true)}
+                        className="text-xs h-8 px-2"
+                        title="Direct Export PDF"
+                      >
+                        🖨️ PDF
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteArchived(inv.id, inv.invoiceNumber)}
+                        className="h-8 w-8 rounded-lg text-ink-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors text-xs"
+                        title="Delete invoice"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════════ */}
-      {/* MODAL: SEND INVOICE VIA EMAIL / WHATSAPP                             */}
-      {/* ═════════════════════════════════════════════════════════════════════ */}
+      {/* ── THE INVOICE CONTAINER (Signature Accent Design & A4 Fitted) ── */}
+      {activeTab === 'editor' && (
+        <div className="a4-document-sheet rounded-2xl border border-ink-950/10 bg-sand-100/60 p-6 sm:p-10 print:p-8 sm:print:p-10 shadow-soft text-ink-950 print:border print:border-ink-950/15 print:rounded-xl print:shadow-none relative">
+          {/* Saved Watermark / Indicator on screen only */}
+          {isSaved && !isEditing && (
+            <div className="no-print absolute top-3 right-3 flex items-center gap-1 bg-white/80 backdrop-blur-xs border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700">
+              <span>🔒 Registered &amp; Locked</span>
+            </div>
+          )}
+
+          {/* ── TOP SECTION: LOGO + INVOICE META ── */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between print:flex-row print:items-start print:justify-between gap-4 pb-5 sm:pb-6 print:pb-5 border-b border-ink-950/12">
+            {/* Logo */}
+            <div>
+              <img
+                src="/twinspace-analytics-logo.png"
+                alt="TwinSpace 360"
+                className="h-12 sm:h-14 print:h-14 w-auto object-contain"
+              />
+            </div>
+
+            {/* Invoice Label, Number & Date */}
+            <div className="sm:text-right print:text-right flex flex-col items-start sm:items-end print:items-end">
+              <h2 className="text-2xl sm:text-3xl print:text-3xl font-bold tracking-tight text-ink-950 font-display">
+                INVOICE
+              </h2>
+              <div className="mt-1 flex items-center gap-1 sm:justify-end print:justify-end">
+                <span className="text-xs print:text-xs font-semibold text-ink-400">Invoice No:</span>
+                <input
+                  type="text"
+                  value={invoiceNumber}
+                  disabled={!isEditing}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setInvoiceNumber(val)
+                    if (!accountNumber) {
+                      setPaymentDetails(`Paybill: 247247  |  Account: ${val}`)
+                    }
+                  }}
+                  className="w-32 sm:text-right print:text-right font-mono text-sm print:text-sm font-semibold text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
+                />
+              </div>
+              <div className="mt-0.5">
+                <input
+                  type="text"
+                  value={invoiceDate}
+                  disabled={!isEditing}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                  className="w-36 sm:text-right print:text-right text-xs print:text-xs font-medium text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none px-1 disabled:opacity-90"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── MIDDLE SECTION: INVOICE DATE + RENEWAL + BILLED TO + PROPERTY ── */}
+          <div className="py-5 sm:py-6 print:py-5 border-b border-ink-950/12 grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-6 print:gap-6">
+            {/* Left Column: Dates & Subscription Info */}
+            <div className="space-y-4 print:space-y-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  INVOICE DATE
+                </p>
+                <input
+                  type="text"
+                  value={fullInvoiceDate}
+                  disabled={!isEditing}
+                  onChange={(e) => setFullInvoiceDate(e.target.value)}
+                  className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+              </div>
+
+              {/* RENEWAL / DUE DATE */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  RENEWAL / DUE DATE
+                </p>
+                <input
+                  type="text"
+                  placeholder="e.g. 30 September 2026"
+                  value={renewalDate}
+                  disabled={!isEditing}
+                  onChange={(e) => setRenewalDate(e.target.value)}
+                  className="w-full text-sm print:text-sm font-semibold text-brand-700 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+              </div>
+
+              {/* BILLING FREQUENCY */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  BILLING FREQUENCY
+                </p>
+                {isEditing ? (
+                  <select
+                    value={billingFrequency}
+                    onChange={(e) => setBillingFrequency(e.target.value as BillingFrequency)}
+                    className="w-full text-xs font-semibold text-ink-900 bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none pb-0.5"
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Biannual">Biannual (6 Months)</option>
+                    <option value="Annual">Annual (12 Months)</option>
+                  </select>
+                ) : (
+                  <p className="text-xs font-semibold text-ink-900">{billingFrequency}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Billed To & Property */}
+            <div className="space-y-4 print:space-y-3.5">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  BILLED TO
+                </p>
+                <input
+                  type="text"
+                  placeholder="Client Name"
+                  value={clientName}
+                  disabled={!isEditing}
+                  onChange={(e) => setClientName(e.target.value)}
+                  className="w-full text-sm print:text-sm font-semibold text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+                <input
+                  type="text"
+                  placeholder="Client Phone / Email"
+                  value={clientContact}
+                  disabled={!isEditing}
+                  onChange={(e) => setClientContact(e.target.value)}
+                  className="mt-0.5 w-full text-xs print:text-xs text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+                {accountNumber && (
+                  <p className="mt-0.5 text-[11px] font-mono text-ink-400">
+                    Account No: {accountNumber}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                  PROPERTY
+                </p>
+                <input
+                  type="text"
+                  placeholder="Property Name"
+                  value={propertyName}
+                  disabled={!isEditing}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                  className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+                <input
+                  type="text"
+                  placeholder="Property Location"
+                  value={propertyLocation}
+                  disabled={!isEditing}
+                  onChange={(e) => setPropertyLocation(e.target.value)}
+                  className="mt-0.5 w-full text-xs print:text-xs text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── SERVICES TABLE ── */}
+          <div className="py-5 sm:py-6 print:py-5 border-b border-ink-950/12">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-3 print:mb-2.5">
+              SERVICES
+            </p>
+
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full text-left print:table-fixed">
+                <thead>
+                  <tr className="border-b border-ink-950/15 text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+                    <th className="pb-2.5 print:pb-2 w-[50%]">DESCRIPTION</th>
+                    <th className="pb-2.5 print:pb-2 text-center w-14 print:w-[12%]">QTY</th>
+                    <th className="pb-2.5 print:pb-2 text-right w-24 print:w-[18%]">RATE</th>
+                    <th className="pb-2.5 print:pb-2 text-right w-28 print:w-[20%]">AMOUNT</th>
+                    <th className="pb-2.5 w-8 no-print" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ink-950/8 text-xs sm:text-sm print:text-sm">
+                  {items.map((item) => {
+                    const lineAmount = (Number(item.qty) || 0) * (Number(item.rate) || 0)
+
+                    return (
+                      <tr key={item.id} className="group">
+                        {/* Description */}
+                        <td className="py-2.5 print:py-2.5 pr-3">
+                          <input
+                            type="text"
+                            value={item.description}
+                            disabled={!isEditing}
+                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                            className="w-full text-xs sm:text-sm print:text-sm font-medium text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                          />
+                        </td>
+
+                        {/* Qty */}
+                        <td className="py-2.5 print:py-2.5 px-2 text-center">
+                          <input
+                            type="number"
+                            min={1}
+                            value={item.qty}
+                            disabled={!isEditing}
+                            onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value, 10) || 1)}
+                            className="w-10 print:w-10 text-center font-mono text-xs sm:text-sm print:text-sm text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                          />
+                        </td>
+
+                        {/* Rate */}
+                        <td className="py-2.5 print:py-2.5 pl-2 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[11px] print:text-xs text-ink-400">KSh</span>
+                            <input
+                              type="number"
+                              min={0}
+                              step={100}
+                              placeholder="0"
+                              value={item.rate === 0 ? '' : item.rate}
+                              disabled={!isEditing}
+                              onChange={(e) => updateItem(item.id, 'rate', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                              className="w-20 print:w-20 text-right font-mono text-xs sm:text-sm print:text-sm text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Amount */}
+                        <td className="py-2.5 print:py-2.5 pl-3 text-right font-mono font-medium text-ink-950 text-xs sm:text-sm print:text-sm">
+                          KSh {formatMoney(lineAmount)}
+                        </td>
+
+                        {/* Delete action */}
+                        <td className="py-2.5 pl-2 text-right no-print">
+                          {items.length > 1 && isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(item.id)}
+                              className="opacity-0 group-hover:opacity-100 text-ink-400 hover:text-red-600 transition-opacity text-xs"
+                              title="Remove row"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── FINANCIAL TOTALS SECTION ── */}
+          <div className="py-5 sm:py-6 print:py-4 border-b border-ink-950/12 flex justify-end">
+            <div className="w-full sm:w-80 print:w-80 space-y-2 print:space-y-1.5 text-xs sm:text-sm print:text-sm">
+              {/* Subtotal */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+                  SUBTOTAL
+                </span>
+                <span className="font-mono font-medium text-ink-900">
+                  KSh {formatMoney(subtotal)}
+                </span>
+              </div>
+
+              {/* Discount */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs print:text-xs font-medium text-ink-500">Discount:</span>
+                <div className="flex items-center gap-1 font-mono">
+                  <span className="text-[11px] print:text-xs text-ink-400">- KSh</span>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={discount === 0 ? '' : discount}
+                    disabled={!isEditing}
+                    onChange={(e) => setDiscount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                    className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                  />
+                </div>
+              </div>
+
+              {/* Tax / VAT */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs print:text-xs font-medium text-ink-500">
+                    Tax / VAT {!isTaxCustom ? '(16%)' : ''}:
+                  </span>
+                  {isEditing && (
+                    <div className="no-print flex items-center gap-1">
+                      {!isTaxCustom ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTax(0)
+                            setIsTaxCustom(true)
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-medium text-ink-400 hover:text-amber-700 hover:bg-amber-50 border border-ink-950/10 transition-colors"
+                          title="Omit VAT from this invoice"
+                        >
+                          Omit
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsTaxCustom(false)
+                            setTax(Math.round(subtotal * 0.16))
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/60 transition-colors"
+                          title="Recalculate automatic 16% VAT"
+                        >
+                          Auto 16%
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 font-mono">
+                  <span className="text-[11px] print:text-xs text-ink-400">+ KSh</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="0"
+                    value={tax === 0 ? '' : tax}
+                    disabled={!isEditing}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value)
+                      setTax(isNaN(val) ? 0 : val)
+                      setIsTaxCustom(true)
+                    }}
+                    className="w-20 print:w-20 text-right text-xs sm:text-sm print:text-sm text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                    title={isTaxCustom ? 'Custom VAT amount (editable)' : 'Automatic 16% VAT (editable)'}
+                  />
+                </div>
+              </div>
+
+              {/* Total Due */}
+              <div className="pt-2.5 print:pt-2 border-t border-ink-950/15 flex items-center justify-between">
+                <span className="font-bold text-xs sm:text-sm print:text-sm uppercase tracking-wider text-ink-950">
+                  TOTAL DUE
+                </span>
+                <span className="font-display text-lg sm:text-xl print:text-xl font-bold text-ink-950">
+                  KSh {formatMoney(totalDue)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── PAYMENT INFORMATION & CLOSING ── */}
+          <div className="pt-5 sm:pt-6 print:pt-5 space-y-3.5 print:space-y-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
+                PAYMENT INFORMATION
+              </p>
+              <div className="flex flex-wrap items-center gap-2 print:gap-2">
+                <input
+                  type="text"
+                  value={paymentMethod}
+                  disabled={!isEditing}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="font-semibold text-xs sm:text-sm print:text-sm text-ink-950 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none disabled:opacity-90"
+                />
+                <span className="text-xs text-ink-300">·</span>
+                <input
+                  type="text"
+                  value={paymentDetails}
+                  disabled={!isEditing}
+                  onChange={(e) => setPaymentDetails(e.target.value)}
+                  className="text-xs print:text-xs font-mono text-ink-600 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none flex-1 min-w-[200px] disabled:opacity-90"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 print:pt-1.5 text-xs print:text-xs text-ink-500 space-y-0.5">
+              <input
+                type="text"
+                value={thankYouMessage}
+                disabled={!isEditing}
+                onChange={(e) => setThankYouMessage(e.target.value)}
+                className="w-full font-medium text-ink-700 bg-transparent border-none p-0 focus:outline-none disabled:opacity-90"
+              />
+              <input
+                type="text"
+                value={tagline}
+                disabled={!isEditing}
+                onChange={(e) => setTagline(e.target.value)}
+                className="w-full text-ink-400 bg-transparent border-none p-0 focus:outline-none disabled:opacity-90"
+              />
+            </div>
+
+            {/* ── Product of DiaSpace Watermark Footer ── */}
+            <SheetDiaspaceWatermark />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: SEND INVOICE VIA EMAIL / WHATSAPP ── */}
       {isSendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4 backdrop-blur-sm">
+        <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-ink-950/10 bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-ink-950/8 pb-3">
               <h3 className="text-base font-semibold text-ink-950">Send Invoice {invoiceNumber}</h3>
@@ -1710,26 +1902,26 @@ export function AdminInvoice() {
                 <div className="rounded-lg bg-ink-50 p-3 text-[11px] text-ink-600 space-y-1">
                   <p><strong>Subject:</strong> Twinspace Invoice – {invoiceNumber}</p>
                   <p><strong>Property:</strong> {propertyName}</p>
-                  <p><strong>Amount:</strong> KES {formatMoney(totalDue)}</p>
+                  <p><strong>Amount:</strong> KSh {formatMoney(totalDue)}</p>
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setIsSendModalOpen(false)}
                     disabled={isSendingEmail}
-                    className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 hover:bg-sand-100 disabled:opacity-50"
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={handleSendEmail}
                     disabled={isSendingEmail}
-                    className="rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-3.5 py-1.5 text-xs font-medium disabled:opacity-50 shadow-soft"
+                    className="bg-ink-950 text-white hover:bg-ink-900"
                   >
                     {isSendingEmail ? 'Sending...' : 'Send via Email'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -1776,20 +1968,20 @@ export function AdminInvoice() {
                 </div>
 
                 <div className="pt-2 flex justify-end gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setIsSendModalOpen(false)}
-                    className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 hover:bg-sand-100"
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={handleSendWhatsApp}
-                    className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-medium shadow-soft"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     Open WhatsApp Handoff
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
