@@ -17,7 +17,8 @@ service cloud.firestore {
     // LISTINGS (Properties & Virtual Tours)
     // =========================================================================
     // PUBLIC USERS: Can view property listings.
-    // ADMIN: Can create, update, publish/unpublish, and permanently delete listings.
+    // ADMIN: Can create, update (including Property Category / tour type),
+    //        publish/unpublish, and permanently delete listings.
     match /listings/{id} {
       allow read: if true;
       allow create, update, delete: if isAdmin();

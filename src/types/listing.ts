@@ -15,6 +15,18 @@ export const LISTING_STATUSES: { value: ListingStatus; label: string; color: str
   { value: 'off_market', label: 'Off Market', color: 'text-ink-500 bg-ink-50 border-ink-200' },
 ]
 
+export const PROPERTY_CATEGORIES = [
+  'AirBnB',
+  'Rentals',
+  'Apartments For Sale',
+  'Hotels',
+  'Commercial Spaces',
+] as const
+
+export type PropertyCategory = (typeof PROPERTY_CATEGORIES)[number]
+export const TOUR_TYPES = PROPERTY_CATEGORIES
+export type TourType = PropertyCategory
+
 export const PROPERTY_TYPES = [
   'Apartment',
   'Studio',
@@ -53,6 +65,7 @@ export interface Listing {
   city: string
   country: string
   price: string
+  propertyCategory?: PropertyCategory | string
   propertyType: string
   bedrooms: number
   bathrooms: number
@@ -86,6 +99,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   city: '',
   country: 'Kenya',
   price: '',
+  propertyCategory: 'AirBnB',
   propertyType: 'Apartment',
   bedrooms: 1,
   bathrooms: 1,

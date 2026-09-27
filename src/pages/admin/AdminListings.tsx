@@ -370,8 +370,13 @@ export function AdminListings() {
                         )}
                       </div>
                     </td>
-                    {/* Type */}
-                    <td className="whitespace-nowrap px-5 py-4 text-ink-600">{listing.propertyType}</td>
+                    {/* Type & Category */}
+                    <td className="whitespace-nowrap px-5 py-4">
+                      <div className="text-sm font-medium text-ink-700">{listing.propertyType}</div>
+                      <span className="inline-flex mt-1 rounded-full bg-brand-50 border border-brand-200/60 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+                        {listing.propertyCategory || 'AirBnB'}
+                      </span>
+                    </td>
                     {/* Price */}
                     <td className="whitespace-nowrap px-5 py-4 font-medium text-ink-800">{listing.price}</td>
                     {/* Status */}

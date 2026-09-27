@@ -4,7 +4,7 @@ import { TourCard } from "@/components/marketing/TourCard"
 import { Section } from "@/components/ui"
 import { usePublishedListings } from "@/hooks/useListings"
 import { usePageMeta } from "@/hooks/usePageMeta"
-import type { Listing } from "@/types/listing"
+import { TOUR_TYPES, type Listing } from "@/types/listing"
 
 /** Seed list — any location found in live data that is not here gets auto-added. */
 const SEED_LOCATIONS = new Set([
@@ -79,15 +79,6 @@ function IconX() {
     </svg>
   )
 }
-
-/* ── Tour Type Options ──────────────────────────────────────────────────── */
-const TOUR_TYPES = [
-  "AirBnB",
-  "Rentals",
-  "Apartments For Sale",
-  "Hotels",
-  "Commercial Spaces",
-] as const
 
 /* ── Tour Type Pill Dropdown ────────────────────────────────────────────── */
 function TourTypeDropdown({
@@ -395,6 +386,12 @@ function FilterBar({
 function matchesTourType(listing: Listing, type: string): boolean {
   if (!type) return true
 
+  // 1. Direct match with admin-selected Property Category
+  if (listing.propertyCategory) {
+    return listing.propertyCategory.trim().toLowerCase() === type.trim().toLowerCase()
+  }
+
+  // 2. Fallback heuristic for older listings without propertyCategory
   const pType = (listing.propertyType || "").toLowerCase()
   const name = (listing.name || "").toLowerCase()
   const desc = (listing.description || "").toLowerCase()
@@ -462,7 +459,7 @@ function matchesTourType(listing: Listing, type: string): boolean {
 /* ── Data helpers ───────────────────────────────────────────────────────── */
 type TourCardData = {
   slug: string; title: string; location?: string; city: string; country: string
-  propertyType: string; bedrooms: number; bathrooms: number
+  propertyCategory?: string; propertyType: string; bedrooms: number; bathrooms: number
   accent: 'clay' | 'olive' | 'ink' | 'sand'; description: string
   amenities: string[]; externalUrl?: string; photoUrl?: string; embedCode?: string
 }
@@ -474,6 +471,7 @@ function listingToCard(listing: Listing): TourCardData {
     location: listing.location,
     city: listing.city,
     country: listing.country,
+    propertyCategory: listing.propertyCategory,
     propertyType: listing.propertyType,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,

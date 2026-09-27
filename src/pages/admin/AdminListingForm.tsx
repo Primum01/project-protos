@@ -16,10 +16,12 @@ import {
   ACCENT_GRADIENTS,
   DEFAULT_LISTING_FORM,
   LISTING_STATUSES,
+  PROPERTY_CATEGORIES,
   PROPERTY_TYPES,
   type Listing,
   type ListingDocument,
   type ListingFormData,
+  type PropertyCategory,
 } from '@/types/listing'
 import { resolveLocationPrefixes } from '@/lib/accountNumber'
 
@@ -166,7 +168,7 @@ function PreviewPanel({
                 <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-paper shadow-soft">
                   <div className={cn('relative aspect-4/3 bg-gradient-to-br', ACCENT_GRADIENTS[form.accent])}>
                     <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-ink-800">
-                      {form.propertyType || 'Property type'}
+                      {form.propertyCategory ? `${form.propertyCategory} · ${form.propertyType}` : form.propertyType || 'Property type'}
                     </span>
                     <span className="absolute bottom-3 right-3 rounded-full bg-black/35 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                       360° 3D tour
@@ -412,7 +414,13 @@ export function AdminListingForm() {
         if (listing) {
           const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = listing as Listing
           void _id; void _c; void _u
-          setForm({ ...DEFAULT_LISTING_FORM, ...rest, embedCode: rest.embedCode ?? '', package: rest.package ?? 'monthly' })
+          setForm({
+            ...DEFAULT_LISTING_FORM,
+            ...rest,
+            propertyCategory: (rest.propertyCategory as PropertyCategory) || 'AirBnB',
+            embedCode: rest.embedCode ?? '',
+            package: rest.package ?? 'monthly',
+          })
         }
       })
       .catch(() => setError('Failed to load listing.'))
@@ -558,7 +566,27 @@ export function AdminListingForm() {
               value={form.price}
               onChange={(e) => set('price', e.target.value)}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Property Category (Tour Type) */}
+              <div>
+                <label htmlFor="listing-category" className="mb-1.5 block text-sm font-medium text-ink-800">
+                  Property Category <span className="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <select
+                  id="listing-category"
+                  value={form.propertyCategory || 'AirBnB'}
+                  onChange={(e) => set('propertyCategory', e.target.value as PropertyCategory)}
+                  className="w-full rounded-md border border-ink-950/15 bg-paper px-3.5 py-2.5 text-sm text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
+                >
+                  {PROPERTY_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-ink-400">Tour type filter on the public tours page.</p>
+              </div>
+
               {/* Property type */}
               <div>
                 <label htmlFor="listing-type" className="mb-1.5 block text-sm font-medium text-ink-800">
@@ -573,6 +601,7 @@ export function AdminListingForm() {
                   {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+
               {/* Status */}
               <div>
                 <label htmlFor="listing-status" className="mb-1.5 block text-sm font-medium text-ink-800">
@@ -1075,6 +1104,26 @@ export function AdminListingForm() {
             >
               {form.published ? 'Live' : 'Draft'}
             </span>
+          </div>
+
+          {/* Quick Category indicator / selector in Publishing sector */}
+          <div className="mt-3.5 space-y-1.5 border-b border-ink-950/8 pb-3.5">
+            <label htmlFor="publishing-category" className="block text-xs font-semibold uppercase tracking-wider text-ink-500">
+              Property Category
+            </label>
+            <select
+              id="publishing-category"
+              value={form.propertyCategory || 'AirBnB'}
+              onChange={(e) => set('propertyCategory', e.target.value as PropertyCategory)}
+              className="w-full rounded-lg border border-ink-950/15 bg-paper px-3 py-2 text-xs font-medium text-ink-900 transition-colors focus:border-brand-500 focus:outline-none shadow-xs"
+            >
+              {PROPERTY_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-ink-400">Controls the tour type filter on the public tours page.</p>
           </div>
 
           <div className="mt-4 flex flex-col gap-2.5">
