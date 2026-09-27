@@ -3,7 +3,14 @@ import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Button, Card, Section } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { usePageMeta } from '@/hooks/usePageMeta'
-import { subscribePricing, DEFAULT_SHOOT_PRICING, type ShootPricingPlan } from '@/lib/firebase/pricing'
+import {
+  subscribePricing,
+  subscribeDiscounts,
+  DEFAULT_SHOOT_PRICING,
+  DEFAULT_PRICING_DISCOUNTS,
+  type ShootPricingPlan,
+  type PricingDiscounts,
+} from '@/lib/firebase/pricing'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 
 /* ── Credit-card number formatter ─────────────────────────────── */
@@ -193,7 +200,11 @@ interface PlanPricingDisplay {
   savingsKsh: number | null
 }
 
-function getPlanPricing(rawPrice: string, cycle: BillingCycle): PlanPricingDisplay {
+function getPlanPricing(
+  rawPrice: string,
+  cycle: BillingCycle,
+  discounts: PricingDiscounts = DEFAULT_PRICING_DISCOUNTS,
+): PlanPricingDisplay {
   const digits = rawPrice.replace(/[^\d]/g, '')
   if (!digits) {
     return {
@@ -214,42 +225,22 @@ function getPlanPricing(rawPrice: string, cycle: BillingCycle): PlanPricingDispl
     }
   }
 
-  if (cycle === 'quarterly') {
-    const rawTotal = monthlyVal * 3
-    const discount = 500
-    const finalPrice = Math.max(0, rawTotal - discount)
-    const pct = Math.round((discount / rawTotal) * 100)
-    return {
-      displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
-      originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
-      savingsPct: pct,
-      savingsKsh: discount,
-    }
-  }
+  const months = cycle === 'quarterly' ? 3 : cycle === 'semi-annually' ? 6 : 12
+  const pct = cycle === 'quarterly'
+    ? (discounts.quarterly ?? 10)
+    : cycle === 'semi-annually'
+    ? (discounts.semiAnnually ?? 15)
+    : (discounts.annually ?? 20)
 
-  if (cycle === 'semi-annually') {
-    const rawTotal = monthlyVal * 6
-    const discount = 800
-    const finalPrice = Math.max(0, rawTotal - discount)
-    const pct = Math.round((discount / rawTotal) * 100)
-    return {
-      displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
-      originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
-      savingsPct: pct,
-      savingsKsh: discount,
-    }
-  }
+  const rawTotal = monthlyVal * months
+  const discountKsh = Math.round(rawTotal * (pct / 100))
+  const finalPrice = Math.max(0, rawTotal - discountKsh)
 
-  // annually
-  const rawTotal = monthlyVal * 12
-  const discount = 1100
-  const finalPrice = Math.max(0, rawTotal - discount)
-  const pct = Math.round((discount / rawTotal) * 100)
   return {
     displayPrice: `Ksh ${finalPrice.toLocaleString()}`,
-    originalPrice: `Ksh ${rawTotal.toLocaleString()}`,
-    savingsPct: pct,
-    savingsKsh: discount,
+    originalPrice: pct > 0 ? `Ksh ${rawTotal.toLocaleString()}` : null,
+    savingsPct: pct > 0 ? pct : null,
+    savingsKsh: pct > 0 ? discountKsh : null,
   }
 }
 
@@ -258,7 +249,9 @@ export function Pricing() {
   const [activeMethod, setActiveMethod] = useState<Method>(null)
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('quarterly')
   const [plans, setPlans] = useState<ShootPricingPlan[]>(DEFAULT_SHOOT_PRICING)
+  const [discounts, setDiscounts] = useState<PricingDiscounts>(DEFAULT_PRICING_DISCOUNTS)
   const [plansLoading, setPlansLoading] = useState(isFirebaseConfigured)
+
 
   // Per-billing-cycle active card indices for mobile carousel
   const [cycleIndices, setCycleIndices] = useState<Record<BillingCycle, number>>({
@@ -336,11 +329,17 @@ export function Pricing() {
 
   useEffect(() => {
     if (!isFirebaseConfigured) return
-    const unsub = subscribePricing((data) => {
+    const unsubPricing = subscribePricing((data) => {
       setPlans(data)
       setPlansLoading(false)
     })
-    return unsub
+    const unsubDiscounts = subscribeDiscounts((data) => {
+      setDiscounts(data)
+    })
+    return () => {
+      unsubPricing()
+      unsubDiscounts()
+    }
   }, [])
 
   usePageMeta({
@@ -457,7 +456,7 @@ export function Pricing() {
                 )}
               >
                 {allPlans.map((plan) => {
-                  const pricing = getPlanPricing(plan.price, cycle)
+                  const pricing = getPlanPricing(plan.price, cycle, discounts)
                   const propertyType = plan.id === 'enterprise' ? 'Custom Space' : plan.name
                   const prefilledMessage = `I am interested in this 3D tour package for my ${propertyType}. I’d like to get started and would love to learn more about the package, pricing, and next steps.`
                   const contactUrl = `/contact?message=${encodeURIComponent(prefilledMessage)}`

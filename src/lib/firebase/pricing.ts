@@ -73,7 +73,20 @@ export const DEFAULT_SHOOT_PRICING: ShootPricingPlan[] = [
   },
 ]
 
+export interface PricingDiscounts {
+  quarterly: number
+  semiAnnually: number
+  annually: number
+}
+
+export const DEFAULT_PRICING_DISCOUNTS: PricingDiscounts = {
+  quarterly: 10,
+  semiAnnually: 15,
+  annually: 20,
+}
+
 const COLLECTION = 'pricing'
+const DISCOUNTS_DOC_ID = 'discounts'
 
 /**
  * Subscribe to live shoot pricing from Firestore.
@@ -127,3 +140,68 @@ export async function updateShootPrice(
 ): Promise<void> {
   await setDoc(doc(db(), COLLECTION, id), { price }, { merge: true })
 }
+
+/**
+ * Subscribe to live timeframe percentage discounts from Firestore.
+ */
+export function subscribeDiscounts(
+  callback: (discounts: PricingDiscounts) => void,
+): () => void {
+  const ref = doc(db(), COLLECTION, DISCOUNTS_DOC_ID)
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as Partial<PricingDiscounts>
+        callback({
+          quarterly: typeof data.quarterly === 'number' && !isNaN(data.quarterly)
+            ? Math.max(0, Math.min(100, data.quarterly))
+            : DEFAULT_PRICING_DISCOUNTS.quarterly,
+          semiAnnually: typeof data.semiAnnually === 'number' && !isNaN(data.semiAnnually)
+            ? Math.max(0, Math.min(100, data.semiAnnually))
+            : DEFAULT_PRICING_DISCOUNTS.semiAnnually,
+          annually: typeof data.annually === 'number' && !isNaN(data.annually)
+            ? Math.max(0, Math.min(100, data.annually))
+            : DEFAULT_PRICING_DISCOUNTS.annually,
+        })
+      } else {
+        callback(DEFAULT_PRICING_DISCOUNTS)
+      }
+    },
+    (err) => {
+      console.error('[Firestore] pricing/discounts error:', err.message)
+      callback(DEFAULT_PRICING_DISCOUNTS)
+    },
+  )
+}
+
+/** Update an individual timeframe discount percentage (0 - 100%). */
+export async function updateTimeframeDiscount(
+  timeframe: keyof PricingDiscounts,
+  percentage: number,
+): Promise<void> {
+  const clamped = Math.max(0, Math.min(100, Math.round(percentage)))
+  await setDoc(
+    doc(db(), COLLECTION, DISCOUNTS_DOC_ID),
+    { [timeframe]: clamped },
+    { merge: true },
+  )
+}
+
+/** Update all timeframe percentage discounts at once. */
+export async function updateAllDiscounts(
+  discounts: Partial<PricingDiscounts>,
+): Promise<void> {
+  const payload: Partial<PricingDiscounts> = {}
+  if (typeof discounts.quarterly === 'number' && !isNaN(discounts.quarterly)) {
+    payload.quarterly = Math.max(0, Math.min(100, Math.round(discounts.quarterly)))
+  }
+  if (typeof discounts.semiAnnually === 'number' && !isNaN(discounts.semiAnnually)) {
+    payload.semiAnnually = Math.max(0, Math.min(100, Math.round(discounts.semiAnnually)))
+  }
+  if (typeof discounts.annually === 'number' && !isNaN(discounts.annually)) {
+    payload.annually = Math.max(0, Math.min(100, Math.round(discounts.annually)))
+  }
+  await setDoc(doc(db(), COLLECTION, DISCOUNTS_DOC_ID), payload, { merge: true })
+}
+

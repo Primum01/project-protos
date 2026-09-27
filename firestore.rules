@@ -51,14 +51,15 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // SHOOT PRICING (Pricing Tiers)
+    // SHOOT PRICING & TIMEFRAME DISCOUNTS (Pricing Tiers & Discount Settings)
     // =========================================================================
-    // PUBLIC USERS: Can read pricing plans on the website.
-    // ADMIN: Can update and modify pricing tier values.
+    // PUBLIC USERS: Can read pricing plans and timeframe discount percentages on the website.
+    // ADMIN: Can create, update, and manage pricing tier values and percentage discounts.
     match /pricing/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
 
     // =========================================================================
     // TOUR ANALYTICS (Real tour views, sessions, link shares)
