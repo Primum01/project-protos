@@ -357,11 +357,11 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
               </button>
             </div>
 
-            {/* iOS Pill Primary Button (Matching Reference Photo) */}
+            {/* iOS Pill Primary Button (Solid Black) */}
             <button
               type="submit"
               disabled={isVerifying || digits.join('').length !== 6 || timeLeft === 0}
-              className="w-full h-12 sm:h-13 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-6 font-semibold text-sm sm:text-base text-white shadow-md shadow-orange-500/25 transition-all hover:opacity-95 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+              className="w-full h-12 sm:h-13 rounded-full bg-black px-6 font-semibold text-sm sm:text-base text-white shadow-md shadow-black/10 transition-all hover:bg-slate-900 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
             >
               {isVerifying ? (
                 <span className="flex items-center justify-center gap-2">
@@ -372,7 +372,7 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
                   Verifying...
                 </span>
               ) : (
-                'Verify Email'
+                'Verify Code'
               )}
             </button>
 

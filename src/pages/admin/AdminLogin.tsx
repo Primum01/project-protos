@@ -74,18 +74,6 @@ export function AdminLogin() {
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-orange-100/50 blur-3xl opacity-60" />
 
       <div className="relative w-full max-w-[420px]">
-        {/* Brand Header */}
-        <div className="mb-6 text-center">
-          <Link to="/" className="inline-flex items-center gap-2 group transition-transform active:scale-95">
-            <span className="font-display text-2xl font-bold tracking-tight text-slate-900 group-hover:text-amber-600 transition-colors">
-              TwinSpace
-            </span>
-            <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-500/20">
-              360
-            </span>
-          </Link>
-        </div>
-
         {/* Firebase Config Notice */}
         {!isFirebaseConfigured && (
           <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-xs text-amber-800 shadow-xs backdrop-blur-xs">
@@ -103,12 +91,15 @@ export function AdminLogin() {
 
         {/* iOS-Style Modal Card */}
         <div className="rounded-[32px] border border-slate-200/90 bg-white p-8 sm:p-9 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07),0_1px_3px_rgba(0,0,0,0.04)]">
-          {/* Top Security Icon Badge */}
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-b from-amber-50 to-orange-100/70 border border-amber-200/70 shadow-xs text-orange-600">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <path d="m9 12 2 2 4-4" />
-            </svg>
+          {/* Official TwinSpace Logo (Black Text Version) */}
+          <div className="mx-auto mb-6 flex justify-center">
+            <Link to="/" title="TwinSpace Home" className="transition-transform active:scale-95">
+              <img
+                src="/twinspace-analytics-logo.png"
+                alt="TwinSpace 360"
+                className="h-10 sm:h-11 w-auto object-contain"
+              />
+            </Link>
           </div>
 
           <div className="text-center">
@@ -141,7 +132,7 @@ export function AdminLogin() {
                   type="email"
                   autoComplete="email"
                   required
-                  placeholder="team@twinspace360.com"
+                  placeholder="Valid email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={!isFirebaseConfigured || busy}
@@ -208,7 +199,7 @@ export function AdminLogin() {
             <button
               type="submit"
               disabled={!isFirebaseConfigured || busy}
-              className="mt-3 flex w-full h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-5 text-sm font-semibold text-white shadow-md shadow-orange-500/25 transition-all hover:opacity-95 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+              className="mt-3 flex w-full h-12 items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white shadow-md shadow-black/10 transition-all hover:bg-slate-900 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
             >
               {busy ? (
                 <span className="flex items-center gap-2">
