@@ -6,7 +6,7 @@ import {
   hashOtpCode,
   incrementOtpAttempts,
   verifyFirebaseAdminToken,
-} from '../_lib/otpStore'
+} from '../_lib/otpStore.ts'
 
 const TARGET_ADMIN_EMAIL = 'team@twinspace360.com'
 const MAX_ATTEMPTS = 5
@@ -40,7 +40,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // 2. Retrieve active OTP record
-    const record = await getOtpRecord(TARGET_ADMIN_EMAIL)
+    const record = await getOtpRecord(TARGET_ADMIN_EMAIL, idToken)
     if (!record) {
       return res.status(400).json({
         error: 'No active verification code found. Please click "Resend Code" to request one.',
@@ -51,7 +51,7 @@ export default async function handler(req: any, res: any) {
 
     // 3. Expiration check
     if (now > record.expiresAt) {
-      await deleteOtpRecord(TARGET_ADMIN_EMAIL)
+      await deleteOtpRecord(TARGET_ADMIN_EMAIL, idToken)
       return res.status(400).json({
         error: 'Verification code has expired. Please click "Resend Code" for a fresh code.',
       })
@@ -59,7 +59,7 @@ export default async function handler(req: any, res: any) {
 
     // 4. Rate-limiting & brute force defense check
     if (record.attempts >= MAX_ATTEMPTS) {
-      await deleteOtpRecord(TARGET_ADMIN_EMAIL)
+      await deleteOtpRecord(TARGET_ADMIN_EMAIL, idToken)
       return res.status(429).json({
         error: 'Too many incorrect attempts. Code has been invalidated for security. Please request a new code.',
       })
@@ -75,11 +75,11 @@ export default async function handler(req: any, res: any) {
       )
 
     if (!isMatch) {
-      const attemptsUsed = await incrementOtpAttempts(TARGET_ADMIN_EMAIL)
+      const attemptsUsed = await incrementOtpAttempts(TARGET_ADMIN_EMAIL, idToken)
       const remaining = Math.max(0, MAX_ATTEMPTS - attemptsUsed)
 
       if (remaining === 0) {
-        await deleteOtpRecord(TARGET_ADMIN_EMAIL)
+        await deleteOtpRecord(TARGET_ADMIN_EMAIL, idToken)
         return res.status(429).json({
           error: 'Too many incorrect attempts. Code invalidated. Please request a new code.',
           remainingAttempts: 0,
@@ -93,7 +93,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // 6. Match succeeded: Immediately invalidate the OTP to prevent replay attacks
-    await deleteOtpRecord(TARGET_ADMIN_EMAIL)
+    await deleteOtpRecord(TARGET_ADMIN_EMAIL, idToken)
 
     // 7. Issue server-signed proof token for this browser session
     const verifiedToken = generateVerifiedToken(TARGET_ADMIN_EMAIL)

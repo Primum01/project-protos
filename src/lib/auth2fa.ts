@@ -64,7 +64,17 @@ export async function sendOtpRequest(idToken: string): Promise<SendOtpResult> {
       body: JSON.stringify({ idToken }),
     })
 
-    const data = await res.json()
+    const text = await res.text()
+    let data: any = null
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return {
+        success: false,
+        error: `Server Error (${res.status}): ${text.slice(0, 150) || res.statusText || 'Unable to connect to verification service.'}`,
+      }
+    }
+
     if (!res.ok || !data.success) {
       return {
         success: false,
@@ -105,7 +115,17 @@ export async function verifyOtpRequest(
       body: JSON.stringify({ code: code.trim(), idToken }),
     })
 
-    const data = await res.json()
+    const text = await res.text()
+    let data: any = null
+    try {
+      data = JSON.parse(text)
+    } catch {
+      return {
+        success: false,
+        error: `Server Error (${res.status}): ${text.slice(0, 150) || res.statusText || 'Unable to verify authentication code.'}`,
+      }
+    }
+
     if (!res.ok || !data.success) {
       return {
         success: false,

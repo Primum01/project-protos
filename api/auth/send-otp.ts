@@ -4,7 +4,7 @@ import {
   hashOtpCode,
   saveOtpRecord,
   verifyFirebaseAdminToken,
-} from '../_lib/otpStore'
+} from '../_lib/otpStore.ts'
 
 const TARGET_ADMIN_EMAIL = 'team@twinspace360.com'
 const OTP_TTL_MS = 5 * 60 * 1000 // 5 minutes
@@ -84,7 +84,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // 2. Cooldown check: prevent email spam
-    const existing = await getOtpRecord(TARGET_ADMIN_EMAIL)
+    const existing = await getOtpRecord(TARGET_ADMIN_EMAIL, idToken)
     const now = Date.now()
     if (existing && now < existing.createdAt + COOLDOWN_MS) {
       const waitSeconds = Math.ceil((existing.createdAt + COOLDOWN_MS - now) / 1000)
@@ -100,13 +100,16 @@ export default async function handler(req: any, res: any) {
     const expiresAt = now + OTP_TTL_MS
 
     // 4. Save record server-side with hash (never plaintext) and reset attempts
-    await saveOtpRecord({
-      codeHash,
-      email: TARGET_ADMIN_EMAIL,
-      attempts: 0,
-      expiresAt,
-      createdAt: now,
-    })
+    await saveOtpRecord(
+      {
+        codeHash,
+        email: TARGET_ADMIN_EMAIL,
+        attempts: 0,
+        expiresAt,
+        createdAt: now,
+      },
+      idToken,
+    )
 
     // 5. Send code via Resend if API key is present
     const resendApiKey = process.env.RESEND_API_KEY

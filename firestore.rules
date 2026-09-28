@@ -110,9 +110,9 @@ service cloud.firestore {
     // ADMIN 2FA OTP STORE (Server-Side Temporary Authentication Codes)
     // =========================================================================
     // PUBLIC & CLIENT SDKs: Completely denied access.
-    // Accessible ONLY through trusted serverless functions via Firestore REST API or Admin SDK.
+    // Accessible ONLY to authenticated admin (team@twinspace360.com) via Firestore REST API or SDK.
     match /admin_otp_store/{id} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
     }
 
     // =========================================================================

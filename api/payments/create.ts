@@ -1,4 +1,4 @@
-import { handleWithIdempotency } from '../_lib/idempotency'
+import { handleWithIdempotency } from '../_lib/idempotency.ts'
 
 interface PaymentRequest {
   amount: number

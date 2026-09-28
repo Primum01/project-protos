@@ -72,10 +72,10 @@ export function hashOtpCode(code: string, email: string): string {
 }
 
 /**
- * Saves the active OTP record into Firestore admin_otp_store (protected by rules: allow read, write: if false)
+ * Saves the active OTP record into Firestore admin_otp_store (protected by rules: allow read, write: if isAdmin())
  * with automatic fallback to memory cache.
  */
-export async function saveOtpRecord(record: StoredOtpRecord): Promise<void> {
+export async function saveOtpRecord(record: StoredOtpRecord, idToken?: string): Promise<void> {
   memoryOtpStore.set(record.email.toLowerCase(), record)
 
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
@@ -83,9 +83,13 @@ export async function saveOtpRecord(record: StoredOtpRecord): Promise<void> {
 
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`
+    }
     await fetch(url, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         fields: {
           codeHash: { stringValue: record.codeHash },
@@ -104,7 +108,7 @@ export async function saveOtpRecord(record: StoredOtpRecord): Promise<void> {
 /**
  * Retrieves the active OTP record from memory or Firestore.
  */
-export async function getOtpRecord(email: string): Promise<StoredOtpRecord | null> {
+export async function getOtpRecord(email: string, idToken?: string): Promise<StoredOtpRecord | null> {
   const key = email.toLowerCase()
   const memRecord = memoryOtpStore.get(key)
   if (memRecord) {
@@ -116,7 +120,11 @@ export async function getOtpRecord(email: string): Promise<StoredOtpRecord | nul
 
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
-    const res = await fetch(url)
+    const headers: Record<string, string> = {}
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`
+    }
+    const res = await fetch(url, { headers })
     if (!res.ok) return null
 
     const data = await res.json()
@@ -141,20 +149,20 @@ export async function getOtpRecord(email: string): Promise<StoredOtpRecord | nul
 /**
  * Increments attempt count for rate-limiting & brute-force defense.
  */
-export async function incrementOtpAttempts(email: string): Promise<number> {
-  const record = await getOtpRecord(email)
+export async function incrementOtpAttempts(email: string, idToken?: string): Promise<number> {
+  const record = await getOtpRecord(email, idToken)
   if (!record) return 0
 
   const newAttempts = record.attempts + 1
   record.attempts = newAttempts
-  await saveOtpRecord(record)
+  await saveOtpRecord(record, idToken)
   return newAttempts
 }
 
 /**
  * Deletes the OTP record upon successful verification, expiration, or lockout.
  */
-export async function deleteOtpRecord(email: string): Promise<void> {
+export async function deleteOtpRecord(email: string, idToken?: string): Promise<void> {
   memoryOtpStore.delete(email.toLowerCase())
 
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
@@ -162,7 +170,11 @@ export async function deleteOtpRecord(email: string): Promise<void> {
 
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
-    await fetch(url, { method: 'DELETE' })
+    const headers: Record<string, string> = {}
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`
+    }
+    await fetch(url, { method: 'DELETE', headers })
   } catch {
     /* ignore deletion errors */
   }

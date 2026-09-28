@@ -46,7 +46,7 @@ setInterval(() => {
 
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/
 
-import { handleWithIdempotency } from './_lib/idempotency'
+import { handleWithIdempotency } from './_lib/idempotency.ts'
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
