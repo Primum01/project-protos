@@ -1,10 +1,9 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signOut } from '@/lib/firebase/auth'
-import { useAuth } from '@/hooks/useAuth'
 import { sendOtpRequest, verifyOtpRequest } from '@/lib/auth2fa'
 import { clearAdminStorage } from '@/lib/storage'
-import { Button } from '@/components/ui'
+import { signOut } from '@/lib/firebase/auth'
+import { useAuth } from '@/hooks/useAuth'
 
 interface Admin2FAGateProps {
   onVerified: () => void
@@ -15,64 +14,85 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
   const navigate = useNavigate()
 
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', ''])
-  const [error, setError] = useState<string>('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+  const [cooldown, setCooldown] = useState(45)
+  const [timeLeft, setTimeLeft] = useState(5 * 60) // 5 minutes in seconds
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null)
-  const [isVerifying, setIsVerifying] = useState<boolean>(false)
-  const [isSending, setIsSending] = useState<boolean>(false)
-  const [cooldown, setCooldown] = useState<number>(45)
+  const [error, setError] = useState('')
   const [expiresAt, setExpiresAt] = useState<number>(Date.now() + 5 * 60 * 1000)
-  const [timeLeft, setTimeLeft] = useState<number>(300)
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Auto-send OTP code on mount
+  // On mount: trigger the initial 6-digit code dispatch to team@twinspace360.com
   useEffect(() => {
-    let isMounted = true
+    let isSubscribed = true
 
-    async function initialSend() {
+    async function dispatchInitialOtp() {
       if (!user) return
       setIsSending(true)
       try {
-        const token = await user.getIdToken()
-        const res = await sendOtpRequest(token)
-        if (!isMounted) return
+        const idToken = await user.getIdToken()
+        const res = await sendOtpRequest(idToken)
+
+        if (!isSubscribed) return
 
         if (res.success) {
-          if (res.expiresAt) setExpiresAt(res.expiresAt)
-          if (res.cooldownSeconds) setCooldown(res.cooldownSeconds)
-        } else if (res.error) {
-          setError(res.error)
-          if (res.cooldownSeconds) setCooldown(res.cooldownSeconds)
+          if (res.expiresAt) {
+            setExpiresAt(res.expiresAt)
+            setTimeLeft(Math.max(0, Math.floor((res.expiresAt - Date.now()) / 1000)))
+          }
+          setCooldown(res.cooldownSeconds || 45)
+        } else {
+          setError(res.error || 'Failed to dispatch verification code.')
+          if (res.cooldownSeconds) {
+            setCooldown(res.cooldownSeconds)
+          }
         }
       } catch (err: any) {
-        if (isMounted) setError(err.message || 'Failed to dispatch verification code.')
+        if (isSubscribed) {
+          setError(err.message || 'Network error requesting verification code.')
+        }
       } finally {
-        if (isMounted) setIsSending(false)
+        if (isSubscribed) {
+          setIsSending(false)
+        }
       }
     }
 
-    initialSend()
+    dispatchInitialOtp()
 
     return () => {
-      isMounted = false
+      isSubscribed = false
     }
   }, [user])
 
-  // Countdown timer for code expiry
+  // Count down expiration timer every second
   useEffect(() => {
     const timer = setInterval(() => {
-      const remainingSeconds = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))
-      setTimeLeft(remainingSeconds)
+      const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))
+      setTimeLeft(remaining)
+      if (remaining === 0) {
+        clearInterval(timer)
+      }
     }, 1000)
+
     return () => clearInterval(timer)
   }, [expiresAt])
 
-  // Cooldown timer for resend button
+  // Count down resend cooldown
   useEffect(() => {
     if (cooldown <= 0) return
     const timer = setInterval(() => {
-      setCooldown((prev) => Math.max(0, prev - 1))
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
+
     return () => clearInterval(timer)
   }, [cooldown])
 
@@ -186,7 +206,10 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
       const res = await sendOtpRequest(idToken)
 
       if (res.success) {
-        if (res.expiresAt) setExpiresAt(res.expiresAt)
+        if (res.expiresAt) {
+          setExpiresAt(res.expiresAt)
+          setTimeLeft(Math.max(0, Math.floor((res.expiresAt - Date.now()) / 1000)))
+        }
         setCooldown(res.cooldownSeconds || 45)
         inputRefs.current[0]?.focus()
       } else {
@@ -217,114 +240,166 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ink-950 px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Brand Header */}
-        <div className="mb-6 text-center">
-          <span className="font-display text-2xl font-medium tracking-tight text-white">
-            TwinSpace
-          </span>
-          <p className="mt-1 text-xs text-ink-400">Admin Security Verification</p>
-        </div>
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#f5f3ef] px-4 py-12 overflow-hidden selection:bg-orange-500/20 selection:text-orange-900">
+      {/* iOS Soft Ambient Glows */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[28rem] w-[40rem] rounded-full bg-gradient-to-tr from-amber-200/40 via-orange-200/30 to-amber-100/20 blur-3xl opacity-70" />
+      <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-orange-100/50 blur-3xl opacity-60" />
 
-        {/* Verification Card */}
-        <div className="rounded-2xl border border-white/10 bg-paper p-8 shadow-2xl">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/10 text-brand-600 ring-1 ring-brand-500/20">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-ink-950">
-              Two-Factor Authentication
+      <div className="relative w-full max-w-[440px]">
+        {/* Verification Card (Matches Reference Photo & iOS Aesthetics) */}
+        <div className="relative rounded-[32px] border border-slate-200/90 bg-white p-7 sm:p-9 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.07),0_1px_3px_rgba(0,0,0,0.04)]">
+          {/* iOS Style Close Button in Top Right */}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            title="Cancel and switch account"
+            className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+
+          {/* Reference Illustration: Envelope with Key & Password Pill */}
+          <div className="text-center pt-2">
+            <svg width="128" height="92" viewBox="0 0 128 92" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-3" aria-hidden="true">
+              {/* Soft Ground Shadow */}
+              <ellipse cx="64" cy="85" rx="44" ry="5" fill="#000000" fillOpacity="0.06" />
+
+              {/* Envelope Body Base */}
+              <rect x="24" y="20" width="80" height="54" rx="10" fill="#F59E0B" />
+              <path d="M24 28L64 56L104 28" stroke="#D97706" strokeWidth="2.5" strokeLinejoin="round" />
+              
+              {/* Envelope Top Flap */}
+              <path d="M24 26C24 22.6863 26.6863 20 30 20H98C101.314 20 104 22.6863 104 26L64 54L24 26Z" fill="#FBBF24" />
+
+              {/* Key Badge (Left) */}
+              <g filter="drop-shadow(0px 3px 6px rgba(234, 88, 12, 0.35))">
+                <circle cx="34" cy="46" r="13" fill="#EA580C" />
+                <circle cx="34" cy="46" r="5" fill="#FFF7ED" />
+                <rect x="32" y="55" width="4.5" height="15" rx="2" fill="#EA580C" />
+                <rect x="36.5" y="61" width="5" height="3" rx="1.5" fill="#EA580C" />
+                <rect x="36.5" y="66" width="4" height="2.5" rx="1.2" fill="#EA580C" />
+              </g>
+
+              {/* Password Pill (Right) */}
+              <g filter="drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.12))">
+                <rect x="66" y="50" width="46" height="20" rx="6" fill="#FFFFFF" />
+                <circle cx="74" cy="60" r="2.2" fill="#1E293B" />
+                <circle cx="81" cy="60" r="2.2" fill="#1E293B" />
+                <circle cx="88" cy="60" r="2.2" fill="#1E293B" />
+                <circle cx="95" cy="60" r="2.2" fill="#1E293B" />
+                <circle cx="102" cy="60" r="2.2" fill="#1E293B" />
+              </g>
+            </svg>
+
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              Verify Your Email Address
             </h1>
-            <p className="mt-1.5 text-xs text-ink-600 leading-relaxed">
-              We've dispatched a 6-digit verification code to{' '}
-              <strong className="text-ink-900 font-mono">team@twinspace360.com</strong>.
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 leading-relaxed max-w-[320px] mx-auto">
+              We've dispatched a 6-digit security code to{' '}
+              <strong className="text-slate-800 font-medium">team@twinspace360.com</strong>. Enter it below to proceed.
             </p>
           </div>
 
-          <form onSubmit={handleFormSubmit} className="mt-6 space-y-6">
-            {/* 6 Digit Input Boxes */}
+          <form onSubmit={handleFormSubmit} className="mt-6 space-y-5">
+            {/* 6 Digit Input Boxes (Matches Reference Photo style) */}
             <div>
               <label className="sr-only">6-Digit Verification Code</label>
               <div className="flex justify-center gap-2 sm:gap-2.5" onPaste={handlePaste}>
-                {digits.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    ref={(el) => { inputRefs.current[idx] = el }}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleDigitChange(idx, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(idx, e)}
-                    disabled={isVerifying}
-                    className="h-12 w-11 sm:h-14 sm:w-12 rounded-xl border border-ink-950/20 bg-white text-center font-mono text-xl sm:text-2xl font-bold text-ink-950 shadow-xs transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-50"
-                  />
-                ))}
+                {digits.map((digit, idx) => {
+                  const isFilled = Boolean(digit)
+                  return (
+                    <input
+                      key={idx}
+                      ref={(el) => { inputRefs.current[idx] = el }}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleDigitChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(idx, e)}
+                      disabled={isVerifying}
+                      className={`h-14 w-11 sm:h-16 sm:w-13 rounded-2xl border text-center font-bold text-2xl text-slate-900 shadow-xs transition-all duration-150 focus:outline-none disabled:opacity-50 ${
+                        isFilled
+                          ? 'border-slate-300 bg-white'
+                          : 'border-slate-200/80 bg-slate-100/90'
+                      } focus:border-amber-500 focus:bg-white focus:ring-4 focus:ring-amber-500/15`}
+                    />
+                  )
+                })}
               </div>
             </div>
 
-            {/* Error Message */}
+            {/* Error Alert */}
             {error && (
-              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 text-center font-medium animate-shake">
+              <div role="alert" className="rounded-2xl border border-red-200 bg-red-50/90 p-3 text-xs text-red-700 text-center font-medium animate-shake">
                 {error}
                 {remainingAttempts !== null && remainingAttempts > 0 && (
                   <p className="mt-0.5 text-[11px] text-red-600 font-normal">
-                    {remainingAttempts} {remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining before lockout.
+                    {remainingAttempts} {remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining before temporary lockout.
                   </p>
                 )}
               </div>
             )}
 
-            {/* Timer and Expiration Info */}
-            <div className="flex items-center justify-between text-xs text-ink-500 px-1">
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className={`inline-block h-2 w-2 rounded-full ${timeLeft > 60 ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                {timeLeft > 0 ? (
-                  <span>Code expires in <strong className="font-mono text-ink-900">{formatTime(timeLeft)}</strong></span>
-                ) : (
-                  <span className="text-red-600 font-semibold">Code expired</span>
-                )}
-              </span>
+            {/* Change Email / Sign Out helper row */}
+            <div className="text-center text-xs text-slate-500">
+              <span>Want to Change Your Email Address? </span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="font-semibold text-slate-700 hover:text-amber-600 underline underline-offset-2 transition-colors"
+              >
+                Change Here
+              </button>
+            </div>
 
+            {/* iOS Pill Primary Button (Matching Reference Photo) */}
+            <button
+              type="submit"
+              disabled={isVerifying || digits.join('').length !== 6 || timeLeft === 0}
+              className="w-full h-12 sm:h-13 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-6 font-semibold text-sm sm:text-base text-white shadow-md shadow-orange-500/25 transition-all hover:opacity-95 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {isVerifying ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Verifying...
+                </span>
+              ) : (
+                'Verify Email'
+              )}
+            </button>
+
+            {/* Resend Code Link & Expiration Timer */}
+            <div className="pt-1 flex flex-col items-center gap-1.5 text-center">
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={cooldown > 0 || isSending}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700 disabled:text-ink-400 transition"
+                className="text-xs font-semibold text-amber-600 hover:text-amber-700 disabled:text-slate-400 transition-colors"
               >
                 {isSending
-                  ? 'Sending...'
+                  ? 'Sending fresh code...'
                   : cooldown > 0
-                    ? `Resend in ${cooldown}s`
-                    : 'Resend code'}
+                    ? `Resend Code (${cooldown}s)`
+                    : 'Resend Code'}
               </button>
+
+              <div className="text-[11px] text-slate-400">
+                {timeLeft > 0 ? (
+                  <span>Code expires in <strong className="font-mono text-slate-600">{formatTime(timeLeft)}</strong></span>
+                ) : (
+                  <span className="text-red-500 font-semibold">Code has expired</span>
+                )}
+              </div>
             </div>
-
-            {/* Verification Button */}
-            <Button
-              type="submit"
-              disabled={isVerifying || digits.join('').length !== 6 || timeLeft === 0}
-              className="w-full h-11 text-sm font-semibold shadow-soft"
-            >
-              {isVerifying ? 'Verifying Code...' : 'Verify & Continue'}
-            </Button>
           </form>
-
-          {/* Footer Navigation */}
-          <div className="mt-6 border-t border-ink-950/8 pt-4 text-center">
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="text-xs text-ink-500 hover:text-ink-800 transition"
-            >
-              ← Sign out / Switch account
-            </button>
-          </div>
         </div>
       </div>
     </div>
