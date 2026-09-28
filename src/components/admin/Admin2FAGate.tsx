@@ -76,11 +76,9 @@ export function Admin2FAGate({ onVerified }: Admin2FAGateProps) {
     return () => clearInterval(timer)
   }, [cooldown])
 
-  // Focus the first empty digit box
+  // Focus the first digit box on mount
   useEffect(() => {
-    const firstEmptyIndex = digits.findIndex((d) => d === '')
-    const targetIndex = firstEmptyIndex === -1 ? 5 : firstEmptyIndex
-    inputRefs.current[targetIndex]?.focus()
+    inputRefs.current[0]?.focus()
   }, [])
 
   function formatTime(seconds: number): string {

@@ -6,22 +6,17 @@ import {
   parseLocalDate,
   formatISODate,
   formatDisplayDate,
-  formatFullDisplayDate,
   normalizeBillingFrequency,
   getFrequencyMonths,
   addMonths,
-  calculateRenewalDate,
   calculateDueDateFromPayment,
   calculateRenewalDateFromPayment,
   getFrequencyDays,
-  addDays,
-  daysUntil,
   isEligibleForRenewalInvoice,
   findExistingRenewalInvoice,
   calculateSubscriptionPrice,
   advanceRenewalDate,
   formatWhatsAppInvoiceMessage,
-  formatWhatsAppReceiptMessage,
 } from '../src/lib/subscriptionRenewal.ts'
 
 describe('Subscription Renewal System Tests', () => {

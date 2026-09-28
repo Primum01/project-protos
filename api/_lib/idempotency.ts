@@ -41,7 +41,7 @@ export function isValidIdempotencyKey(key: any): boolean {
   if (typeof key !== 'string') return false
   const trimmed = key.trim()
   if (trimmed.length < 16 || trimmed.length > 255) return false
-  return /^[A-Za-z0-9_.:\-]+$/.test(trimmed)
+  return /^[A-Za-z0-9_.:-]+$/.test(trimmed)
 }
 
 /**

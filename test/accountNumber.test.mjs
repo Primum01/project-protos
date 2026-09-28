@@ -7,8 +7,6 @@ import {
   resolveLocationPrefixes,
   formatAccountNumber,
   isValidAccountNumber,
-  cleanLocationString,
-  ACCOUNT_NUMBER_REGEX,
   parseSequenceFromAccountNumber,
 } from '../src/lib/accountNumber/prefixes.ts'
 

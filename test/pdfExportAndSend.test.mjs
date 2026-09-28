@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 function formatExportFilename({ clientOrProperty, tourType, date }) {
   const sanitize = (str) =>
     (str || '')
-      .replace(/[\/\\?%*:|"<>]/g, '')
+      .replace(/[/\\?%*:|"<>]/g, '')
       .replace(/\s+/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '')
