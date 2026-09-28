@@ -1,15 +1,169 @@
 import crypto from 'crypto'
-import {
-  deleteOtpRecord,
-  generateVerifiedToken,
-  getOtpRecord,
-  hashOtpCode,
-  incrementOtpAttempts,
-  verifyFirebaseAdminToken,
-} from '../_lib/otpStore.ts'
 
 const TARGET_ADMIN_EMAIL = 'team@twinspace360.com'
 const MAX_ATTEMPTS = 5
+
+// In-memory fallback and test cache
+const memoryOtpStore = new Map<string, any>()
+
+function getOtpSecret(): string {
+  return (
+    process.env.ADMIN_OTP_SECRET ||
+    process.env.VITE_FIREBASE_API_KEY ||
+    'twinspace-admin-otp-cryptographic-salt-2026'
+  )
+}
+
+async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
+  if (!idToken || typeof idToken !== 'string') return false
+
+  const apiKey =
+    process.env.VITE_FIREBASE_API_KEY ||
+    'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      },
+    )
+
+    if (!res.ok) return false
+    const data = await res.json()
+    const userEmail = data.users?.[0]?.email?.trim().toLowerCase()
+    return userEmail === 'team@twinspace360.com'
+  } catch (err) {
+    console.error('[verify-otp] Token verification error:', err)
+    return false
+  }
+}
+
+function hashOtpCode(code: string, email: string): string {
+  const secret = getOtpSecret()
+  return crypto
+    .createHmac('sha256', secret)
+    .update(`${code.trim()}:${email.trim().toLowerCase()}`)
+    .digest('hex')
+}
+
+async function getOtpRecord(email: string, idToken?: string): Promise<any | null> {
+  const key = email.toLowerCase()
+  const memRecord = memoryOtpStore.get(key)
+  if (memRecord) return memRecord
+
+  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
+  const apiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
+    const headers: Record<string, string> = {}
+    if (idToken) headers.Authorization = `Bearer ${idToken}`
+
+    const res = await fetch(url, { headers })
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const fields = data.fields
+    if (!fields || !fields.codeHash?.stringValue) return null
+
+    const record = {
+      codeHash: fields.codeHash.stringValue,
+      email: fields.email?.stringValue || 'team@twinspace360.com',
+      attempts: parseInt(fields.attempts?.integerValue || '0', 10),
+      expiresAt: parseInt(fields.expiresAt?.integerValue || '0', 10),
+      createdAt: parseInt(fields.createdAt?.integerValue || '0', 10),
+    }
+
+    memoryOtpStore.set(key, record)
+    return record
+  } catch {
+    return null
+  }
+}
+
+async function saveOtpRecord(
+  record: {
+    codeHash: string
+    email: string
+    attempts: number
+    expiresAt: number
+    createdAt: number
+  },
+  idToken?: string,
+): Promise<void> {
+  memoryOtpStore.set(record.email.toLowerCase(), record)
+
+  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
+  const apiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (idToken) headers.Authorization = `Bearer ${idToken}`
+
+    await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        fields: {
+          codeHash: { stringValue: record.codeHash },
+          email: { stringValue: record.email },
+          attempts: { integerValue: String(record.attempts) },
+          expiresAt: { integerValue: String(record.expiresAt) },
+          createdAt: { integerValue: String(record.createdAt) },
+        },
+      }),
+    })
+  } catch (err) {
+    console.warn('[verify-otp] Firestore save error, using memory store:', err)
+  }
+}
+
+async function deleteOtpRecord(email: string, idToken?: string): Promise<void> {
+  memoryOtpStore.delete(email.toLowerCase())
+
+  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'twinspace-c113c'
+  const apiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
+    const headers: Record<string, string> = {}
+    if (idToken) headers.Authorization = `Bearer ${idToken}`
+    await fetch(url, { method: 'DELETE', headers })
+  } catch {
+    /* ignore deletion errors */
+  }
+}
+
+async function incrementOtpAttempts(email: string, idToken?: string): Promise<number> {
+  const record = await getOtpRecord(email, idToken)
+  if (!record) return 0
+
+  const newAttempts = record.attempts + 1
+  record.attempts = newAttempts
+  await saveOtpRecord(record, idToken)
+  return newAttempts
+}
+
+function generateVerifiedToken(email: string): string {
+  const secret = getOtpSecret()
+  const payload: any = {
+    email: email.trim().toLowerCase(),
+    verifiedAt: Date.now(),
+    exp: Date.now() + 8 * 60 * 60 * 1000, // 8 hours
+  }
+
+  const sig = crypto
+    .createHmac('sha256', secret)
+    .update(`${payload.email}:${payload.verifiedAt}:${payload.exp}`)
+    .digest('hex')
+
+  payload.sig = sig
+  return Buffer.from(JSON.stringify(payload)).toString('base64url')
+}
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
