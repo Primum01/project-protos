@@ -58,12 +58,27 @@ export const ACCENT_GRADIENTS: Record<ListingAccent, string> = {
 export type PaymentMethod = 'credit_card' | 'mpesa' | ''
 export type SubscriptionPackage = 'monthly' | 'quarterly' | 'biannual' | 'annually'
 
+export interface StructuredLocation {
+  displayName?: string
+  location?: string
+  city?: string
+  county?: string
+  region?: string
+  country?: string
+  countryCode?: string
+  latitude?: number
+  longitude?: number
+  placeId?: string
+}
+
 export interface Listing {
   id: string
   name: string
   location: string
   city: string
+  county?: string
   country: string
+  structuredLocation?: StructuredLocation
   price: string
   propertyCategory?: PropertyCategory | string
   propertyType: string
@@ -97,6 +112,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   name: '',
   location: '',
   city: '',
+  county: '',
   country: 'Kenya',
   price: '',
   propertyCategory: 'AirBnB',

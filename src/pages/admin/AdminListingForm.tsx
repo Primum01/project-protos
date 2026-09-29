@@ -24,6 +24,7 @@ import {
   type PropertyCategory,
 } from '@/types/listing'
 import { resolveLocationPrefixes } from '@/lib/accountNumber'
+import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
 
 
 /* ──────────────────────────────────────────────────── section wrapper */
@@ -533,30 +534,82 @@ export function AdminListingForm() {
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
             />
-            <Input
+            <LocationAutocomplete
               id="listing-location"
               label="Full address / location"
               required
+              type="property"
               placeholder="e.g. GTC Office Tower, 14th Floor, Westlands"
               value={form.location}
-              onChange={(e) => set('location', e.target.value)}
+              onChange={(val) => set('location', val)}
+              onSelect={(suggestion) => {
+                setForm((prev) => ({
+                  ...prev,
+                  location:
+                    suggestion.type === 'area' && suggestion.city
+                      ? `${suggestion.name}, ${suggestion.city}`
+                      : suggestion.name,
+                  city: suggestion.city || prev.city || (suggestion.type === 'city' ? suggestion.name : ''),
+                  county: suggestion.county || prev.county || (suggestion.type === 'county' ? suggestion.name : ''),
+                  country: suggestion.country || prev.country || 'Kenya',
+                  structuredLocation: {
+                    displayName: suggestion.displayName,
+                    location: suggestion.name,
+                    city: suggestion.city,
+                    county: suggestion.county,
+                    region: suggestion.region,
+                    country: suggestion.country,
+                    countryCode: suggestion.countryCode,
+                    latitude: suggestion.latitude,
+                    longitude: suggestion.longitude,
+                  },
+                }))
+              }}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <LocationAutocomplete
                 id="listing-city"
-                label="City"
+                label="City / Town"
                 required
+                type="city"
                 placeholder="e.g. Nairobi"
                 value={form.city}
-                onChange={(e) => set('city', e.target.value)}
+                onChange={(val) => set('city', val)}
+                onSelect={(suggestion) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    city: suggestion.name,
+                    county: suggestion.county || prev.county,
+                    country: suggestion.country || prev.country,
+                  }))
+                }}
               />
-              <Input
+              <LocationAutocomplete
+                id="listing-county"
+                label="County / Region"
+                type="county"
+                placeholder="e.g. Nairobi County"
+                value={form.county || ''}
+                onChange={(val) => set('county', val)}
+                onSelect={(suggestion) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    county: suggestion.name,
+                    country: suggestion.country || prev.country,
+                  }))
+                }}
+              />
+              <LocationAutocomplete
                 id="listing-country"
                 label="Country"
                 required
+                type="country"
                 placeholder="e.g. Kenya"
                 value={form.country}
-                onChange={(e) => set('country', e.target.value)}
+                onChange={(val) => set('country', val)}
+                onSelect={(suggestion) => {
+                  set('country', suggestion.name)
+                }}
               />
             </div>
             <Input

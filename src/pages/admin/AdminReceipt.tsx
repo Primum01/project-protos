@@ -18,6 +18,7 @@ import {
   normalizeBillingFrequency,
 } from '@/lib/subscriptionRenewal'
 import type { FinanceItem, SavedReceipt, BillingFrequency, SendingLog } from '@/types/finance'
+import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
 
 function formatMoney(amount: number): string {
   return amount.toLocaleString('en-KE')
@@ -1396,13 +1397,14 @@ export function AdminReceipt() {
                   onChange={(e) => setPropertyName(e.target.value)}
                   className="w-full text-sm print:text-sm font-medium text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
                 />
-                <input
-                  type="text"
+                <LocationAutocomplete
+                  variant="sheet"
+                  type="property"
                   placeholder="Property Location"
                   value={propertyLocation}
                   disabled={!isEditing}
-                  onChange={(e) => setPropertyLocation(e.target.value)}
-                  className="mt-0.5 w-full text-xs print:text-xs text-ink-500 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                  onChange={setPropertyLocation}
+                  inputClassName="mt-0.5 text-ink-500 hover:border-ink-950/30"
                 />
               </div>
             </div>
