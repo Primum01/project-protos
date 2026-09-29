@@ -19,7 +19,6 @@ import {
 } from '@/lib/subscriptionRenewal'
 import type { FinanceItem, SavedReceipt, BillingFrequency, SendingLog } from '@/types/finance'
 import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
-import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 function formatMoney(amount: number): string {
   return amount.toLocaleString('en-KE')
@@ -1349,28 +1348,19 @@ export function AdminReceipt() {
                 <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
                   BILLING FREQUENCY {invoiceNumber ? '(PAID INVOICE)' : ''}
                 </p>
-                {isEditing ? (
-                  <AdminDropdown<BillingFrequency>
-                    value={billingFrequency}
-                    onChange={(newFreq) => {
-                      setBillingFrequency(newFreq)
-                      const ren = calculateRenewalDateFromPayment(fullPaymentDate, newFreq)
-                      setRenewalDate(formatDisplayDate(ren))
-                    }}
-                    options={[
-                      { value: 'Monthly', label: 'Monthly' },
-                      { value: 'Quarterly', label: 'Quarterly' },
-                      { value: 'Biannual', label: 'Semi-Annually (Biannual)' },
-                      { value: 'Annual', label: 'Annual' },
-                    ]}
-                    className="w-full mt-0.5"
-                    buttonClassName="w-full py-1 px-3 text-xs bg-paper border-ink-950/15"
-                  />
-                ) : (
-                  <p className="text-xs print:text-xs font-semibold text-ink-800">
-                    {billingFrequency}
-                  </p>
-                )}
+                <input
+                  type="text"
+                  placeholder="e.g. Monthly, Quarterly, Annual"
+                  value={billingFrequency}
+                  disabled={!isEditing}
+                  onChange={(e) => {
+                    const newFreq = e.target.value as BillingFrequency
+                    setBillingFrequency(newFreq)
+                    const ren = calculateRenewalDateFromPayment(fullPaymentDate, newFreq)
+                    setRenewalDate(formatDisplayDate(ren))
+                  }}
+                  className="w-full text-xs font-semibold text-ink-800 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
               </div>
             </div>
 

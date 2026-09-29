@@ -1636,28 +1636,21 @@ export function AdminInvoice() {
                 <p className="text-[11px] font-bold uppercase tracking-wider text-ink-400 mb-1">
                   BILLING FREQUENCY
                 </p>
-                {isEditing ? (
-                  <AdminDropdown<BillingFrequency>
-                    value={billingFrequency}
-                    onChange={(newFreq) => {
-                      setBillingFrequency(newFreq)
-                      const target = listings.find((l) => l.id === selectedListingId)
-                      const dueDate = calculateDueDateFromPayment(target?.datePaid, newFreq)
-                      setRenewalDate(formatDisplayDate(dueDate))
-                      setPeriodEnd(formatDisplayDate(dueDate))
-                    }}
-                    options={[
-                      { value: 'Monthly', label: 'Monthly' },
-                      { value: 'Quarterly', label: 'Quarterly' },
-                      { value: 'Biannual', label: 'Biannual (6 Months)' },
-                      { value: 'Annual', label: 'Annual (12 Months)' },
-                    ]}
-                    className="w-full mt-0.5"
-                    buttonClassName="w-full py-1 px-3 text-xs bg-paper border-ink-950/15"
-                  />
-                ) : (
-                  <p className="text-xs font-semibold text-ink-900">{billingFrequency}</p>
-                )}
+                <input
+                  type="text"
+                  placeholder="e.g. Monthly, Quarterly, Annual"
+                  value={billingFrequency}
+                  disabled={!isEditing}
+                  onChange={(e) => {
+                    const newFreq = e.target.value as BillingFrequency
+                    setBillingFrequency(newFreq)
+                    const target = listings.find((l) => l.id === selectedListingId)
+                    const dueDate = calculateDueDateFromPayment(target?.datePaid, newFreq)
+                    setRenewalDate(formatDisplayDate(dueDate))
+                    setPeriodEnd(formatDisplayDate(dueDate))
+                  }}
+                  className="w-full text-xs font-semibold text-ink-900 bg-transparent border-b border-dashed border-transparent hover:border-ink-950/30 focus:border-brand-500 focus:outline-none pb-0.5 disabled:opacity-90"
+                />
               </div>
             </div>
 

@@ -1,16 +1,13 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { isAdminEmail, signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth'
+import { isAdminEmail, signInWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
 
-type Mode = 'sign_in' | 'sign_up'
-
 export function AdminLogin() {
   const [searchParams] = useSearchParams()
   const isIdleTimeout = searchParams.get('reason') === 'idle_timeout'
-  const [mode, setMode] = useState<Mode>('sign_in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -45,11 +42,7 @@ export function AdminLogin() {
 
     setBusy(true)
     try {
-      if (mode === 'sign_in') {
-        await signInWithEmail(email, password)
-      } else {
-        await signUpWithEmail(email, password)
-      }
+      await signInWithEmail(email, password)
       navigate('/admin/listings', { replace: true })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Authentication failed'
@@ -104,12 +97,10 @@ export function AdminLogin() {
 
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              {mode === 'sign_in' ? 'Sign In to Admin' : 'Create Admin Account'}
+              Sign In to Admin
             </h1>
             <p className="mt-1.5 text-xs text-slate-500 leading-relaxed max-w-[280px] mx-auto">
-              {mode === 'sign_in'
-                ? 'Enter your administrator credentials to securely access system management.'
-                : 'Register the primary administrator account for this system.'}
+              Enter your administrator credentials to securely access system management.
             </p>
           </div>
 
@@ -156,7 +147,7 @@ export function AdminLogin() {
                 <input
                   id="admin-password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete={mode === 'sign_in' ? 'current-password' : 'new-password'}
+                  autoComplete="current-password"
                   required
                   minLength={6}
                   placeholder="••••••••••••"
@@ -209,7 +200,7 @@ export function AdminLogin() {
                   </svg>
                   Authenticating...
                 </span>
-              ) : mode === 'sign_in' ? (
+              ) : (
                 <>
                   <span>Sign In to Admin</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -217,27 +208,9 @@ export function AdminLogin() {
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
                 </>
-              ) : (
-                'Create Admin Account'
               )}
             </button>
           </form>
-
-          {/* Mode Switch Footer */}
-          <div className="mt-6 border-t border-slate-100 pt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setMode(mode === 'sign_in' ? 'sign_up' : 'sign_in')
-                setError('')
-              }}
-              className="text-xs font-medium text-slate-500 hover:text-amber-600 transition-colors"
-            >
-              {mode === 'sign_in'
-                ? 'First time? Register admin account →'
-                : '← Back to sign in'}
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -127,7 +127,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   contactPhone: '',
   accountNumber: '',
   datePaid: '',
-  package: 'monthly',
+  package: 'quarterly',
   paymentMethod: '',
   tourUrl: '',
   embedCode: '',
