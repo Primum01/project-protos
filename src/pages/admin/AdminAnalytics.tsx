@@ -5,6 +5,7 @@ import { usePageMeta } from '@/hooks/usePageMeta'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { SheetDiaspaceWatermark } from '@/components/common/SheetDiaspaceWatermark'
 import { tabStorage } from '@/lib/storage'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 type TimeRange = '1w' | '1m' | '3m' | '6m' | '1y'
 
@@ -168,22 +169,27 @@ export function AdminAnalytics() {
 
           {/* Property selector */}
           <div className="flex items-center gap-2">
-            <label htmlFor="analytics-property-select" className="text-xs font-medium text-ink-500">
+            <span className="text-xs font-medium text-ink-500 shrink-0">
               Property:
-            </label>
-            <select
+            </span>
+            <AdminDropdown
               id="analytics-property-select"
               value={selectedListingId}
-              onChange={(e) => setSelectedListingId(e.target.value)}
-              className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Properties (Portfolio)</option>
-              {listings.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name} ({l.city})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedListingId(val)}
+              searchable
+              searchPlaceholder="Search property or location…"
+              placeholder="Select property..."
+              buttonClassName="py-1.5 px-3.5 text-xs font-medium"
+              options={[
+                { value: 'all', label: 'All Properties (Portfolio)' },
+                ...listings.map((l) => ({
+                  value: l.id,
+                  label: l.name,
+                  subtitle: l.city || l.location,
+                  badge: l.propertyCategory || undefined,
+                })),
+              ]}
+            />
           </div>
 
           {/* Optional client name for report header */}

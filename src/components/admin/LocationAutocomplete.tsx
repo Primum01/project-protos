@@ -347,8 +347,9 @@ export const LocationAutocomplete = forwardRef<HTMLInputElement, LocationAutocom
           <ul
             id={id ? `${id}-suggestions-list` : undefined}
             role="listbox"
+            style={{ animation: 'iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both', transformOrigin: 'top left' }}
             className={cn(
-              'absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-xl border border-ink-950/10 bg-white p-1.5 shadow-xl transition-all duration-150 ease-out focus:outline-none',
+              'absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-1.5 shadow-2xl backdrop-blur-xl backdrop-saturate-150 focus:outline-none',
               dropdownClassName,
             )}
           >

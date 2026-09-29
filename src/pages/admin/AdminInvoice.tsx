@@ -32,6 +32,7 @@ import {
 } from '@/lib/subscriptionRenewal'
 import type { BillingFrequency, FinanceItem, InvoiceStatus, SavedInvoice, SendingLog } from '@/types/finance'
 import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 function formatMoney(amount: number): string {
   return amount.toLocaleString('en-KE')
@@ -1010,44 +1011,60 @@ export function AdminInvoice() {
 
               {/* Search results dropdown */}
               {isPropertyDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-ink-950/12 bg-white p-1.5 shadow-lifted">
+                <div
+                  style={{ animation: 'iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both', transformOrigin: 'top left' }}
+                  className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-72 overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-2 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
+                >
                   <div
                     onClick={() => handleListingSelect('custom')}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-xs text-ink-600 hover:bg-sand-100/50 hover:text-ink-950 transition-colors"
+                    className="cursor-pointer rounded-xl px-3 py-2 text-xs text-brand-700 hover:bg-brand-50/80 transition-colors flex items-center justify-between"
                   >
-                    <span className="font-semibold">+ Custom Property</span> (Type manually)
+                    <span className="font-semibold">+ Custom Property (Type manually)</span>
+                    <span className="text-[10px] rounded-full bg-brand-50 px-2 py-0.5 font-medium uppercase text-brand-600">Manual</span>
                   </div>
                   {filteredListings.length === 0 ? (
-                    <div className="px-3 py-3 text-xs text-ink-400 text-center">
+                    <div className="px-3 py-4 text-xs text-ink-400 text-center">
                       No matching properties or contacts found
                     </div>
                   ) : (
-                    filteredListings.map((l) => (
-                      <div
-                        key={l.id}
-                        onClick={() => handleListingSelect(l.id)}
-                        className={`cursor-pointer rounded-lg px-3 py-2 text-xs transition-colors ${
-                          selectedListingId === l.id
-                            ? 'bg-brand-500/10 text-brand-900 font-medium'
-                            : 'hover:bg-sand-100/60 text-ink-900'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between font-semibold">
-                          <span>{l.name}</span>
-                          <span className="text-[10px] text-ink-400 font-normal">{l.city || l.location}</span>
+                    filteredListings.map((l, i) => {
+                      const isSelected = selectedListingId === l.id
+                      return (
+                        <div
+                          key={l.id}
+                          onClick={() => handleListingSelect(l.id)}
+                          className={`cursor-pointer rounded-xl px-3.5 py-2.5 text-xs transition-colors duration-100 ${
+                            i < filteredListings.length - 1 ? 'border-b border-ink-950/5' : ''
+                          } ${
+                            isSelected
+                              ? 'bg-brand-50/90 text-brand-900 font-semibold'
+                              : 'hover:bg-ink-50/70 text-ink-900'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold truncate">{l.name}</span>
+                            <div className="flex items-center gap-2">
+                              {l.accountNumber && (
+                                <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-mono font-medium text-ink-600">
+                                  Acc: {l.accountNumber}
+                                </span>
+                              )}
+                              {isSelected && (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-600 shrink-0">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 font-normal">
+                            {l.contactName && <span>👤 {l.contactName}</span>}
+                            {l.contactPhone && <span>📞 {l.contactPhone}</span>}
+                            {l.contactEmail && <span>✉️ {l.contactEmail}</span>}
+                            {(l.city || l.location) && <span>📍 {l.city || l.location}</span>}
+                          </div>
                         </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-500">
-                          {l.contactName && <span>👤 {l.contactName}</span>}
-                          {l.contactPhone && <span>📞 {l.contactPhone}</span>}
-                          {l.contactEmail && <span>✉️ {l.contactEmail}</span>}
-                          {l.accountNumber && (
-                            <span className="font-mono text-brand-600 text-[10px]">
-                              Acc: {l.accountNumber}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               )}
@@ -1175,19 +1192,35 @@ export function AdminInvoice() {
               Select a property or client to view their financial lifecycle, invoices, receipts, and dispatch logs.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              <select
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <AdminDropdown
                 value={historySelectedListingId}
-                onChange={(e) => setHistorySelectedListingId(e.target.value)}
-                className="rounded-xl border border-ink-950/15 bg-paper px-3.5 py-2 text-xs font-medium text-ink-900 shadow-soft focus:border-brand-500 focus:outline-none"
-              >
-                <option value="">-- Choose a property/client --</option>
-                {listings.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} {l.contactName ? `(${l.contactName})` : ''} — {l.accountNumber || 'No Acc'}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setHistorySelectedListingId(val)}
+                placeholder="Choose a property or client..."
+                searchable
+                searchPlaceholder="Search property, client, or account..."
+                className="w-full sm:w-96"
+                buttonClassName="py-2.5 px-4 text-xs sm:text-sm font-medium shadow-soft border-ink-950/15 bg-paper hover:bg-white"
+                panelClassName="w-full sm:w-96"
+                options={[
+                  { value: '', label: 'Choose a property/client…' },
+                  ...listings.map((l) => ({
+                    value: l.id,
+                    label: l.name,
+                    subtitle: [l.contactName, l.contactPhone, l.city || l.location].filter(Boolean).join(' • '),
+                    badge: l.accountNumber || undefined,
+                  })),
+                ]}
+              />
+              {historySelectedListingId && (
+                <button
+                  type="button"
+                  onClick={() => setHistorySelectedListingId('')}
+                  className="rounded-full border border-ink-950/10 bg-white px-3 py-1.5 text-xs text-ink-500 hover:border-ink-950/20 hover:text-ink-900 transition-colors shadow-xs"
+                >
+                  Clear Selection
+                </button>
+              )}
             </div>
           </div>
 
@@ -1604,23 +1637,24 @@ export function AdminInvoice() {
                   BILLING FREQUENCY
                 </p>
                 {isEditing ? (
-                  <select
+                  <AdminDropdown<BillingFrequency>
                     value={billingFrequency}
-                    onChange={(e) => {
-                      const newFreq = e.target.value as BillingFrequency
+                    onChange={(newFreq) => {
                       setBillingFrequency(newFreq)
                       const target = listings.find((l) => l.id === selectedListingId)
                       const dueDate = calculateDueDateFromPayment(target?.datePaid, newFreq)
                       setRenewalDate(formatDisplayDate(dueDate))
                       setPeriodEnd(formatDisplayDate(dueDate))
                     }}
-                    className="w-full text-xs font-semibold text-ink-900 bg-transparent border-b border-dashed border-ink-300 focus:border-brand-500 focus:outline-none pb-0.5"
-                  >
-                    <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Biannual">Biannual (6 Months)</option>
-                    <option value="Annual">Annual (12 Months)</option>
-                  </select>
+                    options={[
+                      { value: 'Monthly', label: 'Monthly' },
+                      { value: 'Quarterly', label: 'Quarterly' },
+                      { value: 'Biannual', label: 'Biannual (6 Months)' },
+                      { value: 'Annual', label: 'Annual (12 Months)' },
+                    ]}
+                    className="w-full mt-0.5"
+                    buttonClassName="w-full py-1 px-3 text-xs bg-paper border-ink-950/15"
+                  />
                 ) : (
                   <p className="text-xs font-semibold text-ink-900">{billingFrequency}</p>
                 )}

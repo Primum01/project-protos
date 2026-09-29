@@ -4,6 +4,7 @@ import { deleteListing, updateListing } from '@/lib/firebase/listings'
 import { useAdminListings } from '@/contexts/AdminDataContext'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button } from '@/components/ui'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 import {
   type Listing,
   type ListingStatus,
@@ -92,16 +93,13 @@ function DeactivatePicker({
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <span className="text-xs font-medium text-amber-800">Reason:</span>
-      <select
+      <AdminDropdown<DeactivationReason>
         id={`deactivate-reason-${listingId}`}
         value={reason}
-        onChange={(e) => setReason(e.target.value as DeactivationReason)}
-        className="rounded-lg border border-amber-200 bg-white px-2.5 py-1.5 text-xs font-medium text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
-      >
-        {DEACTIVATION_REASONS.map((r) => (
-          <option key={r.value} value={r.value}>{r.label}</option>
-        ))}
-      </select>
+        onChange={(val) => setReason(val)}
+        options={DEACTIVATION_REASONS.map((r) => ({ value: r.value, label: r.label }))}
+        buttonClassName="py-1 px-3 text-xs border-amber-200 bg-white text-amber-900"
+      />
       <button
         id={`deactivate-confirm-${listingId}`}
         onClick={() => onConfirm(reason)}

@@ -19,6 +19,7 @@ import {
 } from '@/lib/subscriptionRenewal'
 import type { FinanceItem, SavedReceipt, BillingFrequency, SendingLog } from '@/types/finance'
 import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 function formatMoney(amount: number): string {
   return amount.toLocaleString('en-KE')
@@ -952,44 +953,60 @@ export function AdminReceipt() {
 
               {/* Search results dropdown */}
               {isPropertyDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-ink-950/12 bg-white p-1.5 shadow-lifted">
+                <div
+                  style={{ animation: 'iosDropIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both', transformOrigin: 'top left' }}
+                  className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-72 overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-2 shadow-2xl backdrop-blur-xl backdrop-saturate-150"
+                >
                   <div
                     onClick={() => handleListingSelect('custom')}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-xs text-ink-600 hover:bg-sand-100/50 hover:text-ink-950 transition-colors"
+                    className="cursor-pointer rounded-xl px-3 py-2 text-xs text-emerald-800 hover:bg-emerald-50/80 transition-colors flex items-center justify-between"
                   >
-                    <span className="font-semibold">+ Custom Property</span> (Type manually)
+                    <span className="font-semibold">+ Custom Property (Type manually)</span>
+                    <span className="text-[10px] rounded-full bg-emerald-50 px-2 py-0.5 font-medium uppercase text-emerald-700">Manual</span>
                   </div>
                   {filteredListings.length === 0 ? (
-                    <div className="px-3 py-3 text-xs text-ink-400 text-center">
+                    <div className="px-3 py-4 text-xs text-ink-400 text-center">
                       No matching properties or contacts found
                     </div>
                   ) : (
-                    filteredListings.map((l) => (
-                      <div
-                        key={l.id}
-                        onClick={() => handleListingSelect(l.id)}
-                        className={`cursor-pointer rounded-lg px-3 py-2 text-xs transition-colors ${
-                          selectedListingId === l.id
-                            ? 'bg-emerald-500/10 text-emerald-900 font-medium'
-                            : 'hover:bg-sand-100/60 text-ink-900'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between font-semibold">
-                          <span>{l.name}</span>
-                          <span className="text-[10px] text-ink-400 font-normal">{l.city || l.location}</span>
+                    filteredListings.map((l, i) => {
+                      const isSelected = selectedListingId === l.id
+                      return (
+                        <div
+                          key={l.id}
+                          onClick={() => handleListingSelect(l.id)}
+                          className={`cursor-pointer rounded-xl px-3.5 py-2.5 text-xs transition-colors duration-100 ${
+                            i < filteredListings.length - 1 ? 'border-b border-ink-950/5' : ''
+                          } ${
+                            isSelected
+                              ? 'bg-emerald-50/90 text-emerald-950 font-semibold'
+                              : 'hover:bg-ink-50/70 text-ink-900'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold truncate">{l.name}</span>
+                            <div className="flex items-center gap-2">
+                              {l.accountNumber && (
+                                <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-mono font-medium text-emerald-700">
+                                  Acc: {l.accountNumber}
+                                </span>
+                              )}
+                              {isSelected && (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 shrink-0">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-ink-500 font-normal">
+                            {l.contactName && <span>👤 {l.contactName}</span>}
+                            {l.contactPhone && <span>📞 {l.contactPhone}</span>}
+                            {l.contactEmail && <span>✉️ {l.contactEmail}</span>}
+                            {(l.city || l.location) && <span>📍 {l.city || l.location}</span>}
+                          </div>
                         </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-500">
-                          {l.contactName && <span>👤 {l.contactName}</span>}
-                          {l.contactPhone && <span>📞 {l.contactPhone}</span>}
-                          {l.contactEmail && <span>✉️ {l.contactEmail}</span>}
-                          {l.accountNumber && (
-                            <span className="font-mono text-emerald-700 text-[10px]">
-                              Acc: {l.accountNumber}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               )}
@@ -1333,21 +1350,22 @@ export function AdminReceipt() {
                   BILLING FREQUENCY {invoiceNumber ? '(PAID INVOICE)' : ''}
                 </p>
                 {isEditing ? (
-                  <select
+                  <AdminDropdown<BillingFrequency>
                     value={billingFrequency}
-                    onChange={(e) => {
-                      const newFreq = e.target.value as BillingFrequency
+                    onChange={(newFreq) => {
                       setBillingFrequency(newFreq)
                       const ren = calculateRenewalDateFromPayment(fullPaymentDate, newFreq)
                       setRenewalDate(formatDisplayDate(ren))
                     }}
-                    className="w-full text-xs font-semibold text-ink-800 bg-paper/60 rounded-md border border-ink-950/20 px-2 py-1 focus:border-brand-500 focus:outline-none"
-                  >
-                    <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Biannual">Semi-Annually (Biannual)</option>
-                    <option value="Annual">Annual</option>
-                  </select>
+                    options={[
+                      { value: 'Monthly', label: 'Monthly' },
+                      { value: 'Quarterly', label: 'Quarterly' },
+                      { value: 'Biannual', label: 'Semi-Annually (Biannual)' },
+                      { value: 'Annual', label: 'Annual' },
+                    ]}
+                    className="w-full mt-0.5"
+                    buttonClassName="w-full py-1 px-3 text-xs bg-paper border-ink-950/15"
+                  />
                 ) : (
                   <p className="text-xs print:text-xs font-semibold text-ink-800">
                     {billingFrequency}

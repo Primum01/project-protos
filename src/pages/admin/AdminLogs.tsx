@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getAllSessions, type AdminSession } from '@/lib/firebase/sessions'
 import { useSession } from '@/contexts/SessionContext'
 import { Badge, Button } from '@/components/ui'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 const USER_ROSTER: Record<string, { initials: string; gradient: string }> = {
   'Victor Kiptoo': {
@@ -179,27 +180,31 @@ export function AdminLogs() {
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-ink-950/8 pb-4">
         <div className="flex flex-wrap items-center gap-2">
           {/* Member Filter */}
-          <select
+          <AdminDropdown
             value={filterUser}
-            onChange={(e) => setFilterUser(e.target.value)}
-            className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Admins</option>
-            <option value="Victor Kiptoo">Victor Kiptoo</option>
-            <option value="Isaac Too">Isaac Too</option>
-            <option value="Nicholas Mokua">Nicholas Mokua</option>
-          </select>
+            onChange={(val) => setFilterUser(val)}
+            placeholder="Filter Member..."
+            buttonClassName="py-1.5 px-3.5 text-xs font-medium"
+            options={[
+              { value: 'all', label: 'All Admins' },
+              { value: 'Victor Kiptoo', label: 'Victor Kiptoo', badge: 'VK' },
+              { value: 'Isaac Too', label: 'Isaac Too', badge: 'IT' },
+              { value: 'Nicholas Mokua', label: 'Nicholas Mokua', badge: 'NM' },
+            ]}
+          />
 
           {/* Status Filter */}
-          <select
+          <AdminDropdown<'all' | 'active' | 'completed'>
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'completed')}
-            className="rounded-lg border border-ink-950/15 bg-paper px-3 py-1.5 text-xs font-medium text-ink-800 transition-colors focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active Only</option>
-            <option value="completed">Completed Only</option>
-          </select>
+            onChange={(val) => setFilterStatus(val)}
+            placeholder="Filter Status..."
+            buttonClassName="py-1.5 px-3.5 text-xs font-medium"
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'active', label: 'Active Only' },
+              { value: 'completed', label: 'Completed Only' },
+            ]}
+          />
         </div>
 
         {/* Search input */}

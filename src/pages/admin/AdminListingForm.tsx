@@ -25,6 +25,7 @@ import {
 } from '@/types/listing'
 import { resolveLocationPrefixes } from '@/lib/accountNumber'
 import { LocationAutocomplete } from '@/components/admin/LocationAutocomplete'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 
 /* ──────────────────────────────────────────────────── section wrapper */
@@ -625,18 +626,14 @@ export function AdminListingForm() {
                 <label htmlFor="listing-category" className="mb-1.5 block text-sm font-medium text-ink-800">
                   Property Category <span className="text-red-500" aria-hidden="true">*</span>
                 </label>
-                <select
+                <AdminDropdown<PropertyCategory>
                   id="listing-category"
-                  value={form.propertyCategory || 'AirBnB'}
-                  onChange={(e) => set('propertyCategory', e.target.value as PropertyCategory)}
-                  className="w-full rounded-md border border-ink-950/15 bg-paper px-3.5 py-2.5 text-sm text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
-                >
-                  {PROPERTY_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  value={(form.propertyCategory as PropertyCategory) || 'AirBnB'}
+                  onChange={(val) => set('propertyCategory', val)}
+                  options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+                  className="w-full"
+                  buttonClassName="w-full py-2.5 px-3.5 text-sm"
+                />
                 <p className="mt-1 text-[11px] text-ink-400">Tour type filter on the public tours page.</p>
               </div>
 
@@ -645,14 +642,14 @@ export function AdminListingForm() {
                 <label htmlFor="listing-type" className="mb-1.5 block text-sm font-medium text-ink-800">
                   Property type <span className="text-red-500" aria-hidden="true">*</span>
                 </label>
-                <select
+                <AdminDropdown<string>
                   id="listing-type"
                   value={form.propertyType}
-                  onChange={(e) => set('propertyType', e.target.value)}
-                  className="w-full rounded-md border border-ink-950/15 bg-paper px-3.5 py-2.5 text-sm text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
-                >
-                  {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                  onChange={(val) => set('propertyType', val)}
+                  options={PROPERTY_TYPES.map((t) => ({ value: t, label: t }))}
+                  className="w-full"
+                  buttonClassName="w-full py-2.5 px-3.5 text-sm"
+                />
               </div>
 
               {/* Status */}
@@ -660,14 +657,14 @@ export function AdminListingForm() {
                 <label htmlFor="listing-status" className="mb-1.5 block text-sm font-medium text-ink-800">
                   Status
                 </label>
-                <select
+                <AdminDropdown<ListingFormData['status']>
                   id="listing-status"
                   value={form.status}
-                  onChange={(e) => set('status', e.target.value as ListingFormData['status'])}
-                  className="w-full rounded-md border border-ink-950/15 bg-paper px-3.5 py-2.5 text-sm text-ink-950 transition-colors focus:border-brand-500 focus:outline-none"
-                >
-                  {LISTING_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                  onChange={(val) => set('status', val)}
+                  options={LISTING_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                  className="w-full"
+                  buttonClassName="w-full py-2.5 px-3.5 text-sm"
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -1165,18 +1162,14 @@ export function AdminListingForm() {
             <label htmlFor="publishing-category" className="block text-xs font-semibold uppercase tracking-wider text-ink-500">
               Property Category
             </label>
-            <select
+            <AdminDropdown<PropertyCategory>
               id="publishing-category"
-              value={form.propertyCategory || 'AirBnB'}
-              onChange={(e) => set('propertyCategory', e.target.value as PropertyCategory)}
-              className="w-full rounded-lg border border-ink-950/15 bg-paper px-3 py-2 text-xs font-medium text-ink-900 transition-colors focus:border-brand-500 focus:outline-none shadow-xs"
-            >
-              {PROPERTY_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              value={(form.propertyCategory as PropertyCategory) || 'AirBnB'}
+              onChange={(val) => set('propertyCategory', val)}
+              options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+              className="w-full"
+              buttonClassName="w-full py-2 px-3 text-xs"
+            />
             <p className="text-[10px] text-ink-400">Controls the tour type filter on the public tours page.</p>
           </div>
 
