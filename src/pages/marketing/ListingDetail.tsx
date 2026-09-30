@@ -348,6 +348,7 @@ export function ListingDetail() {
                     containerClassName="h-full w-full rounded-xl"
                     aspectRatio="custom"
                     loadingMessage={`Initializing ${listing.name} 3D Tour…`}
+                    loading="eager"
                   />
                   {listing.tourUrl && (
                     <a

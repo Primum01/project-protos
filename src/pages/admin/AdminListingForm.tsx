@@ -198,8 +198,7 @@ function PreviewPanel({
                     title="Tour preview"
                     className="h-full w-full border-0"
                     allowFullScreen
-                    allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
+                    allow="autoplay; fullscreen; web-share; xr-spatial-tracking; gyroscope; accelerometer"
                   />
                 ) : form.tourUrl ? (
                   <a

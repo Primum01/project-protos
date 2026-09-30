@@ -1,4 +1,4 @@
-import { useState, type IframeHTMLAttributes } from 'react'
+import { useEffect, useState, type IframeHTMLAttributes } from 'react'
 import { cn } from '@/lib/cn'
 import { TourViewerSkeleton } from './TourViewerSkeleton'
 
@@ -22,9 +22,22 @@ export function TourViewerWithSkeleton({
   loadingMessage = 'Loading 3D space…',
   className,
   onLoad,
+  loading,
+  allow,
   ...props
 }: TourViewerWithSkeletonProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+
+  // Reset loading state and install safety fallback timeout when src changes
+  useEffect(() => {
+    setIsLoaded(false)
+    // Safety fallback: Ensure skeleton fades out smoothly after 4s even on slow mobile connections
+    // or when mobile browsers suppress/delay cross-origin iframe load events
+    const timer = setTimeout(() => {
+      setIsLoaded(true)
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [src])
 
   return (
     <div
@@ -36,16 +49,7 @@ export function TourViewerWithSkeleton({
         containerClassName,
       )}
     >
-      {/* Skeleton overlay until iframe triggers onLoad */}
-      {!isLoaded && (
-        <TourViewerSkeleton
-          aspectRatio="custom"
-          message={loadingMessage}
-          className="absolute inset-0 z-10 h-full w-full rounded-none"
-        />
-      )}
-
-      {/* Embedded 3D viewer */}
+      {/* Embedded 3D viewer (kept rendered in DOM so mobile WebGL contexts initialize immediately) */}
       <iframe
         src={src}
         title={title}
@@ -54,16 +58,29 @@ export function TourViewerWithSkeleton({
           if (onLoad) onLoad(e)
         }}
         className={cn(
-          'h-full w-full border-0 transition-opacity duration-500',
-          isLoaded ? 'opacity-100' : 'opacity-0 pointer-events-none',
+          'h-full w-full border-0',
           className,
         )}
         allowFullScreen
-        allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
-        loading="lazy"
+        allow={allow ?? 'autoplay; fullscreen; web-share; xr-spatial-tracking; gyroscope; accelerometer'}
+        loading={loading ?? 'eager'}
         {...props}
       />
+
+      {/* Skeleton overlay — fades out smoothly once iframe loads or timeout fires */}
+      <div
+        className={cn(
+          'absolute inset-0 z-10 transition-opacity duration-700 ease-out',
+          isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100',
+        )}
+        aria-hidden={isLoaded}
+      >
+        <TourViewerSkeleton
+          aspectRatio="custom"
+          message={loadingMessage}
+          className="h-full w-full rounded-none"
+        />
+      </div>
     </div>
   )
 }
