@@ -52,28 +52,69 @@ export async function is2FAVerified(): Promise<boolean> {
     if (!res.ok) {
       _verifiedCache = false
       _cacheSetAt = now
+      try { sessionStorage.removeItem('ts_2fa_verified') } catch {}
       return false
     }
     const data = await res.json()
     const verified = Boolean(data.verified)
     _verifiedCache = verified
     _cacheSetAt = now
+    try {
+      if (verified) {
+        sessionStorage.setItem('ts_2fa_verified', '1')
+      } else {
+        sessionStorage.removeItem('ts_2fa_verified')
+      }
+    } catch {}
     return verified
   } catch {
     // Network error: treat as unverified (fail-secure)
     _verifiedCache = false
     _cacheSetAt = now
+    try { sessionStorage.removeItem('ts_2fa_verified') } catch {}
     return false
   }
 }
 
 /**
- * Invalidates the local in-memory cache. Call after logout so the next
+ * Synchronous check whether 2FA has been confirmed in this active browser session.
+ * Used by skeleton renderers and transition guards to determine whether the user
+ * has access to the admin dashboard without triggering network round-trips.
+ */
+export function is2FAVerifiedCached(): boolean {
+  if (_verifiedCache !== null) {
+    return _verifiedCache
+  }
+  try {
+    return sessionStorage.getItem('ts_2fa_verified') === '1'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Manually update the client-side 2FA verification cache.
+ */
+export function set2FAVerifiedCached(verified: boolean): void {
+  _verifiedCache = verified
+  _cacheSetAt = Date.now()
+  try {
+    if (verified) {
+      sessionStorage.setItem('ts_2fa_verified', '1')
+    } else {
+      sessionStorage.removeItem('ts_2fa_verified')
+    }
+  } catch {}
+}
+
+/**
+ * Invalidates the local in-memory cache and session flag. Call after logout so the next
  * is2FAVerified() call hits the server rather than the stale cache.
  */
 export function invalidate2FACache(): void {
   _verifiedCache = null
   _cacheSetAt = 0
+  try { sessionStorage.removeItem('ts_2fa_verified') } catch {}
 }
 
 /**
@@ -172,6 +213,7 @@ export async function verifyOtpRequest(
     // Warm up the local cache: verification was just confirmed server-side
     _verifiedCache = true
     _cacheSetAt = Date.now()
+    try { sessionStorage.setItem('ts_2fa_verified', '1') } catch {}
 
     return { success: true }
   } catch (err: any) {

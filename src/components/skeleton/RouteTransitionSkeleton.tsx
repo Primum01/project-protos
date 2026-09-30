@@ -6,7 +6,11 @@ import { SkeletonListingDetail } from './SkeletonListingDetail'
 import { SkeletonTourCard } from './SkeletonTourCard'
 import { SkeletonPricing } from './SkeletonPricing'
 import { SkeletonAdminShell } from './SkeletonAdminShell'
+import { SkeletonLoginCard } from './SkeletonLoginCard'
+import { SkeletonOtpCard } from './SkeletonOtpCard'
 import { SkeletonParagraph } from './SkeletonParagraph'
+import { useAuth } from '@/hooks/useAuth'
+import { is2FAVerifiedCached } from '@/lib/auth2fa'
 
 /**
  * Smart, route-aware Suspense fallback.
@@ -16,9 +20,29 @@ import { SkeletonParagraph } from './SkeletonParagraph'
 export function RouteTransitionSkeleton() {
   const location = useLocation()
   const { pathname } = location
+  const { user, isAdmin, loading: authLoading } = useAuth()
 
   // 1. Admin routes
   if (pathname.startsWith('/admin')) {
+    // 1A. Explicit admin login route: always show the login card skeleton
+    if (pathname === '/admin/login') {
+      return <SkeletonLoginCard />
+    }
+
+    // 1B. Firebase auth still resolving or visitor is not authenticated as admin:
+    // Show login card skeleton (never reveal admin dashboard preview to unauthenticated visitors)
+    if (authLoading || !user || !isAdmin) {
+      return <SkeletonLoginCard />
+    }
+
+    // 1C. User is authenticated, but 2FA access has not yet been confirmed:
+    // Show the OTP input card skeleton during OTP verification phase
+    if (!is2FAVerifiedCached()) {
+      return <SkeletonOtpCard />
+    }
+
+    // 1D. User is authenticated and 2FA verified (has confirmed access to admin dashboard):
+    // Show the admin layout skeleton
     return <SkeletonAdminShell />
   }
 

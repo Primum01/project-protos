@@ -16,6 +16,7 @@ export const ADMIN_SESSION_KEYS = [
   'ts_session_user',
   'ts_session_started',
   'ts_session_last_activity',
+  'ts_2fa_verified',
   // Note: ts_2fa_token and ts_2fa_verified_at have been migrated to an HttpOnly
   // server-side cookie (ts_otp_verified) and no longer live in JS-accessible storage.
   // The entries below are kept for one-time cleanup of any legacy keys.

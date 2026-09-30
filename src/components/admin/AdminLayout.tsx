@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { useAuth } from '@/hooks/useAuth'
 import { useSession } from '@/contexts/SessionContext'
 import { SessionSelect } from '@/pages/admin/SessionSelect'
-import { is2FAVerified, clearOtpSession, invalidate2FACache } from '@/lib/auth2fa'
+import { is2FAVerified, clearOtpSession, invalidate2FACache, is2FAVerifiedCached, set2FAVerifiedCached } from '@/lib/auth2fa'
 import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
 import { SkeletonAdminShell, SkeletonLoginCard, SkeletonOtpCard } from '@/components/skeleton'
@@ -161,8 +161,8 @@ const navItems = [
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isVerified2FA, setIsVerified2FA] = useState<boolean>(false)
-  const [checking2FA, setChecking2FA] = useState<boolean>(true)
+  const [isVerified2FA, setIsVerified2FA] = useState<boolean>(() => is2FAVerifiedCached())
+  const [checking2FA, setChecking2FA] = useState<boolean>(() => !is2FAVerifiedCached())
   const { user, isAdmin, isConfigured, loading: authLoading } = useAuth()
   const { currentUser, activeSession, loading: sessionLoading, evictedReason, dismissEviction, end } = useSession()
   const navigate = useNavigate()
@@ -173,9 +173,15 @@ export function AdminLayout() {
     async function checkSession() {
       try {
         const verified = await is2FAVerified()
-        if (active) setIsVerified2FA(verified)
+        if (active) {
+          setIsVerified2FA(verified)
+          set2FAVerifiedCached(verified)
+        }
       } catch {
-        if (active) setIsVerified2FA(false)
+        if (active) {
+          setIsVerified2FA(false)
+          set2FAVerifiedCached(false)
+        }
       } finally {
         if (active) setChecking2FA(false)
       }
@@ -207,6 +213,7 @@ export function AdminLayout() {
     } catch {
       /* ignore */
     } finally {
+      set2FAVerifiedCached(false)
       setIsVerified2FA(false)
       clearAdminStorage()
       navigate('/admin/login', { replace: true })
@@ -271,7 +278,14 @@ export function AdminLayout() {
     }
     // 4. 2FA status is known and not completed — show the verification gate.
     if (!isVerified2FA) {
-      return <Admin2FAGate onVerified={() => setIsVerified2FA(true)} />
+      return (
+        <Admin2FAGate
+          onVerified={() => {
+            set2FAVerifiedCached(true)
+            setIsVerified2FA(true)
+          }}
+        />
+      )
     }
     // 5. User is 2FA-verified. Now it is correct to show the admin shell skeleton
     //    while Firestore session data loads, because the user WILL reach the dashboard.

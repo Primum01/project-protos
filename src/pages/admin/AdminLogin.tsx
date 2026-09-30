@@ -4,6 +4,7 @@ import { isAdminEmail, signInWithEmail } from '@/lib/firebase/auth'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { SkeletonLoginCard } from '@/components/skeleton'
 
 export function AdminLogin() {
   const [searchParams] = useSearchParams()
@@ -29,6 +30,11 @@ export function AdminLogin() {
     path: '/admin/login',
     noIndex: true,
   })
+
+  // Show login-card skeleton while Firebase auth initial state resolves
+  if (loading) {
+    return <SkeletonLoginCard />
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
