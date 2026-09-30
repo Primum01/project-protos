@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Button, Card, Section } from '@/components/ui'
+import { SkeletonPricing } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
 import { usePageMeta } from '@/hooks/usePageMeta'
 import {
@@ -432,11 +433,7 @@ export function Pricing() {
 
 
         {plansLoading ? (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 animate-pulse rounded-2xl bg-ink-100" />
-            ))}
-          </div>
+          <SkeletonPricing />
         ) : (
           <div>
             {/* Render a carousel per toggle so each billing cycle retains its own independent swipe state */}

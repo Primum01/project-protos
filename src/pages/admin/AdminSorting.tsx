@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdminFinance, useAdminListings } from '@/contexts/AdminDataContext'
+import { SkeletonTable } from '@/components/skeleton'
 import type { Listing } from '@/types/listing'
 import {
   calculateRenewalDate,
@@ -273,11 +274,18 @@ export function AdminSorting() {
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-ink-100" />
-          ))}
-        </div>
+        <SkeletonTable
+          columns={[
+            { header: 'Client', width: '15%' },
+            { header: 'Contact', width: '15%' },
+            { header: 'Property', width: '20%' },
+            { header: 'Package', width: '12%' },
+            { header: 'Renewal Date', width: '14%' },
+            { header: 'Urgency', width: '10%' },
+            { header: 'Renewal Action', width: '14%' },
+          ]}
+          rows={6}
+        />
       )}
 
       {/* Table */}

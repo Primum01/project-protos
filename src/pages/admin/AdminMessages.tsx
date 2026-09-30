@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useAdminMessages } from '@/contexts/AdminDataContext'
 import { deleteMessage, markMessageRead } from "@/lib/firebase/messages"
+import { Skeleton } from '@/components/skeleton'
 import type { ContactMessage } from "@/types/message"
 
 /* ── Icons ──────────────────────────────────────────────────────────────── */
@@ -171,12 +172,21 @@ export function AdminMessages() {
         {/* List */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
-            <div className="space-y-0">
-              {[...Array(5)].map((_, i) => (
+            <div className="space-y-0" aria-busy="true" aria-label="Loading messages">
+              {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="border-b border-ink-950/6 px-5 py-4">
-                  <div className="h-3 w-28 animate-pulse rounded bg-ink-100" />
-                  <div className="mt-2 h-2.5 w-40 animate-pulse rounded bg-ink-100" />
-                  <div className="mt-2 h-2 w-full animate-pulse rounded bg-ink-100" />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton rounded="full" className="h-2 w-2 shrink-0" />
+                        <Skeleton rounded="sm" className="h-4 w-28" />
+                      </div>
+                      <Skeleton rounded="sm" className="h-3 w-40" />
+                      <Skeleton rounded="sm" className="h-3 w-full" />
+                      <Skeleton rounded="sm" className="h-3 w-3/4" />
+                    </div>
+                    <Skeleton rounded="sm" className="h-3 w-10 shrink-0" />
+                  </div>
                 </div>
               ))}
             </div>

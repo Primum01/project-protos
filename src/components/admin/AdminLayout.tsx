@@ -8,6 +8,7 @@ import { SessionSelect } from '@/pages/admin/SessionSelect'
 import { is2FAVerified } from '@/lib/auth2fa'
 import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
+import { SkeletonAdminShell } from '@/components/skeleton'
 
 /* ── Inline icons ─────────────────────────────────────────────────────── */
 function IconBuilding() {
@@ -234,11 +235,7 @@ export function AdminLayout() {
   // ── Authentication, 2FA & Session gate ──────────────────────────────────────────
   if (isConfigured) {
     if (authLoading || sessionLoading) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-ink-950">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        </div>
-      )
+      return <SkeletonAdminShell />
     }
     if (!user || !isAdmin) {
       return <Navigate to="/admin/login" replace />

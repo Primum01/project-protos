@@ -1,6 +1,7 @@
 import { useAdminListings } from '@/contexts/AdminDataContext'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { useNavigate } from 'react-router-dom'
+import { SkeletonDashboard } from '@/components/skeleton'
 import type { ListingStatus } from '@/types/listing'
 import { LISTING_STATUSES } from '@/types/listing'
 
@@ -46,87 +47,85 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Stats and Recent Listings */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-ink-100" />
-          ))}
-        </div>
+        <SkeletonDashboard />
       ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label="Total listings" value={total} />
-          <StatCard label="Published" value={published} sub="Visible on public site" />
-          <StatCard label="Available" value={available} />
-          <StatCard label="Sold" value={sold} />
-        </div>
-      )}
-
-      {/* Recent listings */}
-      {!loading && listings.length > 0 && (
-        <div className="mt-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-ink-950">Recent listings</h2>
-            <button
-              onClick={() => navigate('/admin/listings')}
-              className="text-sm text-brand-600 hover:underline"
-            >
-              View all →
-            </button>
+        <>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard label="Total listings" value={total} />
+            <StatCard label="Published" value={published} sub="Visible on public site" />
+            <StatCard label="Available" value={available} />
+            <StatCard label="Sold" value={sold} />
           </div>
-          <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-paper shadow-soft">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ink-950/8 bg-ink-50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
-                    Property
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
-                    Price
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
-                    Status
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
-                    Published
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-950/6">
-                {listings.slice(0, 6).map((listing) => (
-                  <tr
-                    key={listing.id}
-                    className="cursor-pointer transition-colors hover:bg-ink-50"
-                    onClick={() => navigate(`/admin/listings/${listing.id}`)}
-                  >
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-ink-950">{listing.name}</p>
-                      <p className="text-xs text-ink-400">{listing.location}</p>
-                    </td>
-                    <td className="px-5 py-3.5 text-ink-700">{listing.price}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_META[listing.status]?.color ?? ''}`}>
-                        {STATUS_META[listing.status]?.label ?? listing.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${listing.published ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-400'}`}>
-                        {listing.published ? '✓' : '–'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
-      {/* Empty state */}
-      {!loading && listings.length === 0 && (
-        <div className="mt-16 text-center">
-          <p className="text-ink-400">No listings yet.</p>
-        </div>
+          {/* Recent listings */}
+          {listings.length > 0 && (
+            <div className="mt-10">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-ink-950">Recent listings</h2>
+                <button
+                  onClick={() => navigate('/admin/listings')}
+                  className="text-sm text-brand-600 hover:underline"
+                >
+                  View all →
+                </button>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-ink-950/8 bg-paper shadow-soft">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-ink-950/8 bg-ink-50">
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
+                        Property
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
+                        Price
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
+                        Status
+                      </th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-400">
+                        Published
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink-950/6">
+                    {listings.slice(0, 6).map((listing) => (
+                      <tr
+                        key={listing.id}
+                        className="cursor-pointer transition-colors hover:bg-ink-50"
+                        onClick={() => navigate(`/admin/listings/${listing.id}`)}
+                      >
+                        <td className="px-5 py-3.5">
+                          <p className="font-medium text-ink-950">{listing.name}</p>
+                          <p className="text-xs text-ink-400">{listing.location}</p>
+                        </td>
+                        <td className="px-5 py-3.5 text-ink-700">{listing.price}</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_META[listing.status]?.color ?? ''}`}>
+                            {STATUS_META[listing.status]?.label ?? listing.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${listing.published ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-400'}`}>
+                            {listing.published ? '✓' : '–'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {listings.length === 0 && (
+            <div className="mt-16 text-center">
+              <p className="text-ink-400">No listings yet.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

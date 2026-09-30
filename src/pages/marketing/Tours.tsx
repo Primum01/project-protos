@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { TourCard } from "@/components/marketing/TourCard"
+import { SkeletonTourCard } from "@/components/skeleton"
 import { Section } from "@/components/ui"
 import { usePublishedListings } from "@/hooks/useListings"
 import { usePageMeta } from "@/hooks/usePageMeta"
@@ -524,10 +525,25 @@ export function Tours() {
         title="Browse our listings"
         description="Properties currently available to view. Click any card to launch the 3D tour."
       >
-        {loading ? (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-72 animate-pulse rounded-xl bg-ink-100" />
+        <FilterBar
+          options={locationOptions}
+          location={location}
+          onLocation={setLocation}
+          tourType={tourType}
+          onTourType={setTourType}
+          search={search}
+          onSearch={setSearch}
+          count={loading && listings.length === 0 ? 0 : filtered.length}
+        />
+
+        {loading && listings.length === 0 ? (
+          <div
+            aria-busy="true"
+            aria-label="Loading properties"
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonTourCard key={i} />
             ))}
           </div>
         ) : error && listings.length === 0 ? (
@@ -556,29 +572,15 @@ export function Tours() {
             <p className="font-medium text-ink-500">No properties listed yet</p>
             <p className="mt-1 text-sm text-ink-400">Check back soon — new tours are added regularly.</p>
           </div>
+        ) : filtered.length > 0 ? (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
+          </div>
         ) : (
-          <>
-            <FilterBar
-              options={locationOptions}
-              location={location}
-              onLocation={setLocation}
-              tourType={tourType}
-              onTourType={setTourType}
-              search={search}
-              onSearch={setSearch}
-              count={filtered.length}
-            />
-            {filtered.length > 0 ? (
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
-              </div>
-            ) : (
-              <p className="text-ink-400">
-                No listings match your filters.{" "}
-                <button onClick={() => { setLocation(""); setSearch(""); setTourType("AirBnB"); }} className="text-brand-600 underline">Clear all</button>
-              </p>
-            )}
-          </>
+          <p className="text-ink-400">
+            No listings match your filters.{" "}
+            <button onClick={() => { setLocation(""); setSearch(""); setTourType("AirBnB"); }} className="text-brand-600 underline">Clear all</button>
+          </p>
         )}
       </Section>
     </MarketingLayout>

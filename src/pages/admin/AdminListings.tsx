@@ -5,6 +5,7 @@ import { useAdminListings } from '@/contexts/AdminDataContext'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { Button } from '@/components/ui'
 import { AdminDropdown } from '@/components/admin/AdminDropdown'
+import { SkeletonTable } from '@/components/skeleton'
 import {
   type Listing,
   type ListingStatus,
@@ -280,11 +281,17 @@ export function AdminListings() {
   /* ── Shared empty / loading states */
   function renderSkeleton() {
     return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-xl bg-ink-100" />
-        ))}
-      </div>
+      <SkeletonTable
+        columns={[
+          { header: 'Property', width: '32%' },
+          { header: 'Type', width: '15%' },
+          { header: 'Price', width: '15%' },
+          { header: 'Status', width: '15%' },
+          { header: 'Published', width: '10%' },
+          { header: 'Actions', width: '13%' },
+        ]}
+        rows={6}
+      />
     )
   }
 

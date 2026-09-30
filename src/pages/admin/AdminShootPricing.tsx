@@ -10,6 +10,7 @@ import {
   type PricingDiscounts,
 } from '@/lib/firebase/pricing'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
+import { Skeleton } from '@/components/skeleton'
 
 /* ── Tick icon ───────────────────────────────────────────────────────────── */
 function IconCheck() {
@@ -344,9 +345,24 @@ export function AdminShootPricing() {
         </div>
 
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-xl bg-ink-100" />
+          <div className="space-y-4" aria-busy="true" aria-label="Loading baseline prices">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-3 rounded-xl border border-ink-950/8 bg-paper p-5 shadow-soft sm:flex-row sm:items-center sm:gap-6"
+              >
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton rounded="sm" className="h-4 w-28" />
+                    <Skeleton rounded="full" className="h-4 w-14" />
+                  </div>
+                  <Skeleton rounded="sm" className="h-3 w-3/4" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton rounded="lg" className="h-9 w-40" />
+                  <Skeleton rounded="lg" className="h-9 w-20" />
+                </div>
+              </div>
             ))}
           </div>
         ) : (

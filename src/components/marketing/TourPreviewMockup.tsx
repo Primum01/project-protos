@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Section } from '@/components/ui'
+import { TourViewerWithSkeleton } from '@/components/skeleton'
 
 /**
  * Interactive Matterport 3D walkthrough preview embedded in a mock browser container.
@@ -46,14 +47,12 @@ export function TourPreviewMockup() {
 
         {/* Embedded Matterport 3D viewer fitting 16:9 ratio container */}
         <div className="relative aspect-16/9 w-full bg-ink-950 min-h-[300px] sm:min-h-0">
-          <iframe
+          <TourViewerWithSkeleton
             src={tourSrc}
-            title="Matterport 3D Tour"
-            className="h-full w-full border-0"
-            allowFullScreen
-            allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
-            loading="lazy"
+            title="Matterport 3D Tour Demo"
+            aspectRatio="16/9"
+            containerClassName="min-h-[300px] sm:min-h-0 rounded-none h-full w-full"
+            loadingMessage="Initializing Interactive 3D Walkthrough…"
           />
         </div>
       </div>

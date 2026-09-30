@@ -12,6 +12,7 @@ import {
 import { extractEmbedSrc } from '@/lib/embed'
 import { cn } from '@/lib/cn'
 import { Button, Input } from '@/components/ui'
+import { SkeletonListingForm } from '@/components/skeleton'
 import {
   ACCENT_GRADIENTS,
   DEFAULT_LISTING_FORM,
@@ -489,11 +490,7 @@ export function AdminListingForm() {
   }
 
   if (loadingListing) {
-    return (
-      <div className="flex h-full items-center justify-center p-10">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-      </div>
-    )
+    return <SkeletonListingForm />
   }
 
   return (

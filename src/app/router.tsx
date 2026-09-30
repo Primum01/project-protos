@@ -7,6 +7,7 @@ import { SessionProvider } from '@/contexts/SessionContext'
 import { AdminDataProvider } from '@/contexts/AdminDataContext'
 
 import { RouteErrorBoundary, ErrorBoundary } from '@/components/ui'
+import { RouteTransitionSkeleton } from '@/components/skeleton'
 
 /**
  * Wraps dynamic component imports with controlled automatic retry on chunk loading failure.
@@ -68,15 +69,6 @@ const AdminAnalytics  = lazyWithRetry(() => import('@/pages/admin/AdminAnalytics
 const AdminInvoice    = lazyWithRetry(() => import('@/pages/admin/AdminInvoice').then(m => ({ default: m.AdminInvoice })), 'AdminInvoice')
 const AdminReceipt    = lazyWithRetry(() => import('@/pages/admin/AdminReceipt').then(m => ({ default: m.AdminReceipt })), 'AdminReceipt')
 
-/** Minimal spinner shown while a lazy chunk is being fetched. */
-function PageSpinner() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-    </div>
-  )
-}
-
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
@@ -87,7 +79,7 @@ function ScrollToTop() {
 
   return (
     <ErrorBoundary key={pathname} layout={isPublicMarketing ? 'marketing' : 'contained'}>
-      <Suspense fallback={<PageSpinner />}>
+      <Suspense fallback={<RouteTransitionSkeleton />}>
         <Outlet />
       </Suspense>
     </ErrorBoundary>

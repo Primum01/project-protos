@@ -3,6 +3,7 @@ import { getAllSessions, type AdminSession } from '@/lib/firebase/sessions'
 import { useSession } from '@/contexts/SessionContext'
 import { Badge, Button } from '@/components/ui'
 import { AdminDropdown } from '@/components/admin/AdminDropdown'
+import { Skeleton } from '@/components/skeleton'
 
 const USER_ROSTER: Record<string, { initials: string; gradient: string }> = {
   'Victor Kiptoo': {
@@ -234,12 +235,28 @@ export function AdminLogs() {
             </thead>
             <tbody className="divide-y divide-ink-950/6">
               {loading && sessions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-ink-400">
-                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent mb-2" />
-                    <p className="text-xs">Loading admin session records…</p>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} aria-busy="true">
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <Skeleton rounded="full" className="h-8 w-8 shrink-0" />
+                        <Skeleton rounded="sm" className="h-4 w-28" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Skeleton rounded="full" className="h-5 w-16" />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Skeleton rounded="sm" className="h-4 w-32" />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Skeleton rounded="sm" className="h-4 w-16" />
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <Skeleton rounded="sm" className="h-4 w-24" />
+                    </td>
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-ink-400">

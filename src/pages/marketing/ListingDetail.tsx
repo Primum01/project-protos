@@ -6,6 +6,7 @@ import { extractEmbedSrc } from '@/lib/embed'
 import { recordLinkShared, recordSessionDuration, recordTourView } from '@/lib/firebase/analytics'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
+import { SkeletonListingDetail, TourViewerWithSkeleton } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
 import { ACCENT_GRADIENTS, LISTING_STATUSES } from '@/types/listing'
 import type { Listing } from '@/types/listing'
@@ -278,10 +279,7 @@ export function ListingDetail() {
   if (loading) {
     return (
       <MarketingLayout>
-        <div className="h-20" />
-        <Container className="py-24 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        </Container>
+        <SkeletonListingDetail />
       </MarketingLayout>
     )
   }
@@ -344,14 +342,12 @@ export function ListingDetail() {
             if (embedSrc) {
               return (
                 <div className="relative h-full w-full">
-                  <iframe
+                  <TourViewerWithSkeleton
                     src={embedSrc}
                     title={`${listing.name} 3D Tour`}
-                    className="h-full w-full border-0 rounded-xl"
-                    allowFullScreen
-                    allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
-                    loading="lazy"
+                    containerClassName="h-full w-full rounded-xl"
+                    aspectRatio="custom"
+                    loadingMessage={`Initializing ${listing.name} 3D Tour…`}
                   />
                   {listing.tourUrl && (
                     <a

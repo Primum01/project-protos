@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui'
 import { extractEmbedSrc } from '@/lib/embed'
 import { recordLinkShared } from '@/lib/firebase/analytics'
+import { SkeletonImage, TourViewerWithSkeleton } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
 
 export interface TourCardData {
@@ -87,20 +88,20 @@ export function TourCard({ tour }: { tour: TourCardData }) {
         )}
       >
         {embedSrc ? (
-          <iframe
+          <TourViewerWithSkeleton
             src={embedSrc}
             title={tour.title}
-            className="h-full w-full border-0"
-            allowFullScreen
-            allow="autoplay; fullscreen; web-share; xr-spatial-tracking"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
-            loading="lazy"
+            aspectRatio="16/10"
+            containerClassName="h-full w-full rounded-none"
+            loadingMessage="Loading tour…"
           />
         ) : tour.photoUrl ? (
-          <img
+          <SkeletonImage
             src={tour.photoUrl}
             alt={tour.title}
-            className="absolute inset-0 h-full w-full object-cover"
+            aspectRatio="16/10"
+            containerClassName="absolute inset-0 h-full w-full"
+            fallbackText="Property preview"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs">
