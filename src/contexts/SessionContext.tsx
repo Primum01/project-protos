@@ -32,7 +32,8 @@ export const IDLE_TIMEOUT_MS = SESSION_MAX_INACTIVITY_MS
 
 function getStored(key: string): string | null {
   try {
-    return sessionStorage.getItem(key) || localStorage.getItem(key)
+    // Read from sessionStorage only — session keys are tab-scoped and never persisted to disk
+    return sessionStorage.getItem(key)
   } catch {
     return null
   }
@@ -40,8 +41,9 @@ function getStored(key: string): string | null {
 
 function setStored(key: string, value: string): void {
   try {
+    // Write to sessionStorage only — never localStorage — to prevent session tokens
+    // surviving browser restarts or being accessible to other tabs.
     sessionStorage.setItem(key, value)
-    localStorage.setItem(key, value)
   } catch {
     /* ignore */
   }
@@ -49,6 +51,7 @@ function setStored(key: string, value: string): void {
 
 function removeStored(key: string): void {
   try {
+    // Remove from both storages to clean up any legacy localStorage keys
     sessionStorage.removeItem(key)
     localStorage.removeItem(key)
   } catch {

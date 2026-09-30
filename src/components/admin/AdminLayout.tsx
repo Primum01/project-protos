@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { useAuth } from '@/hooks/useAuth'
 import { useSession } from '@/contexts/SessionContext'
 import { SessionSelect } from '@/pages/admin/SessionSelect'
-import { is2FAVerified } from '@/lib/auth2fa'
+import { is2FAVerified, clearOtpSession, invalidate2FACache } from '@/lib/auth2fa'
 import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
 import { SkeletonAdminShell } from '@/components/skeleton'
@@ -161,10 +161,28 @@ const navItems = [
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isVerified2FA, setIsVerified2FA] = useState<boolean>(() => is2FAVerified())
+  const [isVerified2FA, setIsVerified2FA] = useState<boolean>(false)
+  const [checking2FA, setChecking2FA] = useState<boolean>(true)
   const { user, isAdmin, isConfigured, loading: authLoading } = useAuth()
   const { currentUser, activeSession, loading: sessionLoading, evictedReason, dismissEviction, end } = useSession()
   const navigate = useNavigate()
+
+  // Check the HttpOnly cookie via the server-side session-check endpoint on mount
+  useEffect(() => {
+    let active = true
+    async function checkSession() {
+      try {
+        const verified = await is2FAVerified()
+        if (active) setIsVerified2FA(verified)
+      } catch {
+        if (active) setIsVerified2FA(false)
+      } finally {
+        if (active) setChecking2FA(false)
+      }
+    }
+    void checkSession()
+    return () => { active = false }
+  }, [])
 
   // Prefetch all admin page chunks so navigation is instant
   useEffect(() => {
@@ -182,8 +200,10 @@ export function AdminLayout() {
 
   async function handleSignOut() {
     try {
-      await end()      // Log session end in Firestore first
-      await signOut()  // Then Firebase sign-out
+      await end()             // Log session end in Firestore first
+      await signOut()         // Firebase sign-out
+      await clearOtpSession() // Expire the HttpOnly 2FA cookie on the server
+      invalidate2FACache()    // Clear in-memory cache
     } catch {
       /* ignore */
     } finally {
@@ -234,13 +254,13 @@ export function AdminLayout() {
 
   // ── Authentication, 2FA & Session gate ──────────────────────────────────────────
   if (isConfigured) {
-    if (authLoading || sessionLoading) {
+    if (authLoading || sessionLoading || checking2FA) {
       return <SkeletonAdminShell />
     }
     if (!user || !isAdmin) {
       return <Navigate to="/admin/login" replace />
     }
-    // Step 1: 2FA Email Verification Gate
+    // Step 1: 2FA Email Verification Gate (server-side HttpOnly cookie)
     if (!isVerified2FA) {
       return <Admin2FAGate onVerified={() => setIsVerified2FA(true)} />
     }

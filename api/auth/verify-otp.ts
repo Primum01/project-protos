@@ -249,12 +249,35 @@ export default async function handler(req: any, res: any) {
     // 6. Match succeeded: Immediately invalidate the OTP to prevent replay attacks
     await deleteOtpRecord(TARGET_ADMIN_EMAIL, idToken)
 
-    // 7. Issue server-signed proof token for this browser session
+    // 7. Issue server-signed proof token and set it as an HttpOnly cookie.
+    //    The token is NEVER sent to the browser JS environment — only into the browser's
+    //    secure cookie store. JS code cannot read or steal it via XSS.
     const verifiedToken = generateVerifiedToken(TARGET_ADMIN_EMAIL)
+
+    const isProduction =
+      process.env.NODE_ENV === 'production' ||
+      (req.headers.host || '').includes('twinspace360.com')
+
+    // Cookie lifetime matches the token expiry (8 hours)
+    const maxAgeSeconds = 8 * 60 * 60
+
+    // HttpOnly  → JS cannot access this cookie (mitigates XSS token theft)
+    // SameSite=Strict → browser will not send the cookie on cross-site requests (CSRF protection)
+    // Secure    → only transmitted over HTTPS (enforced in production; omitted in local dev)
+    // Path=/api/auth → scoped: only sent to /api/auth/* endpoints, not to every request
+    const cookieParts = [
+      `ts_otp_verified=${verifiedToken}`,
+      `Max-Age=${maxAgeSeconds}`,
+      'Path=/api/auth',
+      'HttpOnly',
+      'SameSite=Strict',
+    ]
+    if (isProduction) cookieParts.push('Secure')
+
+    res.setHeader('Set-Cookie', cookieParts.join('; '))
 
     return res.status(200).json({
       success: true,
-      verifiedToken,
       message: 'Verification successful. Welcome to the TwinSpace Admin Session.',
     })
   } catch (err: any) {

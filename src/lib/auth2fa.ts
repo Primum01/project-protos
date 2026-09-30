@@ -1,5 +1,17 @@
-const TOKEN_KEY = 'ts_2fa_token'
-const VERIFIED_AT_KEY = 'ts_2fa_verified_at'
+/**
+ * auth2fa.ts — Client-side 2FA helpers
+ *
+ * Architecture note (security):
+ * The verified 2FA token is stored EXCLUSIVELY in an HttpOnly cookie set by the server
+ * (via /api/auth/verify-otp). JS cannot read it. The browser sends it automatically
+ * when fetching /api/auth/* endpoints.
+ *
+ * This module queries /api/auth/session-check to determine verification status
+ * without ever touching the token itself.
+ *
+ * Legacy: The previous approach stored the token in sessionStorage/localStorage, which
+ * is readable by any JS on the page and vulnerable to XSS. That code has been removed.
+ */
 
 export interface SendOtpResult {
   success: boolean
@@ -11,42 +23,57 @@ export interface SendOtpResult {
 
 export interface VerifyOtpResult {
   success: boolean
-  verifiedToken?: string
   remainingAttempts?: number
   error?: string
 }
 
-export function getStored2FAToken(): string | null {
+// ── In-memory verification state cache (avoids hammering the API) ─────────────
+// This is intentionally volatile: it does NOT survive page refresh.
+// On fresh page load, the first check always hits the API, which reads the cookie.
+let _verifiedCache: boolean | null = null
+let _cacheSetAt = 0
+const CACHE_TTL_MS = 60_000 // Re-check the cookie at most once per minute
+
+/**
+ * Queries the server to check whether the current browser session has a valid
+ * `ts_otp_verified` HttpOnly cookie. The cookie itself is not visible to JS.
+ */
+export async function is2FAVerified(): Promise<boolean> {
+  const now = Date.now()
+  if (_verifiedCache !== null && now - _cacheSetAt < CACHE_TTL_MS) {
+    return _verifiedCache
+  }
+
   try {
-    return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY)
+    const res = await fetch('/api/auth/session-check', {
+      method: 'GET',
+      credentials: 'same-origin', // ensure the cookie is sent
+    })
+    if (!res.ok) {
+      _verifiedCache = false
+      _cacheSetAt = now
+      return false
+    }
+    const data = await res.json()
+    const verified = Boolean(data.verified)
+    _verifiedCache = verified
+    _cacheSetAt = now
+    return verified
   } catch {
-    return null
+    // Network error: treat as unverified (fail-secure)
+    _verifiedCache = false
+    _cacheSetAt = now
+    return false
   }
 }
 
-export function is2FAVerified(): boolean {
-  const token = getStored2FAToken()
-  return Boolean(token && token.length > 20)
-}
-
-export function set2FAVerified(token: string): void {
-  try {
-    sessionStorage.setItem(TOKEN_KEY, token)
-    sessionStorage.setItem(VERIFIED_AT_KEY, String(Date.now()))
-  } catch {
-    /* ignore */
-  }
-}
-
-export function clear2FAVerification(): void {
-  try {
-    sessionStorage.removeItem(TOKEN_KEY)
-    sessionStorage.removeItem(VERIFIED_AT_KEY)
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(VERIFIED_AT_KEY)
-  } catch {
-    /* ignore */
-  }
+/**
+ * Invalidates the local in-memory cache. Call after logout so the next
+ * is2FAVerified() call hits the server rather than the stale cache.
+ */
+export function invalidate2FACache(): void {
+  _verifiedCache = null
+  _cacheSetAt = 0
 }
 
 /**
@@ -99,7 +126,14 @@ export async function sendOtpRequest(idToken: string): Promise<SendOtpResult> {
 
 /**
  * Submits the 6-digit candidate code to the server for verification.
- * The server compares the salted hash in constant time and immediately consumes the code.
+ *
+ * On success the server:
+ *   1. Invalidates the OTP (single-use, replay-proof)
+ *   2. Sets a `ts_otp_verified` HttpOnly cookie (JS-inaccessible)
+ *   3. Returns { success: true } — no token in the response body
+ *
+ * The client-side cache is refreshed so subsequent is2FAVerified() calls
+ * return true immediately without an extra round trip.
  */
 export async function verifyOtpRequest(
   code: string,
@@ -112,6 +146,7 @@ export async function verifyOtpRequest(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
+      credentials: 'same-origin', // include + store the Set-Cookie response
       body: JSON.stringify({ code: code.trim(), idToken }),
     })
 
@@ -134,18 +169,31 @@ export async function verifyOtpRequest(
       }
     }
 
-    if (data.verifiedToken) {
-      set2FAVerified(data.verifiedToken)
-    }
+    // Warm up the local cache: verification was just confirmed server-side
+    _verifiedCache = true
+    _cacheSetAt = Date.now()
 
-    return {
-      success: true,
-      verifiedToken: data.verifiedToken,
-    }
+    return { success: true }
   } catch (err: any) {
     return {
       success: false,
       error: err.message || 'Network error submitting verification code.',
     }
+  }
+}
+
+/**
+ * Calls the server logout endpoint to expire the HttpOnly cookie and clears
+ * the local in-memory cache. Should be called alongside Firebase sign-out.
+ */
+export async function clearOtpSession(): Promise<void> {
+  invalidate2FACache()
+  try {
+    await fetch('/api/auth/session-logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+    })
+  } catch {
+    // Best-effort: the cookie has an 8-hour natural expiry anyway
   }
 }
