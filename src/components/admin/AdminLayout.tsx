@@ -8,7 +8,7 @@ import { SessionSelect } from '@/pages/admin/SessionSelect'
 import { is2FAVerified, clearOtpSession, invalidate2FACache } from '@/lib/auth2fa'
 import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
-import { SkeletonAdminShell } from '@/components/skeleton'
+import { SkeletonAdminShell, SkeletonOtpCard } from '@/components/skeleton'
 
 /* ── Inline icons ─────────────────────────────────────────────────────── */
 function IconBuilding() {
@@ -254,11 +254,20 @@ export function AdminLayout() {
 
   // ── Authentication, 2FA & Session gate ──────────────────────────────────────────
   if (isConfigured) {
-    if (authLoading || sessionLoading || checking2FA) {
+    // Phase 1: Firebase auth or Firestore session data still loading.
+    // The user is a confirmed admin at this point (AuthGuard already passed),
+    // so showing the admin shell skeleton is contextually correct.
+    if (authLoading || sessionLoading) {
       return <SkeletonAdminShell />
     }
     if (!user || !isAdmin) {
       return <Navigate to="/admin/login" replace />
+    }
+    // Phase 2: 2FA session-check API call in progress.
+    // We know the user is logged in but don't yet know if 2FA is complete.
+    // Show the OTP card skeleton (cream bg + card) — never the admin shell.
+    if (checking2FA) {
+      return <SkeletonOtpCard />
     }
     // Step 1: 2FA Email Verification Gate (server-side HttpOnly cookie)
     if (!isVerified2FA) {
