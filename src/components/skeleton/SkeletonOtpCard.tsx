@@ -4,11 +4,13 @@ import { Skeleton } from './Skeleton'
  * SkeletonOtpCard
  *
  * Mimics the Admin2FAGate OTP input screen: same cream/off-white background
- * with ambient glows, a centered white card (max-w-[440px]) with an envelope
- * illustration placeholder, title, six digit input boxes, and action buttons.
+ * with ambient glows, centered card with envelope illustration, 6 digit boxes,
+ * verify button, and resend link.
  *
- * Shown while the /api/auth/session-check request resolves after Firebase login —
- * i.e. the user is authenticated but we don't yet know if 2FA has been completed.
+ * Shown in AdminLayout while the /api/auth/session-check request is in-flight —
+ * the user is authenticated but we don't yet know if 2FA has been completed.
+ * This is contextually correct: the user will next see either the 2FA gate
+ * or (if already verified) the admin shell skeleton.
  */
 export function SkeletonOtpCard() {
   return (
@@ -17,7 +19,7 @@ export function SkeletonOtpCard() {
       aria-label="Checking verification status"
       className="relative flex min-h-screen flex-col items-center justify-center bg-[#f5f3ef] px-4 py-12 overflow-hidden"
     >
-      {/* iOS Soft Ambient Glows — matches Admin2FAGate exactly */}
+      {/* iOS Soft Ambient Glows — matches Admin2FAGate */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[28rem] w-[40rem] rounded-full bg-gradient-to-tr from-amber-200/40 via-orange-200/30 to-amber-100/20 blur-3xl opacity-70" />
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-orange-100/50 blur-3xl opacity-60" />
 
@@ -49,7 +51,7 @@ export function SkeletonOtpCard() {
           </div>
 
           {/* Verify button */}
-          <Skeleton rounded="full" className="h-12 w-full mb-4" />
+          <Skeleton rounded="pill" className="h-12 w-full mb-4" />
 
           {/* Resend + timer */}
           <div className="flex flex-col items-center gap-1.5">

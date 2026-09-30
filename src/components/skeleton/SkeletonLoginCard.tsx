@@ -3,11 +3,11 @@ import { Skeleton } from './Skeleton'
 /**
  * SkeletonLoginCard
  *
- * Mimics the admin login page: cream/off-white background with ambient glows,
- * a centered white card (max-w-[420px]) containing a logo placeholder, title,
- * two input fields, and a submit button.
+ * Mimics the admin login page shape: cream/off-white background with ambient
+ * glows, centered white card (max-w-[420px]) with logo, two input fields, button.
  *
- * Shown while Firebase auth state is initializing on the /admin/login route.
+ * Shown in AuthGuard while Firebase auth initializes, and in AdminLayout while
+ * authLoading is true — before we know if the user is authenticated.
  */
 export function SkeletonLoginCard() {
   return (
@@ -16,7 +16,7 @@ export function SkeletonLoginCard() {
       aria-label="Loading login"
       className="relative flex min-h-screen flex-col items-center justify-center bg-[#f5f3ef] px-4 py-12 overflow-hidden"
     >
-      {/* iOS Soft Ambient Glows — matches the real login page exactly */}
+      {/* iOS Soft Ambient Glows — matches the real login page */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[28rem] w-[40rem] rounded-full bg-gradient-to-tr from-amber-200/40 via-orange-200/30 to-amber-100/20 blur-3xl opacity-70" />
       <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-orange-100/50 blur-3xl opacity-60" />
 
@@ -48,7 +48,7 @@ export function SkeletonLoginCard() {
           </div>
 
           {/* Submit button */}
-          <Skeleton rounded="full" className="h-12 w-full" />
+          <Skeleton rounded="pill" className="h-12 w-full" />
         </div>
       </div>
     </div>

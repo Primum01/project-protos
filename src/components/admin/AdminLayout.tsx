@@ -8,7 +8,7 @@ import { SessionSelect } from '@/pages/admin/SessionSelect'
 import { is2FAVerified, clearOtpSession, invalidate2FACache } from '@/lib/auth2fa'
 import { Admin2FAGate } from '@/components/admin/Admin2FAGate'
 import { clearAdminStorage, tabStorage } from '@/lib/storage'
-import { SkeletonAdminShell, SkeletonOtpCard } from '@/components/skeleton'
+import { SkeletonAdminShell, SkeletonLoginCard, SkeletonOtpCard } from '@/components/skeleton'
 
 /* ── Inline icons ─────────────────────────────────────────────────────── */
 function IconBuilding() {
@@ -254,26 +254,31 @@ export function AdminLayout() {
 
   // ── Authentication, 2FA & Session gate ──────────────────────────────────────────
   if (isConfigured) {
-    // Phase 1: Firebase auth or Firestore session data still loading.
-    // The user is a confirmed admin at this point (AuthGuard already passed),
-    // so showing the admin shell skeleton is contextually correct.
-    if (authLoading || sessionLoading) {
-      return <SkeletonAdminShell />
+    // 1. Firebase auth state not yet known — could still be an unauthenticated visitor.
+    //    Show login-card skeleton (never the admin shell at this point).
+    if (authLoading) {
+      return <SkeletonLoginCard />
     }
+    // 2. Auth resolved: gate out non-admins before we check anything else.
     if (!user || !isAdmin) {
       return <Navigate to="/admin/login" replace />
     }
-    // Phase 2: 2FA session-check API call in progress.
-    // We know the user is logged in but don't yet know if 2FA is complete.
-    // Show the OTP card skeleton (cream bg + card) — never the admin shell.
+    // 3. User is a confirmed admin but we haven't yet fetched the 2FA cookie status.
+    //    Show OTP-card skeleton — NOT the admin shell — because we don’t yet know
+    //    whether the user will be shown the 2FA gate or the admin console.
     if (checking2FA) {
       return <SkeletonOtpCard />
     }
-    // Step 1: 2FA Email Verification Gate (server-side HttpOnly cookie)
+    // 4. 2FA status is known and not completed — show the verification gate.
     if (!isVerified2FA) {
       return <Admin2FAGate onVerified={() => setIsVerified2FA(true)} />
     }
-    // Step 2: Choose active administrator identity
+    // 5. User is 2FA-verified. Now it is correct to show the admin shell skeleton
+    //    while Firestore session data loads, because the user WILL reach the dashboard.
+    if (sessionLoading) {
+      return <SkeletonAdminShell />
+    }
+    // 6. Choose active administrator identity.
     if (!currentUser) {
       return <SessionSelect />
     }

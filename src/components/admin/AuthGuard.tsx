@@ -7,14 +7,14 @@ import { SkeletonLoginCard } from '@/components/skeleton'
  * Wraps admin routes. Only sessions recognized as admin (team@twinspace360.com)
  * are permitted to access admin features.
  *
- * While Firebase auth is initializing (loading=true) we show a skeleton that
- * matches the login card — NOT the admin dashboard shell — since we don't yet
- * know whether this is a new visitor or an authenticated admin.
+ * While Firebase auth is initializing we show a skeleton that matches the
+ * login card — NOT the admin shell — since we don't yet know whether this
+ * visitor is authenticated.
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading, isAdmin } = useAuth()
 
-  // Show login-page-shaped skeleton while Firebase auth state resolves
+  // Firebase auth state not yet resolved — show login-card skeleton
   if (loading) return <SkeletonLoginCard />
 
   // No user or not recognized as admin → gate behind login
