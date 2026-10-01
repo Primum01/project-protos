@@ -36,13 +36,33 @@ export async function getCollection<T extends DocumentData>(
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as T))
 }
 
+/**
+ * Recursively strips `undefined` values from an object or array.
+ * Cloud Firestore explicitly rejects objects containing `undefined` properties.
+ */
+export function removeUndefined<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined) as unknown as T
+  }
+  const cleaned: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (value !== undefined) {
+      cleaned[key] = removeUndefined(value)
+    }
+  }
+  return cleaned as T
+}
+
 /** Create or merge-update a document. */
 export async function setDocument(
   collectionName: string,
   id: string,
   data: DocumentData,
 ): Promise<void> {
-  await setDoc(doc(db(), collectionName, id), data, { merge: true })
+  await setDoc(doc(db(), collectionName, id), removeUndefined(data), { merge: true })
 }
 
 /** Delete a document by collection + id. */

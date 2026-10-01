@@ -1,6 +1,6 @@
 import { doc, getFirestore, orderBy, runTransaction, where } from 'firebase/firestore'
 import type { Listing, ListingFormData } from '@/types/listing'
-import { deleteDocument, getDocument, setDocument, subscribeCollection } from './firestore'
+import { deleteDocument, getDocument, removeUndefined, setDocument, subscribeCollection } from './firestore'
 import { generateUUID } from '@/lib/uuid'
 import { getFirebaseApp } from './config'
 import {
@@ -45,13 +45,16 @@ export async function createListing(data: ListingFormData): Promise<string> {
     )
 
     const listingRef = doc(dbInstance, COL, id)
-    transaction.set(listingRef, {
-      ...data,
-      id,
-      accountNumber: allocation.accountNumber,
-      createdAt: now,
-      updatedAt: now,
-    })
+    transaction.set(
+      listingRef,
+      removeUndefined({
+        ...data,
+        id,
+        accountNumber: allocation.accountNumber,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    )
   })
 
   return id
