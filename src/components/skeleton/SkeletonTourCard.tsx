@@ -9,39 +9,39 @@ export function SkeletonTourCard() {
         <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
 
         {/* Top-left property type pill skeleton */}
-        <div className="absolute left-3 top-3 z-10">
+        <div className="absolute left-2.5 top-2.5 sm:left-3 sm:top-3 z-10">
           <Skeleton
             variant="dark"
             rounded="full"
-            className="h-5 w-20 bg-black/25"
+            className="h-4 sm:h-5 w-14 sm:w-20 bg-black/25"
           />
         </div>
 
         {/* Top-right kebab menu button skeleton */}
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3 z-10">
           <Skeleton
             variant="dark"
             rounded="full"
-            className="h-8 w-8 bg-black/25"
+            className="h-7 w-7 sm:h-8 sm:w-8 bg-black/25"
           />
         </div>
       </div>
 
       {/* ── Property Details ── */}
-      <div className="flex flex-1 flex-col p-5">
-        <div className="space-y-2">
+      <div className="flex flex-1 flex-col p-3.5 sm:p-5">
+        <div className="space-y-1.5 sm:space-y-2">
           {/* Title */}
-          <Skeleton rounded="sm" className="h-5 w-4/5" />
+          <Skeleton rounded="sm" className="h-3.5 sm:h-5 w-4/5" />
           {/* Location */}
-          <Skeleton rounded="sm" className="h-3.5 w-1/2" />
+          <Skeleton rounded="sm" className="h-2.5 sm:h-3.5 w-1/2" />
         </div>
 
         {/* Bottom metadata row */}
-        <div className="mt-6 flex items-center justify-between border-t border-ink-950/6 pt-3">
+        <div className="mt-4 sm:mt-6 flex items-center justify-between border-t border-ink-950/6 pt-2.5 sm:pt-3">
           {/* Bed / Bath count */}
-          <Skeleton rounded="sm" className="h-3.5 w-28" />
+          <Skeleton rounded="sm" className="h-2.5 sm:h-3.5 w-16 sm:w-28" />
           {/* Details arrow */}
-          <Skeleton rounded="sm" className="h-3.5 w-14" />
+          <Skeleton rounded="sm" className="h-2.5 sm:h-3.5 w-10 sm:w-14" />
         </div>
       </div>
     </Card>

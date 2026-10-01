@@ -66,17 +66,19 @@ export function RouteTransitionSkeleton() {
           description="Properties currently available to view. Click any card to launch the 3D tour."
         >
           {/* Filter Bar placeholder */}
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-2.5">
-              <Skeleton rounded="full" className="h-10 w-32" />
-              <Skeleton rounded="full" className="h-10 w-32" />
-              <Skeleton rounded="full" className="h-10 w-44" />
+          <div className="mb-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-1">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+                <Skeleton rounded="full" className="h-9 sm:h-10 w-full sm:w-36" />
+                <Skeleton rounded="full" className="h-9 sm:h-10 w-full sm:w-36" />
+              </div>
+              <Skeleton rounded="full" className="h-9 sm:h-10 w-full sm:w-64" />
             </div>
-            <Skeleton rounded="sm" className="h-4 w-20" />
+            <Skeleton rounded="sm" className="h-4 w-20 self-end sm:self-auto" />
           </div>
 
           {/* Listing Cards Grid */}
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3.5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonTourCard key={i} />
             ))}

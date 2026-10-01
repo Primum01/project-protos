@@ -6,6 +6,7 @@ import { Section } from "@/components/ui"
 import { usePublishedListings } from "@/hooks/useListings"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { TOUR_TYPES, type Listing } from "@/types/listing"
+import { cn } from "@/lib/cn"
 
 /** Seed list — any location found in live data that is not here gets auto-added. */
 const SEED_LOCATIONS = new Set([
@@ -487,8 +488,23 @@ function listingToCard(listing: Listing): TourCardData {
   }
 }
 
+const ITEMS_PER_PAGE = 10
+
 function matchesSearch(text: string, query: string) {
   return text.toLowerCase().includes(query.toLowerCase())
+}
+
+function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, 'ellipsis', total]
+  }
+  if (current >= total - 2) {
+    return [1, 'ellipsis', total - 3, total - 2, total - 1, total]
+  }
+  return [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total]
 }
 
 /* ── Page ───────────────────────────────────────────────────────────────── */
@@ -505,6 +521,8 @@ export function Tours() {
   const [location, setLocation] = useState("")
   const [tourType, setTourType] = useState("AirBnB")
   const [search, setSearch] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const listingsSectionRef = useRef<HTMLDivElement>(null)
 
   const locationOptions = useMemo(() => buildOptions(listings.map((l) => l.location)), [listings])
 
@@ -517,6 +535,37 @@ export function Tours() {
       return locationMatch && typeMatch && searchMatch
     })
   }, [listings, location, tourType, search])
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [location, tourType, search])
+
+  // Pagination computations
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE
+
+  // Keep currentPage valid if dataset shrinks
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  const paginatedListings = useMemo(() => {
+    return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filtered, startIndex])
+
+  const pageNumbers = useMemo(() => {
+    return getPageNumbers(safeCurrentPage, totalPages)
+  }, [safeCurrentPage, totalPages])
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage === safeCurrentPage || newPage < 1 || newPage > totalPages) return
+    setCurrentPage(newPage)
+    listingsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <MarketingLayout>
@@ -538,11 +587,14 @@ export function Tours() {
           count={loading && listings.length === 0 ? 0 : filtered.length}
         />
 
+        {/* Scroll anchor for page navigation */}
+        <div ref={listingsSectionRef} className="scroll-mt-28" />
+
         {loading && listings.length === 0 ? (
           <div
             aria-busy="true"
             aria-label="Loading properties"
-            className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3"
+            className="grid grid-cols-2 gap-3.5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonTourCard key={i} />
@@ -575,9 +627,104 @@ export function Tours() {
             <p className="mt-1 text-sm text-ink-400">Check back soon — new tours are added regularly.</p>
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((l) => <TourCard key={l.id} tour={listingToCard(l)} />)}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3.5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {paginatedListings.map((l) => (
+                <TourCard key={l.id} tour={listingToCard(l)} />
+              ))}
+            </div>
+
+            {/* ── Sleek Pagination Controller ── */}
+            {totalPages > 1 && (
+              <nav
+                role="navigation"
+                aria-label="Tours pagination"
+                className="mt-10 sm:mt-14 flex flex-col items-center gap-3.5 select-none"
+              >
+                {/* Pill Dock */}
+                <div className="flex items-center gap-1 sm:gap-1.5 rounded-full border border-ink-950/10 bg-white/95 p-1.5 shadow-sm backdrop-blur-md">
+                  {/* Previous button */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(safeCurrentPage - 1)}
+                    disabled={safeCurrentPage === 1}
+                    aria-label="Previous page"
+                    className={cn(
+                      "flex h-9 items-center gap-1 rounded-full px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all duration-150",
+                      safeCurrentPage === 1
+                        ? "cursor-not-allowed opacity-30 text-ink-400"
+                        : "text-ink-700 hover:bg-ink-100 hover:text-ink-950 active:scale-95"
+                    )}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    <span className="hidden sm:inline">Prev</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {pageNumbers.map((page, idx) => {
+                      if (page === 'ellipsis') {
+                        return (
+                          <span
+                            key={`ellipsis-${idx}`}
+                            className="flex h-9 w-6 items-center justify-center text-xs text-ink-400"
+                            aria-hidden="true"
+                          >
+                            &hellip;
+                          </span>
+                        )
+                      }
+
+                      const isActive = page === safeCurrentPage
+                      return (
+                        <button
+                          key={page}
+                          type="button"
+                          onClick={() => handlePageChange(page)}
+                          aria-current={isActive ? 'page' : undefined}
+                          aria-label={`Page ${page}`}
+                          className={cn(
+                            "flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-xs sm:text-sm font-semibold transition-all duration-150",
+                            isActive
+                              ? "bg-brand-600 text-white shadow-sm ring-2 ring-brand-600/30"
+                              : "text-ink-700 hover:bg-ink-100 hover:text-ink-950 active:scale-95"
+                          )}
+                        >
+                          {page}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Next button */}
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(safeCurrentPage + 1)}
+                    disabled={safeCurrentPage === totalPages}
+                    aria-label="Next page"
+                    className={cn(
+                      "flex h-9 items-center gap-1 rounded-full px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium transition-all duration-150",
+                      safeCurrentPage === totalPages
+                        ? "cursor-not-allowed opacity-30 text-ink-400"
+                        : "text-ink-700 hover:bg-ink-100 hover:text-ink-950 active:scale-95"
+                    )}
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Context counter */}
+                <p className="text-xs text-ink-400 tabular-nums">
+                  Showing <span className="font-semibold text-ink-700">{startIndex + 1}</span>–<span className="font-semibold text-ink-700">{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)}</span> of <span className="font-semibold text-ink-700">{filtered.length}</span> properties
+                </p>
+              </nav>
+            )}
+          </>
         ) : (
           <p className="text-ink-400">
             No listings match your filters.{" "}
