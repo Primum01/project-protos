@@ -11,6 +11,19 @@ import {
 
 const COL = 'listings'
 
+/** In-memory cache for ultra-fast instant navigation between catalog and tour details */
+const listingCache = new Map<string, Listing>()
+
+export function getCachedListing(id: string): Listing | undefined {
+  return listingCache.get(id)
+}
+
+export function cacheListing(listing: Listing): void {
+  if (listing?.id) {
+    listingCache.set(listing.id, listing)
+  }
+}
+
 /**
  * Create a new listing with an atomically generated unique Property Account Number.
  * Format: [COUNTY]-[AREA]-[4_DIGIT_SEQUENCE] (e.g. NRB-KAR-0004)
@@ -24,7 +37,9 @@ export async function createListing(data: ListingFormData): Promise<string> {
 
   // Check if valid account number was explicitly provided (e.g. administrative migration)
   if (data.accountNumber && isValidAccountNumber(data.accountNumber)) {
-    await setDocument(COL, id, { ...data, id, createdAt: now, updatedAt: now })
+    const item = { ...data, id, createdAt: now, updatedAt: now }
+    await setDocument(COL, id, item)
+    listingCache.set(id, item as Listing)
     return id
   }
 
@@ -45,16 +60,15 @@ export async function createListing(data: ListingFormData): Promise<string> {
     )
 
     const listingRef = doc(dbInstance, COL, id)
-    transaction.set(
-      listingRef,
-      removeUndefined({
-        ...data,
-        id,
-        accountNumber: allocation.accountNumber,
-        createdAt: now,
-        updatedAt: now,
-      }),
-    )
+    const newDoc = removeUndefined({
+      ...data,
+      id,
+      accountNumber: allocation.accountNumber,
+      createdAt: now,
+      updatedAt: now,
+    })
+    transaction.set(listingRef, newDoc)
+    listingCache.set(id, newDoc as Listing)
   })
 
   return id
@@ -77,16 +91,29 @@ export async function updateListing(id: string, data: Partial<ListingFormData>):
   }
 
   await setDocument(COL, id, updatePayload)
+  const existing = listingCache.get(id)
+  if (existing) {
+    listingCache.set(id, { ...existing, ...updatePayload } as Listing)
+  }
 }
 
 /** Permanently delete a listing. */
 export async function deleteListing(id: string): Promise<void> {
   await deleteDocument(COL, id)
+  listingCache.delete(id)
 }
 
-/** Fetch a single listing by ID. */
+/** Fetch a single listing by ID with immediate in-memory cache lookup. */
 export async function getListingById(id: string): Promise<Listing | null> {
-  return getDocument<Listing>(COL, id)
+  const cached = listingCache.get(id)
+  if (cached) {
+    return cached
+  }
+  const fetched = await getDocument<Listing>(COL, id)
+  if (fetched) {
+    listingCache.set(id, fetched)
+  }
+  return fetched
 }
 
 /**
@@ -94,7 +121,16 @@ export async function getListingById(id: string): Promise<Listing | null> {
  * Used by the admin panel.
  */
 export function subscribeAllListings(callback: (listings: Listing[]) => void) {
-  return subscribeCollection<Listing>(COL, callback, orderBy('createdAt', 'desc'))
+  return subscribeCollection<Listing>(
+    COL,
+    (items) => {
+      items.forEach((item) => {
+        if (item.id) listingCache.set(item.id, item)
+      })
+      callback(items)
+    },
+    orderBy('createdAt', 'desc'),
+  )
 }
 
 /**
@@ -112,6 +148,9 @@ export function subscribePublishedListings(callback: (listings: Listing[]) => vo
         .sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
+      sorted.forEach((l) => {
+        if (l.id) listingCache.set(l.id, l)
+      })
       callback(sorted)
     },
     where('published', '==', true),

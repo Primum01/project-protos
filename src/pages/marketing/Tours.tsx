@@ -463,6 +463,7 @@ type TourCardData = {
   propertyCategory?: string; propertyType: string; bedrooms: number; bathrooms: number
   accent: 'clay' | 'olive' | 'ink' | 'sand'; description: string
   amenities: string[]; externalUrl?: string; photoUrl?: string; embedCode?: string
+  rawListing?: Listing
 }
 
 function listingToCard(listing: Listing): TourCardData {
@@ -482,6 +483,7 @@ function listingToCard(listing: Listing): TourCardData {
     externalUrl: listing.tourUrl || undefined,
     photoUrl: listing.photoUrl || undefined,
     embedCode: listing.embedCode || undefined,
+    rawListing: listing,
   }
 }
 

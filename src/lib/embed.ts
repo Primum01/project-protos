@@ -27,6 +27,8 @@ export function extractEmbedSrc(
       url.searchParams.set('tourcta', '0')
       url.searchParams.set('help', '0')
       url.searchParams.set('hl', '0')
+      url.searchParams.set('f', '0')
+      url.searchParams.set('wh', '0')
       url.searchParams.delete('nt')
 
       if (options?.isMobile) {

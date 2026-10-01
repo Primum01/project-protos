@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getListingById } from '@/lib/firebase/listings'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { getCachedListing, getListingById } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { extractEmbedSrc } from '@/lib/embed'
 import { recordLinkShared, recordSessionDuration, recordTourView } from '@/lib/firebase/analytics'
@@ -286,8 +286,18 @@ function ContactPromptModal({
 
 export function ListingDetail() {
   const { id } = useParams<{ id: string }>()
-  const [listing, setListing] = useState<Listing | null>(null)
-  const [loading, setLoading] = useState(true)
+  const location = useLocation()
+  const routeListing = (location.state as { listing?: Listing } | undefined)?.listing
+
+  const [listing, setListing] = useState<Listing | null>(() => {
+    if (routeListing && routeListing.id === id) return routeListing
+    if (id) {
+      const cached = getCachedListing(id)
+      if (cached) return cached
+    }
+    return null
+  })
+  const [loading, setLoading] = useState(() => !listing)
   const [copied, setCopied] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [isMobile, setIsMobile] = useState(() => {
@@ -309,8 +319,12 @@ export function ListingDetail() {
       return
     }
     getListingById(id)
-      .then(setListing)
-      .catch(() => setListing(null))
+      .then((data) => {
+        if (data) setListing(data)
+      })
+      .catch(() => {
+        setListing((prev) => prev)
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -394,7 +408,7 @@ export function ListingDetail() {
       <Container>
         <div
           className={cn(
-            'relative flex h-[55vh] min-h-[360px] sm:h-auto sm:aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br text-white',
+            'relative flex h-[65vh] min-h-[420px] sm:h-auto sm:aspect-video w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br text-white',
             ACCENT_GRADIENTS[listing.accent] ?? ACCENT_GRADIENTS.clay,
           )}
         >

@@ -5,6 +5,7 @@ import { extractEmbedSrc, getMatterportThumbnail } from '@/lib/embed'
 import { recordLinkShared } from '@/lib/firebase/analytics'
 import { SkeletonImage } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
+import type { Listing } from '@/types/listing'
 
 export interface TourCardData {
   slug: string
@@ -21,6 +22,7 @@ export interface TourCardData {
   externalUrl?: string
   photoUrl?: string
   embedCode?: string
+  rawListing?: Listing
 }
 
 const accentClasses: Record<string, string> = {
@@ -122,6 +124,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
         {/* Click overlay directing visitor to the full property details page */}
         <Link
           to={`/listing/${tour.slug}`}
+          state={{ listing: tour.rawListing }}
           className="absolute inset-0 z-10 block cursor-pointer"
           aria-label={`View details and 3D tour for ${tour.title}`}
         />
@@ -171,6 +174,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
 
               <Link
                 to={`/listing/${tour.slug}`}
+                state={{ listing: tour.rawListing }}
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center justify-between px-3.5 py-2 text-xs font-medium text-ink-800 hover:bg-ink-50 hover:text-brand-600 transition-colors"
               >
@@ -200,6 +204,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
       <div className="flex flex-1 flex-col gap-1.5 p-5">
         <Link
           to={`/listing/${tour.slug}`}
+          state={{ listing: tour.rawListing }}
           className="text-base font-semibold text-ink-950 transition-colors hover:text-brand-600"
         >
           {tour.title}
@@ -213,6 +218,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
           </p>
           <Link
             to={`/listing/${tour.slug}`}
+            state={{ listing: tour.rawListing }}
             className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors"
           >
             Details &rarr;
