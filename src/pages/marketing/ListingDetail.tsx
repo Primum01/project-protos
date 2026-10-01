@@ -20,6 +20,21 @@ function formatWhatsAppNumber(phone: string): string {
   return cleaned
 }
 
+function normalizeWebsiteUrl(url?: string): string {
+  if (!url) return ''
+  const trimmed = url.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+function formatDisplayUrl(url?: string): string {
+  if (!url) return ''
+  return url.trim().replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '')
+}
+
 function ContactPromptModal({
   listing,
   onClose,
@@ -27,11 +42,13 @@ function ContactPromptModal({
   listing: Listing
   onClose: () => void
 }) {
-  const [copiedField, setCopiedField] = useState<'phone' | 'email' | null>(null)
+  const [copiedField, setCopiedField] = useState<'phone' | 'email' | 'website' | null>(null)
 
   const hasPhone = Boolean(listing.contactPhone?.trim())
   const hasEmail = Boolean(listing.contactEmail?.trim())
-  const hasContact = hasPhone || hasEmail
+  const hasWebsite = Boolean(listing.website?.trim())
+  const hasContact = hasPhone || hasEmail || hasWebsite
+  const websiteUrl = normalizeWebsiteUrl(listing.website)
 
   const whatsAppNum = listing.contactPhone ? formatWhatsAppNumber(listing.contactPhone) : ''
   const whatsAppMsg = encodeURIComponent(
@@ -42,7 +59,7 @@ function ContactPromptModal({
     `Hello,\n\nI am interested in ${listing.name} (${listing.location ? listing.location + ', ' : ''}${listing.city}) listed on TwinSpace.\n\nPlease share more details or availability for a viewing.\n\nThank you.`
   )
 
-  function copyToClipboard(text: string, field: 'phone' | 'email') {
+  function copyToClipboard(text: string, field: 'phone' | 'email' | 'website') {
     void navigator.clipboard.writeText(text).then(() => {
       setCopiedField(field)
       setTimeout(() => setCopiedField(null), 2000)
@@ -193,9 +210,52 @@ function ContactPromptModal({
             </div>
           )}
 
+          {hasWebsite && (
+            <div className="rounded-xl border border-ink-950/8 bg-ink-50/50 p-4 transition-colors hover:border-ink-950/15">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-xs text-brand-600">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="2" y1="12" x2="22" y2="12" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-ink-400 font-medium uppercase tracking-wider">Website</p>
+                    <p className="text-sm font-semibold text-ink-950 truncate">{formatDisplayUrl(listing.website)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(websiteUrl, 'website')}
+                  className="rounded-md border border-ink-950/10 px-2.5 py-1 text-xs font-medium text-ink-600 hover:bg-white transition-colors shrink-0"
+                >
+                  {copiedField === 'website' ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="mt-3.5 pt-2 border-t border-ink-950/6">
+                <a
+                  href={websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-ink-950 px-3.5 py-2 text-xs font-semibold text-white hover:bg-ink-800 transition-colors shadow-xs"
+                >
+                  <span>Visit Host Website</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          )}
+
           {!hasContact && (
             <div className="rounded-xl border border-dashed border-ink-950/15 p-5 text-center">
-              <p className="text-sm font-medium text-ink-800">No direct phone or email specified</p>
+              <p className="text-sm font-medium text-ink-800">No direct contact details specified</p>
               <p className="mt-1 text-xs text-ink-500">
                 You can reach out to TwinSpace support to be connected with this property host.
               </p>
@@ -452,7 +512,7 @@ export function ListingDetail() {
             Get in touch directly with the property host to arrange a viewing or ask any questions.
           </p>
 
-          {(listing.contactPhone || listing.contactEmail) && (
+          {(listing.contactPhone || listing.contactEmail || listing.website) && (
             <div className="mt-5 space-y-2 border-t border-ink-950/8 pt-5 text-sm">
               {listing.contactPhone && (
                 <div className="flex items-center gap-2">
@@ -470,6 +530,24 @@ export function ListingDetail() {
                   </a>
                 </div>
               )}
+              {listing.website && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-400">Website:</span>
+                  <a
+                    href={normalizeWebsiteUrl(listing.website)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand-600 hover:underline break-all inline-flex items-center gap-1"
+                  >
+                    <span>{formatDisplayUrl(listing.website)}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -483,6 +561,27 @@ export function ListingDetail() {
             </svg>
             <span>Contact Host</span>
           </Button>
+
+          {listing.website && (
+            <a
+              href={normalizeWebsiteUrl(listing.website)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-ink-950/12 bg-white px-4 py-2.5 text-xs font-semibold text-ink-800 shadow-xs hover:border-ink-950/25 hover:bg-ink-50/70 hover:text-ink-950 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              <span>Visit Host Website</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          )}
 
           <Link
             to="/tours"

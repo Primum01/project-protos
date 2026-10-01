@@ -232,11 +232,12 @@ function PreviewPanel({
                     </div>
                   </>
                 )}
-                {(form.contactPhone || form.contactEmail) && (
+                {(form.contactPhone || form.contactEmail || form.website) && (
                   <div className="mt-5 border-t border-ink-950/8 pt-4">
                     <p className="text-sm font-semibold text-ink-950">Contact</p>
                     {form.contactPhone && <p className="text-sm text-ink-500">{form.contactPhone}</p>}
                     {form.contactEmail && <p className="text-sm text-ink-500">{form.contactEmail}</p>}
+                    {form.website && <p className="text-sm text-brand-600 truncate">{form.website}</p>}
                   </div>
                 )}
               </div>
@@ -282,7 +283,7 @@ const FORM_SECTIONS = [
   {
     id: 'section-contact',
     label: 'Contact & Payment',
-    isComplete: (f: ListingFormData) => Boolean(f.contactName || f.contactPhone || f.paymentMethod),
+    isComplete: (f: ListingFormData) => Boolean(f.contactName || f.contactPhone || f.website || f.paymentMethod),
   },
   {
     id: 'section-documents',
@@ -769,6 +770,19 @@ export function AdminListingForm() {
                 value={form.contactEmail}
                 onChange={(e) => set('contactEmail', e.target.value)}
               />
+            </div>
+            <div>
+              <Input
+                id="listing-website"
+                type="url"
+                label="Website URL"
+                placeholder="e.g. https://example.com"
+                value={form.website ?? ''}
+                onChange={(e) => set('website', e.target.value)}
+              />
+              <p className="mt-1 text-xs text-ink-400">
+                Optional direct website or booking portal URL. When provided, visitors can redirect to the host&apos;s website.
+              </p>
             </div>
 
             {/* ── Property Account Number ── */}

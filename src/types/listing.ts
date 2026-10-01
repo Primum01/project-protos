@@ -90,6 +90,7 @@ export interface Listing {
   contactName: string
   contactEmail: string
   contactPhone: string
+  website?: string
   accountNumber?: string
   datePaid: string
   package?: SubscriptionPackage
@@ -125,6 +126,7 @@ export const DEFAULT_LISTING_FORM: ListingFormData = {
   contactName: '',
   contactEmail: '',
   contactPhone: '',
+  website: '',
   accountNumber: '',
   datePaid: '',
   package: 'quarterly',
