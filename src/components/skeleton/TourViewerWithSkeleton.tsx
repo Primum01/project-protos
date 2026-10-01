@@ -8,6 +8,7 @@ export interface TourViewerWithSkeletonProps extends IframeHTMLAttributes<HTMLIF
   containerClassName?: string
   aspectRatio?: 'video' | '16/10' | '16/9' | 'custom'
   loadingMessage?: string
+  sandbox?: string
 }
 
 /**
@@ -20,6 +21,7 @@ export function TourViewerWithSkeleton({
   containerClassName,
   aspectRatio = 'video',
   loadingMessage = 'loading...',
+  sandbox = 'allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock',
   className,
   onLoad,
   loading,
@@ -68,6 +70,7 @@ export function TourViewerWithSkeleton({
         )}
         allowFullScreen
         allow={allow ?? 'autoplay; fullscreen; web-share; xr-spatial-tracking; gyroscope; accelerometer'}
+        sandbox={sandbox}
         loading={loading ?? 'eager'}
         {...props}
       />

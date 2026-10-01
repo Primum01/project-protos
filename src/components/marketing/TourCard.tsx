@@ -92,7 +92,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
             src={embedSrc}
             title={tour.title}
             aspectRatio="custom"
-            containerClassName="absolute inset-0 h-full w-full rounded-none"
+            containerClassName="absolute inset-0 h-full w-full rounded-none pointer-events-none"
             loadingMessage="loading..."
           />
         ) : tour.photoUrl ? (
@@ -100,24 +100,31 @@ export function TourCard({ tour }: { tour: TourCardData }) {
             src={tour.photoUrl}
             alt={tour.title}
             aspectRatio="16/10"
-            containerClassName="absolute inset-0 h-full w-full"
+            containerClassName="absolute inset-0 h-full w-full pointer-events-none"
             fallbackText="Property preview"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs">
+          <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs pointer-events-none">
             3D tour preview
           </div>
         )}
 
+        {/* Click overlay directing visitor to the full property details page */}
+        <Link
+          to={`/listing/${tour.slug}`}
+          className="absolute inset-0 z-10 block cursor-pointer"
+          aria-label={`View details and 3D tour for ${tour.title}`}
+        />
+
         {/* Top-left property type badge */}
         {tour.propertyType && (
-          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm shadow-sm">
+          <span className="pointer-events-none absolute left-3 top-3 z-20 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm shadow-sm">
             {tour.propertyType}
           </span>
         )}
 
         {/* Top-right Kebab Menu */}
-        <div ref={menuRef} className="absolute right-3 top-3 z-20">
+        <div ref={menuRef} className="absolute right-3 top-3 z-30">
           <button
             type="button"
             aria-label="Tour options"
