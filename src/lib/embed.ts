@@ -47,3 +47,26 @@ export function extractEmbedSrc(
 
   return src
 }
+
+/**
+ * Extracts the Matterport model ID from an embed code or tour URL.
+ * Matches ?m=MODEL_ID or /models/MODEL_ID
+ */
+export function extractMatterportModelId(input?: string | null): string | null {
+  if (!input) return null
+  const trimmed = input.trim()
+  const mMatch = trimmed.match(/[?&]m=([a-zA-Z0-9_-]+)/i)
+  if (mMatch && mMatch[1]) return mMatch[1]
+  const modelsMatch = trimmed.match(/\/models\/([a-zA-Z0-9_-]+)/i)
+  if (modelsMatch && modelsMatch[1]) return modelsMatch[1]
+  return null
+}
+
+/**
+ * Returns a high-resolution preview thumbnail image URL for a Matterport space.
+ */
+export function getMatterportThumbnail(input?: string | null): string | null {
+  const modelId = extractMatterportModelId(input)
+  if (!modelId) return null
+  return `https://my.matterport.com/api/v1/player/models/${modelId}/thumb`
+}

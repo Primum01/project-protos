@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui'
-import { extractEmbedSrc } from '@/lib/embed'
+import { extractEmbedSrc, getMatterportThumbnail } from '@/lib/embed'
 import { recordLinkShared } from '@/lib/firebase/analytics'
-import { SkeletonImage, TourViewerWithSkeleton } from '@/components/skeleton'
+import { SkeletonImage } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
 
 export interface TourCardData {
@@ -35,20 +35,8 @@ export function TourCard({ tour }: { tour: TourCardData }) {
   const [copied, setCopied] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-  })
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  const embedSrc = extractEmbedSrc(tour.embedCode || tour.externalUrl, { isMobile })
+  const previewImage = tour.photoUrl || getMatterportThumbnail(tour.embedCode || tour.externalUrl)
+  const embedSrc = extractEmbedSrc(tour.embedCode || tour.externalUrl)
   const tourLink = tour.externalUrl || embedSrc
 
   // Close kebab menu when clicking outside
@@ -65,7 +53,7 @@ export function TourCard({ tour }: { tour: TourCardData }) {
 
   async function handleCopyLink() {
     void recordLinkShared(tour.slug, tour.title)
-    const urlToCopy = tourLink || window.location.origin + `/listing/${tour.slug}`
+    const urlToCopy = window.location.origin + `/listing/${tour.slug}`
     try {
       await navigator.clipboard.writeText(urlToCopy)
       setCopied(true)
@@ -79,35 +67,57 @@ export function TourCard({ tour }: { tour: TourCardData }) {
   }
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border border-ink-950/8 bg-paper shadow-soft transition-all duration-200 hover:shadow-lifted">
-      {/* ── 3D Embed / Photo Container ── */}
+    <Card className="group relative flex h-full flex-col overflow-hidden border border-ink-950/8 bg-paper shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lifted">
+      {/* ── Visual Preview Container ── */}
       <div
         className={cn(
           'relative aspect-[16/10] w-full overflow-hidden bg-ink-950',
           accentClasses[tour.accent ?? 'clay'] ?? accentClasses.clay,
         )}
       >
-        {embedSrc ? (
-          <TourViewerWithSkeleton
-            src={embedSrc}
-            title={tour.title}
-            aspectRatio="custom"
-            containerClassName="absolute inset-0 h-full w-full rounded-none pointer-events-none"
-            loadingMessage="loading..."
-          />
-        ) : tour.photoUrl ? (
+        {previewImage ? (
           <SkeletonImage
-            src={tour.photoUrl}
+            src={previewImage}
             alt={tour.title}
             aspectRatio="16/10"
             containerClassName="absolute inset-0 h-full w-full pointer-events-none"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             fallbackText="Property preview"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs pointer-events-none">
-            3D tour preview
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-white/70 pointer-events-none">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm shadow-inner">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-white/80">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            </div>
+            <span className="text-xs font-medium tracking-wide text-white/60">3D Interactive Tour</span>
           </div>
         )}
+
+        {/* Subtle Dark Gradient Vignette for text/badge readability */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+
+        {/* Interactive 3D Badge (Bottom-Left) */}
+        <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md shadow-md transition-all duration-300 group-hover:bg-brand-600/95 group-hover:shadow-lg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-brand-400 group-hover:text-white transition-colors">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+          </svg>
+          <span>Explore 3D Tour</span>
+        </div>
+
+        {/* Central Play/Walkthrough Icon on Hover */}
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-brand-600 shadow-lifted backdrop-blur-md transition-transform duration-300 scale-90 group-hover:scale-100">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="ml-0.5">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          </div>
+        </div>
 
         {/* Click overlay directing visitor to the full property details page */}
         <Link
