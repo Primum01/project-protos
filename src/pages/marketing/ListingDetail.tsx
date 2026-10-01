@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getCachedListing, getListingById } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
-import { extractEmbedSrc } from '@/lib/embed'
+import { extractEmbedSrc, getMatterportThumbnail } from '@/lib/embed'
 import { recordLinkShared, recordSessionDuration, recordTourView } from '@/lib/firebase/analytics'
 import { MarketingLayout } from '@/components/layout/MarketingLayout'
 import { Badge, Button, Container } from '@/components/ui'
-import { SkeletonListingDetail, TourViewerWithSkeleton } from '@/components/skeleton'
+import { SkeletonImage, SkeletonListingDetail, TourViewerWithSkeleton } from '@/components/skeleton'
 import { cn } from '@/lib/cn'
 import { ACCENT_GRADIENTS, LISTING_STATUSES } from '@/types/listing'
 import type { Listing } from '@/types/listing'
@@ -298,6 +298,7 @@ export function ListingDetail() {
     return null
   })
   const [loading, setLoading] = useState(() => !listing)
+  const [isTourActive, setIsTourActive] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [isMobile, setIsMobile] = useState(() => {
@@ -414,22 +415,117 @@ export function ListingDetail() {
         >
           {(() => {
             if (embedSrc) {
+              if (isTourActive) {
+                return (
+                  <div className="relative h-full w-full">
+                    <TourViewerWithSkeleton
+                      src={embedSrc}
+                      title={`${listing.name} 3D Tour`}
+                      containerClassName="h-full w-full rounded-xl"
+                      aspectRatio="custom"
+                      loadingMessage={`Initializing ${listing.name} 3D Tour…`}
+                      loading="eager"
+                    />
+
+                    {/* Pause/Exit button to return to stagnant mode and unlock smooth scrolling */}
+                    <button
+                      type="button"
+                      onClick={() => setIsTourActive(false)}
+                      className="absolute top-4 left-4 z-30 inline-flex items-center gap-1.5 rounded-lg bg-black/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-black/95 transition-colors shadow-lifted border border-white/10"
+                      aria-label="Pause 3D tour"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <rect x="6" y="4" width="4" height="16" />
+                        <rect x="14" y="4" width="4" height="16" />
+                      </svg>
+                      <span>Pause 3D Tour</span>
+                    </button>
+
+                    {listing.tourUrl && (
+                      <a
+                        href={listing.tourUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden sm:inline-flex absolute bottom-4 right-4 items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
+                      >
+                        <span>Open tour in new tab</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                )
+              }
+
+              // Stagnant preview poster state (zero GPU/network load until clicked)
+              const previewImage = listing.photoUrl || getMatterportThumbnail(listing.embedCode || listing.tourUrl)
+
               return (
-                <div className="relative h-full w-full">
-                  <TourViewerWithSkeleton
-                    src={embedSrc}
-                    title={`${listing.name} 3D Tour`}
-                    containerClassName="h-full w-full rounded-xl"
-                    aspectRatio="custom"
-                    loadingMessage={`Initializing ${listing.name} 3D Tour…`}
-                    loading="eager"
-                  />
+                <div className="group relative h-full w-full overflow-hidden">
+                  {previewImage ? (
+                    <SkeletonImage
+                      src={previewImage}
+                      alt={listing.name}
+                      aspectRatio="auto"
+                      containerClassName="absolute inset-0 h-full w-full"
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      fallbackText="Tour Preview"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br text-white/70">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm shadow-inner">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                          <line x1="12" y1="22.08" x2="12" y2="12" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium tracking-wide text-white/70">Interactive 3D Virtual Tour</span>
+                    </div>
+                  )}
+
+                  {/* Dark gradient overlay for text and button readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/50" />
+
+                  {/* Centered Activation CTA */}
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsTourActive(true)}
+                      className="group/cta flex flex-col items-center gap-4 cursor-pointer focus:outline-none"
+                      aria-label={`Enter interactive 3D tour for ${listing.name}`}
+                    >
+                      <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-brand-600 text-white shadow-2xl backdrop-blur-md transition-all duration-300 group-hover/cta:scale-110 group-hover/cta:bg-brand-500">
+                        <span className="absolute -inset-2 rounded-full bg-brand-400/40 animate-ping opacity-60 pointer-events-none" />
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="ml-1 sm:h-8 sm:w-8">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-black/60 px-5 py-2 text-xs sm:text-sm font-semibold text-white backdrop-blur-md shadow-lg border border-white/15 transition-all group-hover/cta:bg-black/80 group-hover/cta:border-brand-400/50">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-brand-400">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                            <line x1="12" y1="22.08" x2="12" y2="12" />
+                          </svg>
+                          <span>Tap to Explore 3D Walkthrough</span>
+                        </span>
+                        <span className="text-[11px] sm:text-xs text-white/75 font-medium tracking-wide">
+                          Interactive 360&deg; spatial tour &middot; Walk room-to-room
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
                   {listing.tourUrl && (
                     <a
                       href={listing.tourUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:inline-flex absolute bottom-4 right-4 items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
+                      className="hidden sm:inline-flex absolute bottom-4 right-4 z-20 items-center gap-1.5 rounded-lg bg-ink-950/75 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md hover:bg-ink-950 transition-colors shadow-lifted"
                     >
                       <span>Open tour in new tab</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
