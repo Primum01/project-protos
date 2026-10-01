@@ -19,7 +19,7 @@ export function TourViewerWithSkeleton({
   title,
   containerClassName,
   aspectRatio = 'video',
-  loadingMessage = 'Loading 3D space…',
+  loadingMessage = 'loading...',
   className,
   onLoad,
   loading,
@@ -39,10 +39,15 @@ export function TourViewerWithSkeleton({
     return () => clearTimeout(timer)
   }, [src])
 
+  const hasCustomRounding = Boolean(
+    containerClassName && /\brounded(-[a-z0-9]+)?\b/.test(containerClassName),
+  )
+
   return (
     <div
       className={cn(
-        'relative w-full overflow-hidden rounded-xl bg-ink-950',
+        'relative w-full overflow-hidden bg-ink-950',
+        !hasCustomRounding && 'rounded-xl',
         aspectRatio === 'video' && 'aspect-video',
         aspectRatio === '16/10' && 'aspect-[16/10]',
         aspectRatio === '16/9' && 'aspect-[16/9]',
@@ -58,7 +63,7 @@ export function TourViewerWithSkeleton({
           if (onLoad) onLoad(e)
         }}
         className={cn(
-          'h-full w-full border-0',
+          'block absolute inset-0 h-full w-full border-0',
           className,
         )}
         allowFullScreen

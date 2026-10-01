@@ -5,6 +5,7 @@ export interface TourViewerSkeletonProps {
   aspectRatio?: 'video' | '16/10' | '16/9' | 'custom'
   className?: string
   message?: string
+  showSubtext?: boolean
 }
 
 const aspectMap = {
@@ -21,14 +22,18 @@ const aspectMap = {
 export function TourViewerSkeleton({
   aspectRatio = 'video',
   className,
-  message = 'Initializing 3D Space…',
+  message = 'loading...',
+  showSubtext = false,
 }: TourViewerSkeletonProps) {
+  const hasCustomRounding = Boolean(className && /\brounded(-[a-z0-9]+)?\b/.test(className))
+
   return (
     <div
       role="status"
       aria-label="Loading interactive 3D virtual tour"
       className={cn(
-        'relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-ink-950 text-white',
+        'relative flex w-full flex-col justify-between overflow-hidden bg-ink-950 text-white',
+        !hasCustomRounding && 'rounded-xl',
         aspectMap[aspectRatio],
         className,
       )}
@@ -85,9 +90,11 @@ export function TourViewerSkeleton({
           </svg>
         </div>
         <p className="font-medium text-sm text-white/90 tracking-wide">{message}</p>
-        <p className="mt-1 text-xs text-white/50 max-w-xs">
-          Preparing high-resolution photogrammetry &amp; spatial dollhouse…
-        </p>
+        {showSubtext && (
+          <p className="mt-1 text-xs text-white/50 max-w-xs">
+            Preparing high-resolution photogrammetry &amp; spatial dollhouse…
+          </p>
+        )}
       </div>
 
       {/* Bottom control bar placeholder */}

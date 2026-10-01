@@ -91,9 +91,9 @@ export function TourCard({ tour }: { tour: TourCardData }) {
           <TourViewerWithSkeleton
             src={embedSrc}
             title={tour.title}
-            aspectRatio="16/10"
-            containerClassName="h-full w-full rounded-none"
-            loadingMessage="Loading tour…"
+            aspectRatio="custom"
+            containerClassName="absolute inset-0 h-full w-full rounded-none"
+            loadingMessage="loading..."
           />
         ) : tour.photoUrl ? (
           <SkeletonImage
