@@ -79,24 +79,24 @@ export function TourDetail() {
     <MarketingLayout>
       <div className="h-20" />
       <Container className="pt-8 sm:pt-10 pb-6">
-        {/* Back navigation button */}
-        <div className="mb-4 sm:mb-6">
+        {/* Back navigation text link */}
+        <div className="mb-3 sm:mb-4">
           <button
             type="button"
             onClick={handleBack}
-            className="group inline-flex items-center gap-2 rounded-full border border-ink-950/10 bg-white/85 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-ink-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-ink-950/20 hover:bg-white hover:text-ink-950 hover:shadow-md active:scale-95"
+            className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-ink-500 hover:text-brand-600 transition-colors focus:outline-none"
             aria-label="Back to listings"
           >
             <svg
-              width="15"
-              height="15"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-ink-500 transition-transform group-hover:-translate-x-0.5 group-hover:text-ink-950"
+              className="text-ink-400 transition-transform group-hover:-translate-x-0.5 group-hover:text-brand-600"
               aria-hidden="true"
             >
               <polyline points="15 18 9 12 15 6" />
