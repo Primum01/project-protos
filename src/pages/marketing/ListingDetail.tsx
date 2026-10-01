@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getCachedListing, getListingById } from '@/lib/firebase/listings'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { extractEmbedSrc, getMatterportThumbnail } from '@/lib/embed'
@@ -287,7 +287,16 @@ function ContactPromptModal({
 export function ListingDetail() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const routeListing = (location.state as { listing?: Listing } | undefined)?.listing
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/tours')
+    }
+  }
 
   const [listing, setListing] = useState<Listing | null>(() => {
     if (routeListing && routeListing.id === id) return routeListing
@@ -383,7 +392,33 @@ export function ListingDetail() {
       <div className="h-20" />
 
       {/* Title bar */}
-      <Container className="pb-6 pt-10">
+      <Container className="pb-6 pt-8 sm:pt-10">
+        {/* Back navigation button */}
+        <div className="mb-4 sm:mb-6">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="group inline-flex items-center gap-2 rounded-full border border-ink-950/10 bg-white/85 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-ink-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-ink-950/20 hover:bg-white hover:text-ink-950 hover:shadow-md active:scale-95"
+            aria-label="Back to listings"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-ink-500 transition-transform group-hover:-translate-x-0.5 group-hover:text-ink-950"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <span>Back to listings</span>
+          </button>
+        </div>
+
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-ink-500">

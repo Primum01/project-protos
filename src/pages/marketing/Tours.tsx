@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { MarketingLayout } from "@/components/layout/MarketingLayout"
 import { TourCard } from "@/components/marketing/TourCard"
 import { SkeletonTourCard } from "@/components/skeleton"
@@ -7,6 +8,7 @@ import { usePublishedListings } from "@/hooks/useListings"
 import { usePageMeta } from "@/hooks/usePageMeta"
 import { TOUR_TYPES, type Listing } from "@/types/listing"
 import { cn } from "@/lib/cn"
+import { saveToursStage, getToursStage } from "@/lib/navigationState"
 
 /** Seed list — any location found in live data that is not here gets auto-added. */
 const SEED_LOCATIONS = new Set([
@@ -510,6 +512,7 @@ function getPageNumbers(current: number, total: number): (number | 'ellipsis')[]
 /* ── Page ───────────────────────────────────────────────────────────────── */
 export function Tours() {
   const { listings, loading, error } = usePublishedListings()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   usePageMeta({
     title: 'Browse 3D Property Tours — TwinSpace',
@@ -518,11 +521,29 @@ export function Tours() {
     path: '/tours',
   })
 
-  const [location, setLocation] = useState("")
-  const [tourType, setTourType] = useState("AirBnB")
-  const [search, setSearch] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
+  // Retrieve saved stage from sessionStorage
+  const savedStage = useRef(getToursStage()).current
+
+  // Hydrate initial state with safe priority: URL search params -> savedStage -> defaults
+  const initialTourType = searchParams.get('type') || savedStage?.tourType || 'AirBnB'
+  const initialLocation = searchParams.get('location') || savedStage?.location || ''
+  const initialSearch = searchParams.get('q') || savedStage?.search || ''
+  const initialPage = (() => {
+    const fromParam = searchParams.get('page')
+    if (fromParam) {
+      const p = parseInt(fromParam, 10)
+      if (!isNaN(p) && p > 0) return p
+    }
+    return savedStage?.page || 1
+  })()
+
+  const [location, setLocation] = useState(initialLocation)
+  const [tourType, setTourType] = useState(initialTourType)
+  const [search, setSearch] = useState(initialSearch)
+  const [currentPage, setCurrentPage] = useState(initialPage)
   const listingsSectionRef = useRef<HTMLDivElement>(null)
+  const hasRestoredScroll = useRef(false)
+  const isFilterMounted = useRef(false)
 
   const locationOptions = useMemo(() => buildOptions(listings.map((l) => l.location)), [listings])
 
@@ -536,10 +557,75 @@ export function Tours() {
     })
   }, [listings, location, tourType, search])
 
-  // Reset to page 1 whenever filters change
+  // Reset to page 1 ONLY when filters change after the initial mount
   useEffect(() => {
+    if (!isFilterMounted.current) {
+      isFilterMounted.current = true
+      return
+    }
     setCurrentPage(1)
   }, [location, tourType, search])
+
+  // Keep URL and sessionStorage synchronized with the current exploration stage
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (tourType && tourType !== 'AirBnB') params.type = tourType
+    if (location) params.location = location
+    if (search) params.q = search
+    if (currentPage > 1) params.page = currentPage.toString()
+
+    setSearchParams(params, { replace: true })
+
+    saveToursStage({
+      page: currentPage,
+      tourType,
+      location,
+      search,
+      scrollY: window.scrollY,
+    })
+  }, [tourType, location, search, currentPage, setSearchParams])
+
+  // Continuously record scroll position on the listings page
+  useEffect(() => {
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          saveToursStage({
+            page: currentPage,
+            tourType,
+            location,
+            search,
+            scrollY: window.scrollY,
+          })
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      saveToursStage({
+        page: currentPage,
+        tourType,
+        location,
+        search,
+        scrollY: window.scrollY,
+      })
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [currentPage, tourType, location, search])
+
+  // Seamlessly restore scroll position once listings render in the DOM
+  useEffect(() => {
+    if (hasRestoredScroll.current) return
+    if (!loading && filtered.length > 0 && savedStage?.scrollY && savedStage.scrollY > 0) {
+      hasRestoredScroll.current = true
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: savedStage.scrollY, left: 0, behavior: 'instant' })
+      })
+    }
+  }, [loading, filtered.length, savedStage?.scrollY])
 
   // Pagination computations
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))

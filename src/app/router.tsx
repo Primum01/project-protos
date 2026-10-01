@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useNavigationType } from 'react-router-dom'
 import { createBrowserRouter } from 'react-router-dom'
+import { saveRouteScroll, getRouteScroll } from '@/lib/navigationState'
 import { AuthGuard } from '@/components/admin/AuthGuard'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { SessionProvider } from '@/contexts/SessionContext'
@@ -69,11 +70,46 @@ const AdminAnalytics  = lazyWithRetry(() => import('@/pages/admin/AdminAnalytics
 const AdminInvoice    = lazyWithRetry(() => import('@/pages/admin/AdminInvoice').then(m => ({ default: m.AdminInvoice })), 'AdminInvoice')
 const AdminReceipt    = lazyWithRetry(() => import('@/pages/admin/AdminReceipt').then(m => ({ default: m.AdminReceipt })), 'AdminReceipt')
 
-function ScrollToTop() {
+function ScrollManager() {
   const { pathname } = useLocation()
+  const navType = useNavigationType()
+  const isNavigatingBack = navType === 'POP'
+
+  // Persist scroll position as the user scrolls
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    let ticking = false
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          saveRouteScroll(pathname, window.scrollY)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      saveRouteScroll(pathname, window.scrollY)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [pathname])
+
+  // Handle scroll position when route changes
+  useEffect(() => {
+    if (isNavigatingBack) {
+      // For /tours, Tours.tsx manages its own precise stage and dynamic card scroll restoration once listings are in DOM.
+      // For other pages, restore the saved scroll position if available.
+      if (pathname !== '/tours') {
+        const savedY = getRouteScroll(pathname)
+        if (savedY !== null && savedY > 0) {
+          window.scrollTo({ top: savedY, left: 0, behavior: 'instant' })
+        }
+      }
+    } else {
+      // PUSH / REPLACE: Brand-new forward destination -> scroll to top
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }
+  }, [pathname, isNavigatingBack])
 
   const isPublicMarketing = !pathname.startsWith('/admin')
 
@@ -88,7 +124,7 @@ function ScrollToTop() {
 
 export const router = createBrowserRouter([
   {
-    element: <ScrollToTop />,
+    element: <ScrollManager />,
     errorElement: <RouteErrorBoundary />,
     children: [
       // ── Public marketing routes
