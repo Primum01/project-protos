@@ -142,30 +142,53 @@ export function FinanceInvoicesReceipts({
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-ink-950/8 bg-paper p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            placeholder={
-              activeSubTab === 'invoices'
-                ? 'Search by invoice #, client, property, account...'
-                : 'Search by receipt #, invoice #, client, property...'
-            }
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-ink-950/15 bg-white px-3 py-1.5 text-xs text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          />
-        </div>
+      {/* Filter Toolbar - Pill Filter Bar matching Tours.tsx */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Search Pill */}
+          <div className="flex w-full sm:w-auto sm:flex-1 sm:max-w-md items-center gap-2 rounded-full border border-ink-950/10 bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20">
+            <span className="text-ink-400 shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              placeholder={
+                activeSubTab === 'invoices'
+                  ? 'Search by invoice #, client, property, account...'
+                  : 'Search by receipt #, invoice #, client, property...'
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-xs sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-ink-400 hover:text-ink-700 transition-colors shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
 
-        {activeSubTab === 'invoices' && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-ink-500 shrink-0">Status:</span>
+          {activeSubTab === 'invoices' && (
             <AdminDropdown<string>
               id="finance-invoices-status-filter"
               value={statusFilter}
               onChange={(val) => setStatusFilter(val)}
-              buttonClassName="py-1.5 px-3 text-xs min-w-[140px]"
+              icon={
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 14 14" />
+                </svg>
+              }
               options={[
                 { value: 'all', label: 'All Statuses' },
                 { value: 'draft', label: 'Draft' },
@@ -176,8 +199,38 @@ export function FinanceInvoicesReceipts({
                 { value: 'cancelled', label: 'Cancelled' },
               ]}
             />
-          </div>
-        )}
+          )}
+
+          {/* Reset Filters Chip */}
+          {((activeSubTab === 'invoices' && statusFilter !== 'all') || searchQuery.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('all')
+                setSearchQuery('')
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/60 px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
+            >
+              Reset Filters
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Counter row */}
+        <div className="flex items-center justify-between text-xs text-ink-500 pt-1">
+          <span>
+            Showing <strong className="text-ink-950 font-semibold">{activeSubTab === 'invoices' ? filteredInvoices.length : filteredReceipts.length}</strong> {activeSubTab}
+          </span>
+          {activeSubTab === 'invoices' && (
+            <span className="text-ink-800 font-medium">
+              Overdue: {invoices.filter((i) => i.status === 'overdue').length} • Unpaid: {invoices.filter((i) => i.status !== 'paid' && i.status !== 'cancelled').length}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Invoices List */}

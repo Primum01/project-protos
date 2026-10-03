@@ -186,12 +186,12 @@ export function AdminDropdown<T = string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          'flex items-center justify-between gap-2 rounded-full border px-4 py-2 text-xs sm:text-sm font-medium',
-          'shadow-xs transition-all duration-200 select-none whitespace-nowrap min-w-0 disabled:opacity-50 disabled:pointer-events-none',
+          'flex items-center justify-between gap-1.5 sm:gap-2 rounded-full border px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium',
+          'shadow-sm transition-all duration-200 select-none whitespace-nowrap min-w-0 disabled:opacity-50 disabled:pointer-events-none',
           isFullWidth && 'w-full',
           open
-            ? 'border-ink-950/20 bg-ink-950 text-white shadow-md'
-            : 'border-ink-950/10 bg-white text-ink-800 hover:border-ink-950/25 hover:shadow-sm',
+            ? 'border-ink-950/20 bg-ink-950 text-white shadow-lg'
+            : 'border-ink-950/10 bg-white text-ink-800 hover:border-ink-950/20 hover:shadow-md',
           buttonClassName,
         )}
       >
@@ -225,7 +225,7 @@ export function AdminDropdown<T = string>({
             transformOrigin: align === 'right' ? 'top right' : 'top left',
           }}
           className={cn(
-            'absolute top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl backdrop-saturate-150',
+            'absolute top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/60 bg-white/90 shadow-2xl backdrop-blur-xl backdrop-saturate-150',
             isFullWidth ? 'w-full min-w-[260px]' : 'min-w-[240px]',
             'max-w-[calc(100vw-2rem)]',
             align === 'right' ? 'right-0' : 'left-0',

@@ -252,24 +252,48 @@ export function FinanceHosting({ listings, invoices, receipts }: FinanceHostingP
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-ink-950/8 bg-paper p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            placeholder="Search property, client contact, email, phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-ink-950/15 bg-white px-3 py-1.5 text-xs text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          />
-        </div>
+      {/* Filters Toolbar - Pill Filter Bar matching Tours.tsx */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Search Pill */}
+          <div className="flex w-full sm:w-auto sm:flex-1 sm:max-w-md items-center gap-2 rounded-full border border-ink-950/10 bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20">
+            <span className="text-ink-400 shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              placeholder="Search property, client contact, email, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-xs sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-ink-400 hover:text-ink-700 transition-colors shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
 
-        <div className="flex items-center gap-2">
+          {/* Billing Cycle Pill */}
           <AdminDropdown<'all' | 'Quarterly' | 'Biannual' | 'Annual'>
             id="finance-hosting-cycle-filter"
             value={cycleFilter}
             onChange={(val) => setCycleFilter(val)}
-            buttonClassName="py-1.5 px-3 text-xs min-w-[150px]"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+            }
             options={[
               { value: 'all', label: 'All Cycles' },
               { value: 'Quarterly', label: 'Quarterly (3 Months)' },
@@ -278,11 +302,17 @@ export function FinanceHosting({ listings, invoices, receipts }: FinanceHostingP
             ]}
           />
 
+          {/* Status Pill */}
           <AdminDropdown<string>
             id="finance-hosting-status-filter"
             value={statusFilter}
             onChange={(val) => setStatusFilter(val)}
-            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 14 14" />
+              </svg>
+            }
             options={[
               { value: 'all', label: 'All Statuses' },
               { value: 'active', label: 'Active' },
@@ -291,6 +321,35 @@ export function FinanceHosting({ listings, invoices, receipts }: FinanceHostingP
               { value: 'ended', label: 'Ended' },
             ]}
           />
+
+          {/* Reset Filters Chip */}
+          {(cycleFilter !== 'all' || statusFilter !== 'all' || searchQuery.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                setCycleFilter('all')
+                setStatusFilter('all')
+                setSearchQuery('')
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/60 px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
+            >
+              Reset Filters
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Counter row */}
+        <div className="flex items-center justify-between text-xs text-ink-500 pt-1">
+          <span>
+            Showing <strong className="text-ink-950 font-semibold">{filtered.length}</strong> hosting subscriptions
+          </span>
+          <span className="text-ink-800 font-medium">
+            Active Subscriptions: {activeCount} • Due / Overdue: {dueCount + overdueCount}
+          </span>
         </div>
       </div>
 

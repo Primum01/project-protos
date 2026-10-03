@@ -155,120 +155,186 @@ export function FinanceTransactions({
         </button>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="rounded-xl border border-ink-950/8 bg-paper p-4 shadow-soft">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          {/* Search */}
-          <div className="lg:col-span-2">
-            <label className="block text-[11px] font-medium text-ink-500 mb-1">Search</label>
+      {/* Filter Toolbar - Pill Filter Bar matching Tours.tsx */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Search Pill */}
+          <div className="flex w-full sm:w-auto sm:flex-1 sm:max-w-xs items-center gap-2 rounded-full border border-ink-950/10 bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20">
+            <span className="text-ink-400 shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
             <input
-              type="text"
-              placeholder="Search client, property, note, ref..."
+              type="search"
+              placeholder="Search client, property, ref..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-ink-950/15 bg-white px-3 py-1.5 text-xs text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="flex-1 bg-transparent text-xs sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-ink-400 hover:text-ink-700 transition-colors shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
           </div>
 
-          {/* Type Filter */}
-          <div>
-            <label className="block text-[11px] font-medium text-ink-500 mb-1">Type</label>
-            <AdminDropdown<'all' | 'income' | 'expense'>
-              id="finance-tx-type-filter"
-              value={typeFilter}
-              onChange={(val) => setTypeFilter(val)}
-              buttonClassName="py-1.5 px-3 text-xs w-full"
-              options={[
-                { value: 'all', label: 'All Types' },
-                { value: 'income', label: 'Income Only' },
-                { value: 'expense', label: 'Expense Only' },
-              ]}
-            />
-          </div>
+          {/* Property Dropdown Pill */}
+          <AdminDropdown<string>
+            id="finance-tx-property-filter"
+            value={selectedProperty}
+            onChange={(val) => setSelectedProperty(val)}
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                <line x1="9" y1="22" x2="9" y2="18" />
+                <line x1="15" y1="22" x2="15" y2="18" />
+                <line x1="9" y1="6" x2="9" y2="6.01" />
+                <line x1="15" y1="6" x2="15" y2="6.01" />
+                <line x1="9" y1="10" x2="9" y2="10.01" />
+                <line x1="15" y1="10" x2="15" y2="10.01" />
+                <line x1="9" y1="14" x2="9" y2="14.01" />
+                <line x1="15" y1="14" x2="15" y2="14.01" />
+              </svg>
+            }
+            searchable
+            searchPlaceholder="Search property..."
+            buttonClassName="max-w-[220px]"
+            options={[
+              { value: 'all', label: `All Properties (${propertiesList.length})` },
+              ...propertiesList.map((p) => ({ value: p, label: p })),
+            ]}
+          />
 
-          {/* Income Service Type */}
-          <div>
-            <label className="block text-[11px] font-medium text-ink-500 mb-1">Service</label>
-            <AdminDropdown<'all' | 'scan' | 'hosting' | 'other'>
-              id="finance-tx-service-filter"
-              value={incomeTypeFilter}
-              onChange={(val) => setIncomeTypeFilter(val)}
-              disabled={typeFilter === 'expense'}
-              buttonClassName="py-1.5 px-3 text-xs w-full"
-              options={[
-                { value: 'all', label: 'All Services' },
-                { value: 'scan', label: 'Scan / Shoot' },
-                { value: 'hosting', label: 'Hosting' },
-                { value: 'other', label: 'Other' },
-              ]}
-            />
-          </div>
+          {/* Type Filter Pill */}
+          <AdminDropdown<'all' | 'income' | 'expense'>
+            id="finance-tx-type-filter"
+            value={typeFilter}
+            onChange={(val) => setTypeFilter(val)}
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+            }
+            options={[
+              { value: 'all', label: 'All Types' },
+              { value: 'income', label: 'Income Only' },
+              { value: 'expense', label: 'Expense Only' },
+            ]}
+          />
 
-          {/* Status */}
-          <div>
-            <label className="block text-[11px] font-medium text-ink-500 mb-1">Status</label>
-            <AdminDropdown<string>
-              id="finance-tx-status-filter"
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
-              buttonClassName="py-1.5 px-3 text-xs w-full"
-              options={[
-                { value: 'all', label: 'All Statuses' },
-                { value: 'paid', label: 'Paid' },
-                { value: 'partial', label: 'Partial' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'overdue', label: 'Overdue' },
-                { value: 'cancelled', label: 'Cancelled' },
-              ]}
-            />
-          </div>
+          {/* Service Filter Pill */}
+          <AdminDropdown<'all' | 'scan' | 'hosting' | 'other'>
+            id="finance-tx-service-filter"
+            value={incomeTypeFilter}
+            onChange={(val) => setIncomeTypeFilter(val)}
+            disabled={typeFilter === 'expense'}
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+            }
+            options={[
+              { value: 'all', label: 'All Services' },
+              { value: 'scan', label: 'Scan / Shoot' },
+              { value: 'hosting', label: 'Hosting' },
+              { value: 'other', label: 'Other' },
+            ]}
+          />
 
-          {/* Date Range */}
-          <div>
-            <label className="block text-[11px] font-medium text-ink-500 mb-1">Date Range</label>
-            <AdminDropdown<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>
-              id="finance-tx-date-filter"
-              value={dateRange}
-              onChange={(val) => setDateRange(val)}
-              buttonClassName="py-1.5 px-3 text-xs w-full"
-              options={[
-                { value: 'all', label: 'All Time' },
-                { value: '7d', label: 'Last 7 Days' },
-                { value: '30d', label: 'Last 30 Days' },
-                { value: '3m', label: 'Last 3 Months' },
-                { value: '6m', label: 'Last 6 Months' },
-                { value: '12m', label: 'Last 12 Months' },
-              ]}
-            />
-          </div>
+          {/* Status Filter Pill */}
+          <AdminDropdown<string>
+            id="finance-tx-status-filter"
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(val)}
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 14 14" />
+              </svg>
+            }
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'paid', label: 'Paid' },
+              { value: 'partial', label: 'Partial' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'overdue', label: 'Overdue' },
+              { value: 'cancelled', label: 'Cancelled' },
+            ]}
+          />
+
+          {/* Date Range Filter Pill */}
+          <AdminDropdown<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>
+            id="finance-tx-date-filter"
+            value={dateRange}
+            onChange={(val) => setDateRange(val)}
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            }
+            options={[
+              { value: 'all', label: 'All Time' },
+              { value: '7d', label: 'Last 7 Days' },
+              { value: '30d', label: 'Last 30 Days' },
+              { value: '3m', label: 'Last 3 Months' },
+              { value: '6m', label: 'Last 6 Months' },
+              { value: '12m', label: 'Last 12 Months' },
+            ]}
+          />
+
+          {/* Reset Filters Chip */}
+          {(typeFilter !== 'all' ||
+            incomeTypeFilter !== 'all' ||
+            statusFilter !== 'all' ||
+            dateRange !== 'all' ||
+            selectedProperty !== 'all' ||
+            searchQuery.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                setTypeFilter('all')
+                setIncomeTypeFilter('all')
+                setStatusFilter('all')
+                setDateRange('all')
+                setSelectedProperty('all')
+                setSearchQuery('')
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/60 px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
+            >
+              Reset Filters
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {/* Secondary row for property filter */}
-        <div className="mt-3 flex flex-wrap items-center justify-between border-t border-ink-950/5 pt-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-ink-500 shrink-0">Property:</span>
-            <AdminDropdown<string>
-              id="finance-tx-property-filter"
-              value={selectedProperty}
-              onChange={(val) => setSelectedProperty(val)}
-              searchable
-              searchPlaceholder="Search property..."
-              buttonClassName="py-1 px-3 text-xs min-w-[200px]"
-              options={[
-                { value: 'all', label: `All Properties (${propertiesList.length})` },
-                ...propertiesList.map((p) => ({ value: p, label: p })),
-              ]}
-            />
-          </div>
-
-          <div className="flex items-center gap-4 text-ink-600">
-            <span>
-              Showing <strong>{filtered.length}</strong> records
-            </span>
-            <span className="text-emerald-700">
+        {/* Counter & Financial Sub-metrics row */}
+        <div className="flex flex-wrap items-center justify-between text-xs text-ink-500 pt-1">
+          <span>
+            Showing <strong className="text-ink-950 font-semibold">{filtered.length}</strong> records
+          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-emerald-700 font-medium">
               Income: <strong>KSh {formatMoney(filteredSummary.income)}</strong>
             </span>
-            <span className="text-rose-700">
+            <span className="text-rose-700 font-medium">
               Expenses: <strong>KSh {formatMoney(filteredSummary.expenses)}</strong>
             </span>
             <span className="font-semibold text-ink-900">

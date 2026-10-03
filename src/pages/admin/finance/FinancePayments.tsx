@@ -134,24 +134,49 @@ export function FinancePayments({
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-ink-950/8 bg-paper p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <input
-            type="text"
-            placeholder="Search by client, property, reference code, notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-ink-950/15 bg-white px-3 py-1.5 text-xs text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          />
-        </div>
+      {/* Filter Toolbar - Pill Filter Bar matching Tours.tsx */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+          {/* Search Pill */}
+          <div className="flex w-full sm:w-auto sm:flex-1 sm:max-w-md items-center gap-2 rounded-full border border-ink-950/10 bg-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm shadow-sm transition-shadow focus-within:shadow-md focus-within:border-ink-950/20">
+            <span className="text-ink-400 shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              placeholder="Search by client, property, reference code, notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-xs sm:text-sm text-ink-800 placeholder-ink-400 outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="text-ink-400 hover:text-ink-700 transition-colors shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
 
-        <div className="flex items-center gap-2">
+          {/* Payment Method Pill */}
           <AdminDropdown<string>
             id="finance-payments-method-filter"
             value={methodFilter}
             onChange={(val) => setMethodFilter(val)}
-            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                <line x1="1" y1="10" x2="23" y2="10" />
+              </svg>
+            }
             options={[
               { value: 'all', label: 'All Methods' },
               { value: 'm-pesa', label: 'M-Pesa' },
@@ -162,11 +187,18 @@ export function FinancePayments({
             ]}
           />
 
+          {/* Category Pill */}
           <AdminDropdown<string>
             id="finance-payments-category-filter"
             value={categoryFilter}
             onChange={(val) => setCategoryFilter(val)}
-            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+            }
             options={[
               { value: 'all', label: 'All Categories' },
               { value: 'scan', label: 'Scan / Shoot' },
@@ -174,6 +206,35 @@ export function FinancePayments({
               { value: 'other', label: 'Other' },
             ]}
           />
+
+          {/* Reset Filters Chip */}
+          {(methodFilter !== 'all' || categoryFilter !== 'all' || searchQuery.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                setMethodFilter('all')
+                setCategoryFilter('all')
+                setSearchQuery('')
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/60 px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors"
+            >
+              Reset Filters
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Counter row */}
+        <div className="flex items-center justify-between text-xs text-ink-500 pt-1">
+          <span>
+            Showing <strong className="text-ink-950 font-semibold">{filteredPayments.length}</strong> payments
+          </span>
+          <span className="text-emerald-700 font-semibold">
+            Filtered Total: KSh {formatMoney(filteredPayments.reduce((s: number, p: PaymentRecord) => s + (Number(p.amount) || 0), 0))}
+          </span>
         </div>
       </div>
 
