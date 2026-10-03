@@ -3,6 +3,7 @@ import { uploadFile } from '@/lib/firebase/storage'
 import { isFirebaseConfigured } from '@/lib/firebase/config'
 import { generateUUID } from '@/lib/uuid'
 import type { ExpenseCategory, ExpenseRecord, PaymentMethod } from '@/types/finance'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface RecordExpenseModalProps {
   isOpen: boolean
@@ -158,34 +159,35 @@ export function RecordExpenseModal({
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Category *
               </label>
-              <select
+              <AdminDropdown<ExpenseCategory>
+                id="modal-expense-category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                {EXPENSE_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setCategory(val)}
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={EXPENSE_CATEGORIES.map((cat) => ({
+                  value: cat.value,
+                  label: cat.label,
+                }))}
+              />
             </div>
 
             <div>
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Payment Method *
               </label>
-              <select
+              <AdminDropdown<PaymentMethod>
+                id="modal-expense-payment-method"
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                <option value="M-Pesa">M-Pesa</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Other">Other</option>
-              </select>
+                onChange={(val) => setPaymentMethod(val)}
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={[
+                  { value: 'M-Pesa', label: 'M-Pesa' },
+                  { value: 'Bank Transfer', label: 'Bank Transfer' },
+                  { value: 'Cash', label: 'Cash' },
+                  { value: 'Card', label: 'Card' },
+                  { value: 'Other', label: 'Other' },
+                ]}
+              />
             </div>
           </div>
 

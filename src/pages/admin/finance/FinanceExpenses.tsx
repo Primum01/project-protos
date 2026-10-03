@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { formatMoney } from '@/lib/financeCalculations'
 import type { ExpenseRecord } from '@/types/finance'
 import { RecordExpenseModal } from './RecordExpenseModal'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface FinanceExpensesProps {
   expenses: ExpenseRecord[]
@@ -154,35 +155,39 @@ export function FinanceExpenses({
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <AdminDropdown<string>
+            id="finance-expenses-category-filter"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Categories</option>
-            <option value="transport">Transport</option>
-            <option value="equipment">Equipment</option>
-            <option value="software">Software & Services</option>
-            <option value="marketing">Marketing</option>
-            <option value="contractor">Contractor</option>
-            <option value="hosting/infrastructure">Hosting & Infrastructure</option>
-            <option value="office">Office</option>
-            <option value="communication">Communication</option>
-            <option value="miscellaneous">Miscellaneous</option>
-          </select>
+            onChange={(val) => setCategoryFilter(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[160px]"
+            options={[
+              { value: 'all', label: 'All Categories' },
+              { value: 'transport', label: 'Transport' },
+              { value: 'equipment', label: 'Equipment' },
+              { value: 'software', label: 'Software & Services' },
+              { value: 'marketing', label: 'Marketing' },
+              { value: 'contractor', label: 'Contractor' },
+              { value: 'hosting/infrastructure', label: 'Hosting & Infrastructure' },
+              { value: 'office', label: 'Office' },
+              { value: 'communication', label: 'Communication' },
+              { value: 'miscellaneous', label: 'Miscellaneous' },
+            ]}
+          />
 
-          <select
+          <AdminDropdown<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>
+            id="finance-expenses-date-filter"
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as any)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Time</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="3m">Last 3 Months</option>
-            <option value="6m">Last 6 Months</option>
-            <option value="12m">Last 12 Months</option>
-          </select>
+            onChange={(val) => setDateRange(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            options={[
+              { value: 'all', label: 'All Time' },
+              { value: '7d', label: 'Last 7 Days' },
+              { value: '30d', label: 'Last 30 Days' },
+              { value: '3m', label: 'Last 3 Months' },
+              { value: '6m', label: 'Last 6 Months' },
+              { value: '12m', label: 'Last 12 Months' },
+            ]}
+          />
         </div>
       </div>
 

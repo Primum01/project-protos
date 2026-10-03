@@ -3,6 +3,7 @@ import { formatMoney } from '@/lib/financeCalculations'
 import type { PaymentRecord, SavedInvoice } from '@/types/finance'
 import type { Listing } from '@/types/listing'
 import { RecordPaymentModal } from './RecordPaymentModal'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface FinancePaymentsProps {
   payments: PaymentRecord[]
@@ -146,29 +147,33 @@ export function FinancePayments({
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <AdminDropdown<string>
+            id="finance-payments-method-filter"
             value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Methods</option>
-            <option value="m-pesa">M-Pesa</option>
-            <option value="bank transfer">Bank Transfer</option>
-            <option value="cash">Cash</option>
-            <option value="card">Card</option>
-            <option value="other">Other</option>
-          </select>
+            onChange={(val) => setMethodFilter(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            options={[
+              { value: 'all', label: 'All Methods' },
+              { value: 'm-pesa', label: 'M-Pesa' },
+              { value: 'bank transfer', label: 'Bank Transfer' },
+              { value: 'cash', label: 'Cash' },
+              { value: 'card', label: 'Card' },
+              { value: 'other', label: 'Other' },
+            ]}
+          />
 
-          <select
+          <AdminDropdown<string>
+            id="finance-payments-category-filter"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Categories</option>
-            <option value="scan">Scan / Shoot</option>
-            <option value="hosting">Hosting</option>
-            <option value="other">Other</option>
-          </select>
+            onChange={(val) => setCategoryFilter(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            options={[
+              { value: 'all', label: 'All Categories' },
+              { value: 'scan', label: 'Scan / Shoot' },
+              { value: 'hosting', label: 'Hosting' },
+              { value: 'other', label: 'Other' },
+            ]}
+          />
         </div>
       </div>
 

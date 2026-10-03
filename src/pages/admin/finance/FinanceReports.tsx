@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 import {
   calculateFinanceOverview,
   exportFinancialSummaryToCSV,
@@ -75,18 +76,20 @@ export function FinanceReports({
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <AdminDropdown<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>
+            id="finance-reports-date-filter"
             value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as any)}
-            className="rounded-lg border border-ink-950/15 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Time</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="3m">Last 3 Months</option>
-            <option value="6m">Last 6 Months</option>
-            <option value="12m">Last 12 Months</option>
-          </select>
+            onChange={(val) => setDateRange(val)}
+            buttonClassName="py-2 px-3 text-xs min-w-[130px]"
+            options={[
+              { value: 'all', label: 'All Time' },
+              { value: '7d', label: 'Last 7 Days' },
+              { value: '30d', label: 'Last 30 Days' },
+              { value: '3m', label: 'Last 3 Months' },
+              { value: '6m', label: 'Last 6 Months' },
+              { value: '12m', label: 'Last 12 Months' },
+            ]}
+          />
 
           <button
             onClick={() =>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatMoney, getInvoicePaidAmount } from '@/lib/financeCalculations'
 import type { PaymentRecord, SavedInvoice, SavedReceipt } from '@/types/finance'
 import type { Listing } from '@/types/listing'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface FinanceInvoicesReceiptsProps {
   invoices: SavedInvoice[]
@@ -159,20 +160,22 @@ export function FinanceInvoicesReceipts({
 
         {activeSubTab === 'invoices' && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-ink-500">Status:</span>
-            <select
+            <span className="text-xs text-ink-500 shrink-0">Status:</span>
+            <AdminDropdown<string>
+              id="finance-invoices-status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="partial">Partial</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              onChange={(val) => setStatusFilter(val)}
+              buttonClassName="py-1.5 px-3 text-xs min-w-[140px]"
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'draft', label: 'Draft' },
+                { value: 'sent', label: 'Sent' },
+                { value: 'partial', label: 'Partial' },
+                { value: 'paid', label: 'Paid' },
+                { value: 'overdue', label: 'Overdue' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 import { formatMoney } from '@/lib/financeCalculations'
 import {
   addMonths,
@@ -264,28 +265,32 @@ export function FinanceHosting({ listings, invoices, receipts }: FinanceHostingP
         </div>
 
         <div className="flex items-center gap-2">
-          <select
+          <AdminDropdown<'all' | 'Quarterly' | 'Biannual' | 'Annual'>
+            id="finance-hosting-cycle-filter"
             value={cycleFilter}
-            onChange={(e) => setCycleFilter(e.target.value as any)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Cycles</option>
-            <option value="Quarterly">Quarterly (3 Months)</option>
-            <option value="Biannual">Semi-annually (6 Months)</option>
-            <option value="Annual">Annually (12 Months)</option>
-          </select>
+            onChange={(val) => setCycleFilter(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[150px]"
+            options={[
+              { value: 'all', label: 'All Cycles' },
+              { value: 'Quarterly', label: 'Quarterly (3 Months)' },
+              { value: 'Biannual', label: 'Semi-annually (6 Months)' },
+              { value: 'Annual', label: 'Annually (12 Months)' },
+            ]}
+          />
 
-          <select
+          <AdminDropdown<string>
+            id="finance-hosting-status-filter"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-          >
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="due">Due Soon</option>
-            <option value="overdue">Overdue</option>
-            <option value="ended">Ended</option>
-          </select>
+            onChange={(val) => setStatusFilter(val)}
+            buttonClassName="py-1.5 px-3 text-xs min-w-[130px]"
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'active', label: 'Active' },
+              { value: 'due', label: 'Due Soon' },
+              { value: 'overdue', label: 'Overdue' },
+              { value: 'ended', label: 'Ended' },
+            ]}
+          />
         </div>
       </div>
 

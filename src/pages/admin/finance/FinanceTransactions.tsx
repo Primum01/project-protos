@@ -11,6 +11,7 @@ import type {
   SavedReceipt,
 } from '@/types/finance'
 import type { Listing } from '@/types/listing'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface FinanceTransactionsProps {
   invoices: SavedInvoice[]
@@ -172,84 +173,92 @@ export function FinanceTransactions({
           {/* Type Filter */}
           <div>
             <label className="block text-[11px] font-medium text-ink-500 mb-1">Type</label>
-            <select
+            <AdminDropdown<'all' | 'income' | 'expense'>
+              id="finance-tx-type-filter"
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="w-full rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Types</option>
-              <option value="income">Income Only</option>
-              <option value="expense">Expense Only</option>
-            </select>
+              onChange={(val) => setTypeFilter(val)}
+              buttonClassName="py-1.5 px-3 text-xs w-full"
+              options={[
+                { value: 'all', label: 'All Types' },
+                { value: 'income', label: 'Income Only' },
+                { value: 'expense', label: 'Expense Only' },
+              ]}
+            />
           </div>
 
           {/* Income Service Type */}
           <div>
             <label className="block text-[11px] font-medium text-ink-500 mb-1">Service</label>
-            <select
+            <AdminDropdown<'all' | 'scan' | 'hosting' | 'other'>
+              id="finance-tx-service-filter"
               value={incomeTypeFilter}
-              onChange={(e) => setIncomeTypeFilter(e.target.value as any)}
+              onChange={(val) => setIncomeTypeFilter(val)}
               disabled={typeFilter === 'expense'}
-              className="w-full rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none disabled:opacity-50"
-            >
-              <option value="all">All Services</option>
-              <option value="scan">Scan / Shoot</option>
-              <option value="hosting">Hosting</option>
-              <option value="other">Other</option>
-            </select>
+              buttonClassName="py-1.5 px-3 text-xs w-full"
+              options={[
+                { value: 'all', label: 'All Services' },
+                { value: 'scan', label: 'Scan / Shoot' },
+                { value: 'hosting', label: 'Hosting' },
+                { value: 'other', label: 'Other' },
+              ]}
+            />
           </div>
 
           {/* Status */}
           <div>
             <label className="block text-[11px] font-medium text-ink-500 mb-1">Status</label>
-            <select
+            <AdminDropdown<string>
+              id="finance-tx-status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="paid">Paid</option>
-              <option value="partial">Partial</option>
-              <option value="pending">Pending</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              onChange={(val) => setStatusFilter(val)}
+              buttonClassName="py-1.5 px-3 text-xs w-full"
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'paid', label: 'Paid' },
+                { value: 'partial', label: 'Partial' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'overdue', label: 'Overdue' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
           </div>
 
           {/* Date Range */}
           <div>
             <label className="block text-[11px] font-medium text-ink-500 mb-1">Date Range</label>
-            <select
+            <AdminDropdown<'7d' | '30d' | '3m' | '6m' | '12m' | 'all'>
+              id="finance-tx-date-filter"
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
-              className="w-full rounded-lg border border-ink-950/15 bg-white px-2.5 py-1.5 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Time</option>
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="3m">Last 3 Months</option>
-              <option value="6m">Last 6 Months</option>
-              <option value="12m">Last 12 Months</option>
-            </select>
+              onChange={(val) => setDateRange(val)}
+              buttonClassName="py-1.5 px-3 text-xs w-full"
+              options={[
+                { value: 'all', label: 'All Time' },
+                { value: '7d', label: 'Last 7 Days' },
+                { value: '30d', label: 'Last 30 Days' },
+                { value: '3m', label: 'Last 3 Months' },
+                { value: '6m', label: 'Last 6 Months' },
+                { value: '12m', label: 'Last 12 Months' },
+              ]}
+            />
           </div>
         </div>
 
         {/* Secondary row for property filter */}
         <div className="mt-3 flex flex-wrap items-center justify-between border-t border-ink-950/5 pt-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-ink-500">Property:</span>
-            <select
+            <span className="text-ink-500 shrink-0">Property:</span>
+            <AdminDropdown<string>
+              id="finance-tx-property-filter"
               value={selectedProperty}
-              onChange={(e) => setSelectedProperty(e.target.value)}
-              className="rounded-md border border-ink-950/12 bg-white px-2 py-1 text-xs text-ink-800 focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">All Properties ({propertiesList.length})</option>
-              {propertiesList.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedProperty(val)}
+              searchable
+              searchPlaceholder="Search property..."
+              buttonClassName="py-1 px-3 text-xs min-w-[200px]"
+              options={[
+                { value: 'all', label: `All Properties (${propertiesList.length})` },
+                ...propertiesList.map((p) => ({ value: p, label: p })),
+              ]}
+            />
           </div>
 
           <div className="flex items-center gap-4 text-ink-600">

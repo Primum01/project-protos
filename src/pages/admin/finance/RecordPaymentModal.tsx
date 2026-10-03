@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { generateUUID } from '@/lib/uuid'
 import type { PaymentCategory, PaymentMethod, PaymentRecord, SavedInvoice } from '@/types/finance'
 import type { Listing } from '@/types/listing'
+import { AdminDropdown } from '@/components/admin/AdminDropdown'
 
 interface RecordPaymentModalProps {
   isOpen: boolean
@@ -167,17 +168,19 @@ export function RecordPaymentModal({
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Payment Method *
               </label>
-              <select
+              <AdminDropdown<PaymentMethod>
+                id="modal-payment-method"
                 value={method}
-                onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                <option value="M-Pesa">M-Pesa</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Other">Other</option>
-              </select>
+                onChange={(val) => setMethod(val)}
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={[
+                  { value: 'M-Pesa', label: 'M-Pesa' },
+                  { value: 'Bank Transfer', label: 'Bank Transfer' },
+                  { value: 'Cash', label: 'Cash' },
+                  { value: 'Card', label: 'Card' },
+                  { value: 'Other', label: 'Other' },
+                ]}
+              />
             </div>
 
             <div>
@@ -199,33 +202,38 @@ export function RecordPaymentModal({
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Payment Category
               </label>
-              <select
+              <AdminDropdown<PaymentCategory>
+                id="modal-payment-category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as PaymentCategory)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                <option value="scan">One-time Shoot / Scan</option>
-                <option value="hosting">3D Tour Hosting</option>
-                <option value="other">Other Service</option>
-              </select>
+                onChange={(val) => setCategory(val)}
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={[
+                  { value: 'scan', label: 'One-time Shoot / Scan' },
+                  { value: 'hosting', label: '3D Tour Hosting' },
+                  { value: 'other', label: 'Other Service' },
+                ]}
+              />
             </div>
 
             <div>
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Link to Invoice (Optional)
               </label>
-              <select
+              <AdminDropdown<string>
+                id="modal-payment-invoice"
                 value={selectedInvoiceId}
-                onChange={(e) => handleInvoiceChange(e.target.value)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                <option value="">No invoice linked</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={inv.id}>
-                    {inv.invoiceNumber} — {inv.propertyName || inv.clientName} (KSh {inv.totalDue})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleInvoiceChange(val)}
+                searchable
+                searchPlaceholder="Search invoices..."
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={[
+                  { value: '', label: 'No invoice linked' },
+                  ...invoices.map((inv) => ({
+                    value: inv.id,
+                    label: `${inv.invoiceNumber} — ${inv.propertyName || inv.clientName} (KSh ${inv.totalDue})`,
+                  })),
+                ]}
+              />
             </div>
           </div>
 
@@ -234,18 +242,21 @@ export function RecordPaymentModal({
               <label className="block text-[11px] font-medium text-ink-600 mb-1">
                 Property / Project
               </label>
-              <select
+              <AdminDropdown<string>
+                id="modal-payment-listing"
                 value={selectedListingId}
-                onChange={(e) => handlePropertyChange(e.target.value)}
-                className="w-full rounded-lg border border-ink-950/20 bg-white px-3 py-2 text-xs text-ink-900 focus:border-brand-500 focus:outline-none"
-              >
-                <option value="">Select Property...</option>
-                {listings.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handlePropertyChange(val)}
+                searchable
+                searchPlaceholder="Search properties..."
+                buttonClassName="w-full py-2 px-3 text-xs justify-between"
+                options={[
+                  { value: '', label: 'Select Property...' },
+                  ...listings.map((l) => ({
+                    value: l.id,
+                    label: l.name,
+                  })),
+                ]}
+              />
             </div>
 
             <div>
