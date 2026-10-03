@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAdminFinance, useAdminListings } from '@/contexts/AdminDataContext'
 import { useAuth } from '@/hooks/useAuth'
 import { usePageMeta } from '@/hooks/usePageMeta'
@@ -37,7 +37,6 @@ export function AdminFinance() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (searchParams.get('tab') as FinanceTab) || 'overview'
 
-  const navigate = useNavigate()
   const { user } = useAuth()
 
   usePageMeta({
@@ -79,49 +78,11 @@ export function AdminFinance() {
   return (
     <div className="p-6 lg:p-10 space-y-8">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-950">Finance Hub</h1>
-          <p className="mt-1 text-sm text-ink-500">
-            Track money in, business expenses, tour hosting subscriptions, and client financial health.
-          </p>
-        </div>
-
-        {/* Global Finance Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsPaymentModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-emerald-700"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Record Payment
-          </button>
-
-          <button
-            onClick={() => setIsExpenseModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-950/12 bg-paper px-3.5 py-2 text-xs font-semibold text-ink-800 shadow-soft transition-all hover:bg-ink-50"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Record Expense
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/invoice')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-brand-700"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-            New Invoice
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink-950">Finance Hub</h1>
+        <p className="mt-1 text-sm text-ink-500">
+          Track money in, business expenses, tour hosting subscriptions, and client financial health.
+        </p>
       </div>
 
       {/* Main Finance Tab Navigation */}
@@ -158,8 +119,6 @@ export function AdminFinance() {
               listings={listings}
               dateRange={dateRange}
               setDateRange={setDateRange}
-              onOpenPaymentModal={() => setIsPaymentModalOpen(true)}
-              onOpenExpenseModal={() => setIsExpenseModalOpen(true)}
               onNavigateTab={(tab) => handleTabChange(tab as FinanceTab)}
             />
           )}

@@ -17,8 +17,6 @@ interface FinanceOverviewProps {
   listings: Listing[]
   dateRange: '7d' | '30d' | '3m' | '6m' | '12m' | 'all'
   setDateRange: (range: '7d' | '30d' | '3m' | '6m' | '12m' | 'all') => void
-  onOpenPaymentModal: () => void
-  onOpenExpenseModal: () => void
   onNavigateTab: (tab: string) => void
 }
 
@@ -77,8 +75,6 @@ export function FinanceOverview({
   listings,
   dateRange,
   setDateRange,
-  onOpenPaymentModal,
-  onOpenExpenseModal,
   onNavigateTab,
 }: FinanceOverviewProps) {
   const navigate = useNavigate()
@@ -104,8 +100,8 @@ export function FinanceOverview({
 
   return (
     <div className="space-y-8">
-      {/* Time Range Filter & Fast Action Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Time Range Filter */}
+      <div className="flex items-center">
         <div className="inline-flex rounded-lg border border-ink-950/10 bg-ink-50 p-1 text-xs font-medium">
           {(
             [
@@ -120,36 +116,15 @@ export function FinanceOverview({
             <button
               key={t.key}
               onClick={() => setDateRange(t.key)}
-              className={`rounded-md px-3 py-1.5 transition-all ${
+              className={`rounded-md px-3.5 py-1.5 transition-all ${
                 dateRange === t.key
-                  ? 'bg-paper text-ink-950 shadow-xs font-semibold'
-                  : 'text-ink-500 hover:text-ink-800'
+                  ? 'bg-ink-950 text-white shadow-xs font-semibold'
+                  : 'text-ink-600 hover:text-ink-950 hover:bg-ink-100/60 font-medium'
               }`}
             >
               {t.label}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenPaymentModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-soft transition-all hover:bg-emerald-700"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Record Payment
-          </button>
-          <button
-            onClick={onOpenExpenseModal}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-ink-950/12 bg-paper px-3.5 py-2 text-xs font-semibold text-ink-800 shadow-soft transition-all hover:bg-ink-50"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Record Expense
-          </button>
         </div>
       </div>
 
