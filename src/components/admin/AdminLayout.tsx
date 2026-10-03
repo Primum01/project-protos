@@ -148,9 +148,19 @@ function SessionClock({ startedAt }: { startedAt?: string }) {
   return <span>{elapsed || 'Active now'}</span>
 }
 
+function IconFinance() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  )
+}
+
 const navItems = [
   { to: '/admin/listings', label: 'Listings', icon: <IconBuilding /> },
   { to: '/admin/dashboard', label: 'Dashboard', icon: <IconGrid /> },
+  { to: '/admin/finance', label: 'Finance', icon: <IconFinance /> },
   { to: '/admin/analytics', label: 'Analytics', icon: <IconBarChart /> },
   { to: '/admin/invoice', label: 'Invoice', icon: <IconInvoice /> },
   { to: '/admin/receipt', label: 'Receipt', icon: <IconReceipt /> },

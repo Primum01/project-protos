@@ -73,15 +73,21 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // INVOICES & RECEIPTS
+    // INVOICES, RECEIPTS, EXPENSES & PAYMENTS (FINANCE)
     // =========================================================================
     // PUBLIC USERS: Completely denied access.
-    // ADMIN: Can read, create, update, and delete invoice and receipt records,
-    //        including automated 16% VAT calculations, custom tax values, and tax omissions.
+    // ADMIN: Can read, create, update, and delete invoice, receipt, expense,
+    //        and payment records.
     match /invoices/{id} {
       allow read, write: if isAdmin();
     }
     match /receipts/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /expenses/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /payments/{id} {
       allow read, write: if isAdmin();
     }
 

@@ -4,15 +4,19 @@ import {
   subscribeCollection,
 } from './firestore'
 import { isFirebaseConfigured } from './config'
-import type { SavedInvoice, SavedReceipt } from '@/types/finance'
+import type { ExpenseRecord, PaymentRecord, SavedInvoice, SavedReceipt } from '@/types/finance'
 
 // In-memory volatile fallback (never written to disk or Local Storage)
 let memoryInvoices: SavedInvoice[] = []
 let memoryReceipts: SavedReceipt[] = []
+let memoryExpenses: ExpenseRecord[] = []
+let memoryPayments: PaymentRecord[] = []
 
 export function clearFinanceMemory(): void {
   memoryInvoices = []
   memoryReceipts = []
+  memoryExpenses = []
+  memoryPayments = []
 }
 
 /**
@@ -178,4 +182,77 @@ export function subscribeReceipts(callback: (receipts: SavedReceipt[]) => void) 
     return () => {}
   }
   return subscribeCollection<SavedReceipt>('receipts', callback)
+}
+
+// ── EXPENSES PERSISTENCE & SUBSCRIPTION ───────────────────────────────────────
+export async function persistExpense(
+  expense: ExpenseRecord,
+  _existingExpenses: ExpenseRecord[] = [],
+): Promise<void> {
+  if (!expense.description.trim()) {
+    throw new Error('Expense description is required.')
+  }
+  if (typeof expense.amount !== 'number' || isNaN(expense.amount) || expense.amount <= 0) {
+    throw new Error('Expense amount must be a positive number.')
+  }
+
+  memoryExpenses = [
+    expense,
+    ...memoryExpenses.filter((e) => e.id !== expense.id),
+  ]
+
+  if (isFirebaseConfigured) {
+    await setDocument('expenses', expense.id, expense)
+  }
+}
+
+export async function removeExpense(id: string, _existingExpenses: ExpenseRecord[] = []): Promise<void> {
+  memoryExpenses = memoryExpenses.filter((e) => e.id !== id)
+
+  if (isFirebaseConfigured) {
+    await deleteDocument('expenses', id)
+  }
+}
+
+export function subscribeExpenses(callback: (expenses: ExpenseRecord[]) => void) {
+  if (!isFirebaseConfigured) {
+    callback([...memoryExpenses])
+    return () => {}
+  }
+  return subscribeCollection<ExpenseRecord>('expenses', callback)
+}
+
+// ── PAYMENTS PERSISTENCE & SUBSCRIPTION ───────────────────────────────────────
+export async function persistPayment(
+  payment: PaymentRecord,
+  _existingPayments: PaymentRecord[] = [],
+): Promise<void> {
+  if (typeof payment.amount !== 'number' || isNaN(payment.amount) || payment.amount <= 0) {
+    throw new Error('Payment amount must be a positive number.')
+  }
+
+  memoryPayments = [
+    payment,
+    ...memoryPayments.filter((p) => p.id !== payment.id),
+  ]
+
+  if (isFirebaseConfigured) {
+    await setDocument('payments', payment.id, payment)
+  }
+}
+
+export async function removePayment(id: string, _existingPayments: PaymentRecord[] = []): Promise<void> {
+  memoryPayments = memoryPayments.filter((p) => p.id !== id)
+
+  if (isFirebaseConfigured) {
+    await deleteDocument('payments', id)
+  }
+}
+
+export function subscribePayments(callback: (payments: PaymentRecord[]) => void) {
+  if (!isFirebaseConfigured) {
+    callback([...memoryPayments])
+    return () => {}
+  }
+  return subscribeCollection<PaymentRecord>('payments', callback)
 }

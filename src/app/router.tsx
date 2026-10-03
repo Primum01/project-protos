@@ -69,6 +69,7 @@ const AdminLogs       = lazyWithRetry(() => import('@/pages/admin/AdminLogs').th
 const AdminAnalytics  = lazyWithRetry(() => import('@/pages/admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })), 'AdminAnalytics')
 const AdminInvoice    = lazyWithRetry(() => import('@/pages/admin/AdminInvoice').then(m => ({ default: m.AdminInvoice })), 'AdminInvoice')
 const AdminReceipt    = lazyWithRetry(() => import('@/pages/admin/AdminReceipt').then(m => ({ default: m.AdminReceipt })), 'AdminReceipt')
+const AdminFinance    = lazyWithRetry(() => import('@/pages/admin/finance/AdminFinance').then(m => ({ default: m.AdminFinance })), 'AdminFinance')
 
 function ScrollManager() {
   const { pathname } = useLocation()
@@ -159,6 +160,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/admin/listings" replace /> },
           { path: 'dashboard', element: <AdminDashboard /> },
+          { path: 'finance', element: <AdminFinance /> },
           { path: 'analytics', element: <AdminAnalytics /> },
           { path: 'invoice', element: <AdminInvoice /> },
           { path: 'receipt', element: <AdminReceipt /> },
