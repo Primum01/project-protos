@@ -105,9 +105,12 @@ function ContactPromptModal({
 
         {/* Header */}
         <div className="flex items-start gap-3.5 pr-8">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 font-semibold text-lg">
-            🏠
-          </div>
+          <img
+            src="/house-icon.png"
+            alt=""
+            aria-hidden="true"
+            className="h-9 w-9 shrink-0 object-contain"
+          />
           <div>
             <h3 id="contact-modal-title" className="text-lg font-semibold text-ink-950">
               Contact Property Host
@@ -161,9 +164,12 @@ function ContactPromptModal({
                     rel="noopener noreferrer"
                     className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#25D366] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#20bd5a] transition-colors shadow-xs"
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
-                    </svg>
+                    <img
+                      src="/whatsapp-badge.png"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-4 w-4 shrink-0 object-contain"
+                    />
                     WhatsApp
                   </a>
                 )}
