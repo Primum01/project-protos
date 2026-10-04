@@ -13,7 +13,15 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   )
 }
 
-import { getOtpSecret } from '../_lib/otpStore.ts'
+function getOtpSecret(): string {
+  if (process.env.ADMIN_OTP_SECRET) {
+    return process.env.ADMIN_OTP_SECRET
+  }
+  if (process.env.VERCEL_ENV === 'preview' || process.env.NODE_ENV !== 'production') {
+    return 'twinspace-admin-otp-preview-fallback-2026'
+  }
+  return process.env.VITE_FIREBASE_API_KEY || 'twinspace-admin-otp-production-fallback-2026'
+}
 
 // ── Verify the HMAC-signed token from the cookie ─────────────────────────────
 function verifySignedToken(token: string): boolean {

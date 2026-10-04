@@ -2,7 +2,32 @@
 // Configured sender: no-reply@twinspace360.com
 // Never exposes credentials to client-side code or Local Storage.
 
-import { verifyFirebaseAdminToken } from '../_lib/otpStore.ts'
+async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
+  if (!idToken || typeof idToken !== 'string') return false
+  const apiKey =
+    process.env.VITE_FIREBASE_API_KEY ||
+    process.env.FIREBASE_API_KEY ||
+    'AIzaSyBI1dDPGnipwNXU0pQRAQcJuJZYfvuNGbQ'
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      },
+    )
+
+    if (!res.ok) return false
+    const data = await res.json()
+    const userEmail = data.users?.[0]?.email?.trim().toLowerCase()
+    return userEmail === 'team@twinspace360.com'
+  } catch (err) {
+    console.error('[send-invoice] Token verification error:', err)
+    return false
+  }
+}
 
 interface SendDocumentPayload {
   type: 'invoice' | 'receipt'
