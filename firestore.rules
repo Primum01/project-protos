@@ -10,6 +10,7 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null
           && request.auth.token.email != null
+          && request.auth.token.email_verified == true
           && request.auth.token.email.lower() == 'team@twinspace360.com';
     }
 

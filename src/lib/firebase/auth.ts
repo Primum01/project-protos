@@ -78,5 +78,15 @@ export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
   return onAuthStateChanged(auth(), callback)
 }
 
+/**
+ * Returns the current authenticated admin's Firebase ID token for API requests.
+ * Returns null if not logged in or email is not team@twinspace360.com.
+ */
+export async function getCurrentAdminIdToken(): Promise<string | null> {
+  const user = auth().currentUser
+  if (!user || !isAdminEmail(user.email)) return null
+  return user.getIdToken()
+}
+
 export type { FirebaseUser }
 

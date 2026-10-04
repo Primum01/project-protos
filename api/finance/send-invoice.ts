@@ -2,6 +2,8 @@
 // Configured sender: no-reply@twinspace360.com
 // Never exposes credentials to client-side code or Local Storage.
 
+import { verifyFirebaseAdminToken } from '../_lib/otpStore.ts'
+
 interface SendDocumentPayload {
   type: 'invoice' | 'receipt'
   recipientEmail: string
@@ -244,6 +246,19 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    // 1. Enforce admin authentication
+    const authHeader = req.headers.authorization || req.headers.Authorization || ''
+    const idToken = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : (typeof req.body === 'object' && req.body?.idToken) || ''
+
+    const isVerifiedAdmin = await verifyFirebaseAdminToken(idToken)
+    if (!isVerifiedAdmin) {
+      return res.status(401).json({
+        error: 'Unauthorized: valid team@twinspace360.com admin credentials required to dispatch documents.',
+      })
+    }
+
     const body: SendDocumentPayload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {}
 
     // Validation

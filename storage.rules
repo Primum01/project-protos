@@ -5,39 +5,54 @@ service firebase.storage {
     function isAdmin() {
       return request.auth != null
           && request.auth.token.email != null
+          && request.auth.token.email_verified == true
           && request.auth.token.email.lower() == 'team@twinspace360.com';
     }
 
     // STRICTLY ADMIN-ONLY: Invoices, receipts, and private business documents
     match /listings/{listingId}/documents/{allPaths=**} {
       allow read: if isAdmin();
-      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('(application/pdf|image/(jpeg|png|webp))');
     }
     match /invoices/{allPaths=**} {
       allow read: if isAdmin();
-      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('application/pdf');
     }
     match /receipts/{allPaths=**} {
       allow read: if isAdmin();
-      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('application/pdf');
     }
     match /expenses/{allPaths=**} {
       allow read: if isAdmin();
-      allow write: if isAdmin() && request.resource.size < 20 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('(application/pdf|image/(jpeg|png|webp))');
     }
 
     // PUBLIC: Property photos, virtual tour media, and general public assets
     match /listings/{listingId}/photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 35 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(jpeg|png|webp|avif|gif)');
     }
     match /photos/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 35 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(jpeg|png|webp|avif|gif)');
     }
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 35 * 1024 * 1024;
+      allow write: if isAdmin()
+                   && request.resource.size < 35 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(jpeg|png|webp|avif|gif)');
     }
   }
 }

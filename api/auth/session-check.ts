@@ -13,14 +13,7 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   )
 }
 
-// ── Token secret ──────────────────────────────────────────────────────────────
-function getOtpSecret(): string {
-  return (
-    process.env.ADMIN_OTP_SECRET ||
-    process.env.VITE_FIREBASE_API_KEY ||
-    'twinspace-admin-otp-cryptographic-salt-2026'
-  )
-}
+import { getOtpSecret } from '../_lib/otpStore.ts'
 
 // ── Verify the HMAC-signed token from the cookie ─────────────────────────────
 function verifySignedToken(token: string): boolean {

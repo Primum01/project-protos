@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAdminFinance, useAdminListings } from '@/contexts/AdminDataContext'
 import { Button } from '@/components/ui'
 import { usePageMeta } from '@/hooks/usePageMeta'
+import { getCurrentAdminIdToken } from '@/lib/firebase/auth'
 import { generateNextInvoiceNumber } from '@/lib/firebase/finance'
 import { formatExportFilename } from '@/lib/exportFilename'
 import { generateDocumentPdf, type GeneratedPdfResult } from '@/lib/pdfGenerator'
@@ -746,9 +747,13 @@ export function AdminInvoice() {
         } : undefined,
       }
 
+      const idToken = await getCurrentAdminIdToken()
       const res = await fetch('/api/finance/send-invoice', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify(payload),
       })
 

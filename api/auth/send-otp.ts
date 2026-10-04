@@ -7,13 +7,7 @@ const COOLDOWN_MS = 45 * 1000 // 45 seconds between sends
 // In-memory fallback and test cache
 const memoryOtpStore = new Map<string, any>()
 
-function getOtpSecret(): string {
-  return (
-    process.env.ADMIN_OTP_SECRET ||
-    process.env.VITE_FIREBASE_API_KEY ||
-    'twinspace-admin-otp-cryptographic-salt-2026'
-  )
-}
+import { getOtpSecret } from '../_lib/otpStore.ts'
 
 async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
   if (!idToken || typeof idToken !== 'string') return false
@@ -248,7 +242,7 @@ export default async function handler(req: any, res: any) {
           error: 'Failed to deliver verification email. Please try again.',
         })
       }
-    } else {
+    } else if (process.env.NODE_ENV !== 'production') {
       console.log(
         `[send-otp] [DEV LOG] OTP generated for ${TARGET_ADMIN_EMAIL}: ${code} (Expires in 5m)`,
       )

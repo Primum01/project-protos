@@ -19,11 +19,13 @@ export interface VerifiedTokenPayload {
 export const memoryOtpStore = new Map<string, StoredOtpRecord>()
 
 export function getOtpSecret(): string {
-  return (
-    process.env.ADMIN_OTP_SECRET ||
-    process.env.VITE_FIREBASE_API_KEY ||
-    'twinspace-admin-otp-cryptographic-salt-2026'
-  )
+  if (process.env.ADMIN_OTP_SECRET) {
+    return process.env.ADMIN_OTP_SECRET
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL SECURITY CONFIGURATION: ADMIN_OTP_SECRET environment variable is missing in production.')
+  }
+  return 'twinspace-admin-otp-dev-secret-only'
 }
 
 /**

@@ -6,13 +6,7 @@ const MAX_ATTEMPTS = 5
 // In-memory fallback and test cache
 const memoryOtpStore = new Map<string, any>()
 
-function getOtpSecret(): string {
-  return (
-    process.env.ADMIN_OTP_SECRET ||
-    process.env.VITE_FIREBASE_API_KEY ||
-    'twinspace-admin-otp-cryptographic-salt-2026'
-  )
-}
+import { getOtpSecret } from '../_lib/otpStore.ts'
 
 async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
   if (!idToken || typeof idToken !== 'string') return false
