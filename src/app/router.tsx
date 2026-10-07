@@ -2,10 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Outlet, useLocation, useNavigationType } from 'react-router-dom'
 import { createBrowserRouter } from 'react-router-dom'
 import { saveRouteScroll, getRouteScroll } from '@/lib/navigationState'
-import { AuthGuard } from '@/components/admin/AuthGuard'
-import { AdminLayout } from '@/components/admin/AdminLayout'
-import { SessionProvider } from '@/contexts/SessionContext'
-import { AdminDataProvider } from '@/contexts/AdminDataContext'
 
 import { RouteErrorBoundary, ErrorBoundary } from '@/components/ui'
 import { RouteTransitionSkeleton } from '@/components/skeleton'
@@ -70,6 +66,7 @@ const AdminAnalytics  = lazyWithRetry(() => import('@/pages/admin/AdminAnalytics
 const AdminInvoice    = lazyWithRetry(() => import('@/pages/admin/AdminInvoice').then(m => ({ default: m.AdminInvoice })), 'AdminInvoice')
 const AdminReceipt    = lazyWithRetry(() => import('@/pages/admin/AdminReceipt').then(m => ({ default: m.AdminReceipt })), 'AdminReceipt')
 const AdminFinance    = lazyWithRetry(() => import('@/pages/admin/finance/AdminFinance').then(m => ({ default: m.AdminFinance })), 'AdminFinance')
+const AdminAppShell   = lazyWithRetry(() => import('@/components/admin/AdminAppShell').then(m => ({ default: m.AdminAppShell })), 'AdminAppShell')
 
 function ScrollManager() {
   const { pathname } = useLocation()
@@ -148,15 +145,7 @@ export const router = createBrowserRouter([
       {
         path: '/admin',
         errorElement: <RouteErrorBoundary />,
-        element: (
-          <AuthGuard>
-            <AdminDataProvider>
-              <SessionProvider>
-                <AdminLayout />
-              </SessionProvider>
-            </AdminDataProvider>
-          </AuthGuard>
-        ),
+        element: <AdminAppShell />,
         children: [
           { index: true, element: <Navigate to="/admin/listings" replace /> },
           { path: 'dashboard', element: <AdminDashboard /> },

@@ -54,6 +54,8 @@ export function NavBar({ overlay = false }: NavBarProps) {
             <img
               src="/logo.png"
               alt="TwinSpace"
+              width={1024}
+              height={259}
               className={cn(
                 'h-10 w-auto object-contain transition-all duration-300',
                 isLight ? 'brightness-100' : 'brightness-0',

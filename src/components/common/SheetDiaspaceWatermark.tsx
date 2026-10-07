@@ -17,6 +17,8 @@ export function SheetDiaspaceWatermark({ className = '' }: SheetDiaspaceWatermar
       <img
         src="/diaspace-dark-logo.png"
         alt="DiaSpace — Building Possibilities, Bridging Distances"
+        width={789}
+        height={291}
         className="h-6 sm:h-7 print:h-5.5 w-auto object-contain opacity-85"
       />
     </div>

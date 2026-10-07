@@ -71,7 +71,7 @@ export function TourViewerWithSkeleton({
         allowFullScreen
         allow={allow ?? 'autoplay; fullscreen; web-share; xr-spatial-tracking; gyroscope; accelerometer'}
         sandbox={sandbox}
-        loading={loading ?? 'eager'}
+        loading={loading ?? 'lazy'}
         {...props}
       />
 

@@ -109,6 +109,8 @@ function ContactPromptModal({
             src="/house-icon.png"
             alt=""
             aria-hidden="true"
+            width={36}
+            height={36}
             className="h-9 w-9 shrink-0 object-contain"
           />
           <div>
@@ -168,6 +170,8 @@ function ContactPromptModal({
                       src="/whatsapp-badge.png"
                       alt=""
                       aria-hidden="true"
+                      width={16}
+                      height={16}
                       className="h-4 w-4 shrink-0 object-contain"
                     />
                     WhatsApp

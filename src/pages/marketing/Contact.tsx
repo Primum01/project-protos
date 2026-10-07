@@ -191,6 +191,8 @@ export function Contact() {
                   src="/whatsapp-icon.png"
                   alt=""
                   aria-hidden="true"
+                  width={24}
+                  height={24}
                   className="h-6 w-6 shrink-0 object-contain"
                 />
                 <h2 className="text-base font-semibold text-ink-950">Prefer WhatsApp?</h2>
