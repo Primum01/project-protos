@@ -543,11 +543,21 @@ export function ListingDetail() {
                       className="group/cta flex flex-col items-center gap-4 cursor-pointer focus:outline-none"
                       aria-label={`Enter interactive 3D tour for ${listing.name}`}
                     >
-                      <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-brand-600 text-white shadow-2xl backdrop-blur-md transition-all duration-300 group-hover/cta:scale-110 group-hover/cta:bg-brand-500">
-                        <span className="absolute -inset-2 rounded-full bg-brand-400/40 animate-ping opacity-60 pointer-events-none" />
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="ml-1 sm:h-8 sm:w-8">
-                          <polygon points="5 3 19 12 5 21 5 3" />
-                        </svg>
+                      <div className="relative flex items-center justify-center">
+                        {/* Ambient subtle glow aura on hover */}
+                        <div className="absolute inset-0 rounded-full bg-brand-500/25 blur-xl transition-all duration-500 group-hover/cta:scale-125 group-hover/cta:bg-brand-500/40" />
+
+                        {/* Frosted Glass Disc housing the custom outline play icon */}
+                        <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-black/45 ring-1 ring-white/25 backdrop-blur-md shadow-2xl transition-all duration-300 group-hover/cta:scale-110 group-hover/cta:ring-brand-400/60 group-hover/cta:bg-black/60 group-hover/cta:shadow-[0_0_35px_rgba(176,141,87,0.45)]">
+                          <img
+                            src="/play-icon-white.png"
+                            alt=""
+                            aria-hidden="true"
+                            width={512}
+                            height={512}
+                            className="h-9 w-9 sm:h-11 sm:w-11 object-contain transition-transform duration-300 group-hover/cta:scale-105"
+                          />
+                        </div>
                       </div>
                       <div className="flex flex-col items-center gap-1.5">
                         <span className="inline-flex items-center gap-2 rounded-full bg-black/60 px-5 py-2 text-xs sm:text-sm font-semibold text-white backdrop-blur-md shadow-lg border border-white/15 transition-all group-hover/cta:bg-black/80 group-hover/cta:border-brand-400/50">
