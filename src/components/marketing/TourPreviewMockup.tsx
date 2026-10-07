@@ -7,7 +7,7 @@ const POSTER_IMAGE = `https://my.matterport.com/api/v1/player/models/${DEMO_MODE
 
 /**
  * Interactive Matterport 3D walkthrough preview embedded in a mock browser container.
- * Uses a lightweight, high-performance facade pattern to avoid loading heavy 3D WebGL
+ * Uses a full-bleed, high-performance facade pattern to avoid loading heavy 3D WebGL
  * scripts and render-blocking iframe assets during initial page load and mobile evaluation.
  */
 export function TourPreviewMockup() {
@@ -83,7 +83,7 @@ export function TourPreviewMockup() {
           <span className="w-12" />
         </div>
 
-        {/* 16:9 ratio container */}
+        {/* Full-bleed 16:9 ratio container (300px min-height on mobile, aspect-16/9 on desktop) */}
         <div className="relative aspect-16/9 w-full bg-ink-950 min-h-[300px] sm:min-h-0">
           {isInteractive ? (
             <>
@@ -111,8 +111,8 @@ export function TourPreviewMockup() {
               </button>
             </>
           ) : (
-            <div className="group relative h-full w-full overflow-hidden select-none">
-              {/* High-res static poster image */}
+            <div className="group absolute inset-0 overflow-hidden select-none">
+              {/* Full-bleed high-res static poster image */}
               <img
                 src={POSTER_IMAGE}
                 alt="Interactive 3D Walkthrough Preview"
@@ -122,17 +122,11 @@ export function TourPreviewMockup() {
                 className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               />
 
-              {/* Cinematic Vignette Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/40 to-ink-950/50" />
-
-              {/* Status Badge */}
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[11px] font-medium tracking-wide text-white backdrop-blur-md shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Interactive 3D Walkthrough</span>
-              </div>
+              {/* Cinematic Vignette Overlay covering the full frame */}
+              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/35 to-ink-950/45" />
 
               {/* Bottom Feature Pill */}
-              <div className="absolute bottom-4 right-4 hidden sm:flex items-center gap-2 rounded-lg bg-black/60 backdrop-blur-md px-3 py-1.5 text-xs text-white/80 border border-white/10 shadow-sm">
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 hidden xs:flex items-center gap-2 rounded-lg bg-black/60 backdrop-blur-md px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs text-white/80 border border-white/10 shadow-sm">
                 <svg
                   className="h-3.5 w-3.5 text-brand-400"
                   viewBox="0 0 24 24"
@@ -158,21 +152,28 @@ export function TourPreviewMockup() {
                 aria-label="Click to explore interactive 3D virtual tour"
                 className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 text-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               >
-                <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-brand-500/90 text-white shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:scale-110 group-hover:bg-brand-500 group-hover:shadow-[0_0_35px_rgba(176,141,87,0.5)]">
-                  <svg
-                    className="h-7 w-7 sm:h-8 sm:w-8 translate-x-0.5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+                {/* Premium Stylized Play Button */}
+                <div className="relative flex items-center justify-center">
+                  {/* Ambient subtle glow aura on hover */}
+                  <div className="absolute inset-0 rounded-full bg-brand-500/25 blur-xl transition-all duration-500 group-hover:scale-125 group-hover:bg-brand-500/40" />
+
+                  {/* Frosted Glass Disc housing the custom outline play icon */}
+                  <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-black/45 ring-1 ring-white/25 backdrop-blur-md shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:ring-brand-400/60 group-hover:bg-black/60 group-hover:shadow-[0_0_35px_rgba(176,141,87,0.45)]">
+                    <img
+                      src="/play-icon-white.png"
+                      alt=""
+                      aria-hidden="true"
+                      width={512}
+                      height={512}
+                      className="h-9 w-9 sm:h-11 sm:w-11 object-contain transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
                 </div>
 
-                <span className="mt-4 text-base sm:text-lg font-medium text-white drop-shadow-md transition-colors duration-200 group-hover:text-brand-300">
+                <span className="mt-3.5 sm:mt-4 text-base sm:text-lg font-medium text-white drop-shadow-md transition-colors duration-200 group-hover:text-brand-300">
                   Click to Explore in 3D
                 </span>
-                <span className="mt-1 text-xs sm:text-sm text-white/75 drop-shadow-sm">
+                <span className="mt-1 text-xs sm:text-sm text-white/75 drop-shadow-sm px-4">
                   Orbit rooms • Dollhouse 3D view • Floor plan navigation
                 </span>
               </button>
