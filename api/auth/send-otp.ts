@@ -31,6 +31,7 @@ async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
+        signal: AbortSignal.timeout(5000),
       },
     )
 
@@ -75,6 +76,7 @@ async function saveOtpRecord(
     await fetch(url, {
       method: 'PATCH',
       headers,
+      signal: AbortSignal.timeout(4000),
       body: JSON.stringify({
         fields: {
           codeHash: { stringValue: record.codeHash },
@@ -103,7 +105,7 @@ async function getOtpRecord(email: string, idToken?: string): Promise<any | null
     const headers: Record<string, string> = {}
     if (idToken) headers.Authorization = `Bearer ${idToken}`
 
-    const res = await fetch(url, { headers })
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(4000) })
     if (!res.ok) return null
 
     const data = await res.json()
@@ -229,31 +231,81 @@ export default async function handler(req: any, res: any) {
     // 5. Send code via Resend if API key is present
     const resendApiKey = process.env.RESEND_API_KEY
     if (resendApiKey) {
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'TwinSpace Security <no-reply@twinspace360.com>',
-          to: [TARGET_ADMIN_EMAIL],
-          subject: `TwinSpace Admin Verification Code: ${code.slice(0, 3)} ${code.slice(3)}`,
-          html: generateOtpEmailHtml(code),
-        }),
-      })
+      const emailPayload = {
+        to: [TARGET_ADMIN_EMAIL],
+        subject: `TwinSpace Admin Verification Code: ${code.slice(0, 3)} ${code.slice(3)}`,
+        html: generateOtpEmailHtml(code),
+      }
 
-      if (!resendRes.ok) {
-        const errText = await resendRes.text()
-        console.error('[send-otp] Resend dispatch error:', resendRes.status, errText)
-        return res.status(502).json({
-          error: 'Failed to deliver verification email. Please try again.',
+      let resendRes: Response | null = null
+      let primaryErrorText = ''
+
+      try {
+        resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...emailPayload,
+            from: 'TwinSpace Security <no-reply@twinspace360.com>',
+          }),
+          signal: AbortSignal.timeout(6000),
+        })
+      } catch (err: any) {
+        console.warn('[send-otp] Primary Resend fetch error/timeout:', err?.message)
+      }
+
+      // If primary sender failed (e.g. domain not verified), try onboarding@resend.dev fallback
+      if (!resendRes || !resendRes.ok) {
+        if (resendRes) {
+          primaryErrorText = await resendRes.text()
+          console.warn('[send-otp] Primary Resend send failed, attempting fallback sender:', resendRes.status, primaryErrorText)
+        }
+
+        try {
+          resendRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...emailPayload,
+              from: 'TwinSpace Security <onboarding@resend.dev>',
+            }),
+            signal: AbortSignal.timeout(6000),
+          })
+        } catch (err: any) {
+          console.warn('[send-otp] Fallback Resend fetch error/timeout:', err?.message)
+        }
+      }
+
+      if (!resendRes || !resendRes.ok) {
+        const errText = resendRes ? await resendRes.text() : primaryErrorText || 'Network timeout connecting to mail service.'
+        console.error('[send-otp] Resend dispatch error:', resendRes?.status || 'no-response', errText)
+
+        let userMsg = 'Failed to deliver verification email. Please check that your email provider is active or try again.'
+        try {
+          const parsed = JSON.parse(errText)
+          if (parsed.message) {
+            userMsg = `Email dispatch notice: ${parsed.message}`
+          }
+        } catch {}
+
+        res.setHeader('Content-Type', 'application/json')
+        return res.status(500).json({
+          success: false,
+          error: userMsg,
         })
       }
     } else if (process.env.NODE_ENV !== 'production') {
       console.log(
         `[send-otp] [DEV LOG] OTP generated for ${TARGET_ADMIN_EMAIL}: ${code} (Expires in 5m)`,
       )
+    } else {
+      console.warn('[send-otp] RESEND_API_KEY is not configured in environment.')
     }
 
     // 6. Return response to frontend WITHOUT THE CODE

@@ -48,6 +48,7 @@ export async function verifyFirebaseAdminToken(idToken: string): Promise<boolean
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
+        signal: AbortSignal.timeout(5000),
       },
     )
 
@@ -94,6 +95,7 @@ export async function saveOtpRecord(record: StoredOtpRecord, idToken?: string): 
     await fetch(url, {
       method: 'PATCH',
       headers,
+      signal: AbortSignal.timeout(4000),
       body: JSON.stringify({
         fields: {
           codeHash: { stringValue: record.codeHash },
@@ -128,7 +130,7 @@ export async function getOtpRecord(email: string, idToken?: string): Promise<Sto
     if (idToken) {
       headers.Authorization = `Bearer ${idToken}`
     }
-    const res = await fetch(url, { headers })
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(4000) })
     if (!res.ok) return null
 
     const data = await res.json()
@@ -178,7 +180,7 @@ export async function deleteOtpRecord(email: string, idToken?: string): Promise<
     if (idToken) {
       headers.Authorization = `Bearer ${idToken}`
     }
-    await fetch(url, { method: 'DELETE', headers })
+    await fetch(url, { method: 'DELETE', headers, signal: AbortSignal.timeout(4000) })
   } catch {
     /* ignore deletion errors */
   }

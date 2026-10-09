@@ -30,6 +30,7 @@ async function verifyFirebaseAdminToken(idToken: string): Promise<boolean> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
+        signal: AbortSignal.timeout(5000),
       },
     )
 
@@ -64,7 +65,7 @@ async function getOtpRecord(email: string, idToken?: string): Promise<any | null
     const headers: Record<string, string> = {}
     if (idToken) headers.Authorization = `Bearer ${idToken}`
 
-    const res = await fetch(url, { headers })
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(4000) })
     if (!res.ok) return null
 
     const data = await res.json()
@@ -109,6 +110,7 @@ async function saveOtpRecord(
     await fetch(url, {
       method: 'PATCH',
       headers,
+      signal: AbortSignal.timeout(4000),
       body: JSON.stringify({
         fields: {
           codeHash: { stringValue: record.codeHash },
@@ -134,7 +136,7 @@ async function deleteOtpRecord(email: string, idToken?: string): Promise<void> {
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/admin_otp_store/admin_active_otp?key=${apiKey}`
     const headers: Record<string, string> = {}
     if (idToken) headers.Authorization = `Bearer ${idToken}`
-    await fetch(url, { method: 'DELETE', headers })
+    await fetch(url, { method: 'DELETE', headers, signal: AbortSignal.timeout(4000) })
   } catch {
     /* ignore deletion errors */
   }

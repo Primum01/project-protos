@@ -325,19 +325,26 @@ export default async function handler(req: any, res: any) {
         ]
       }
 
-      const resendResponse = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(emailPayload),
-      })
+      let resendResponse: Response | null = null
+      try {
+        resendResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emailPayload),
+          signal: AbortSignal.timeout(8000),
+        })
+      } catch (err: any) {
+        console.error('[send-invoice] Resend API timeout or network error:', err?.message)
+      }
 
-      if (!resendResponse.ok) {
-        const errorText = await resendResponse.text()
-        console.error('[send-invoice] Resend API error:', resendResponse.status, errorText)
-        return res.status(502).json({
+      if (!resendResponse || !resendResponse.ok) {
+        const errorText = resendResponse ? await resendResponse.text() : 'Timeout connecting to email delivery service.'
+        console.error('[send-invoice] Resend API error:', resendResponse?.status || 'no-response', errorText)
+        res.setHeader('Content-Type', 'application/json')
+        return res.status(500).json({
           error: `Email delivery failed: ${errorText || 'Upstream mail service error.'}`,
           sender: 'no-reply@twinspace360.com',
         })

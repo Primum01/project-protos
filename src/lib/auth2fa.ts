@@ -118,6 +118,30 @@ export function invalidate2FACache(): void {
 }
 
 /**
+ * Helper to safely extract a user-facing error message from a non-JSON or proxy/gateway response.
+ * Prevents raw HTML error pages (e.g. Cloudflare / CDN 502/504 pages) from leaking into the UI.
+ */
+function formatProxyOrServerError(res: Response, text: string, defaultAction: string): string {
+  const trimmed = text.trim()
+  const isHtml = trimmed.startsWith('<') || trimmed.toLowerCase().includes('<!doctype') || trimmed.toLowerCase().includes('<html')
+
+  if (isHtml) {
+    if (res.status === 502) {
+      return 'Authentication gateway temporarily unavailable (502 Bad Gateway). Please try again shortly.'
+    }
+    if (res.status === 504) {
+      return 'Authentication request timed out (504 Gateway Timeout). Please try again.'
+    }
+    if (res.status === 503) {
+      return 'Authentication service is temporarily unavailable (503 Service Unavailable). Please try again shortly.'
+    }
+    return `Authentication service error (${res.status} ${res.statusText || 'Error'}). Please try again.`
+  }
+
+  return `Server Error (${res.status}): ${trimmed.slice(0, 150) || res.statusText || defaultAction}`
+}
+
+/**
  * Requests the server to generate and send a 6-digit verification code to team@twinspace360.com.
  * Requires the current Firebase Auth user ID token.
  */
@@ -139,7 +163,7 @@ export async function sendOtpRequest(idToken: string): Promise<SendOtpResult> {
     } catch {
       return {
         success: false,
-        error: `Server Error (${res.status}): ${text.slice(0, 150) || res.statusText || 'Unable to connect to verification service.'}`,
+        error: formatProxyOrServerError(res, text, 'Unable to connect to verification service.'),
       }
     }
 
@@ -198,7 +222,7 @@ export async function verifyOtpRequest(
     } catch {
       return {
         success: false,
-        error: `Server Error (${res.status}): ${text.slice(0, 150) || res.statusText || 'Unable to verify authentication code.'}`,
+        error: formatProxyOrServerError(res, text, 'Unable to verify authentication code.'),
       }
     }
 
